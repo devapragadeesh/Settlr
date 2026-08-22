@@ -236,6 +236,41 @@ def _score_ambiguity(result, truth, bank_to_batch, batch_by_id) -> AmbiguityMetr
     return metrics
 
 
+def candidate_set_sizes(result) -> dict:
+    """Distribution of enumerated candidates per ambiguous bank line.
+
+    **This is the number that closes the "enumerate more to score better"
+    loophole**, and it is reported unprompted for exactly that reason.
+
+    `truth_in_candidates` alone is gameable: a solver that returned all 2**n
+    subsets of the pool would contain the truth every time and score a perfect
+    ambiguity recall while having decided nothing. The mean candidate set size
+    is what distinguishes "narrowed it to two possibilities and refused to
+    guess between them" from "listed everything and called it humility".
+
+    A mean near 2 means the engine is genuinely deciding. A mean in the tens
+    means the metric above is not evidence of anything.
+    """
+    from matching.model import Ambiguous
+
+    sizes = [len(item.resolution.candidates)
+             for item in result.stage3.reconstructions
+             if isinstance(item.resolution, Ambiguous)]
+    return {
+        "sizes": sorted(sizes),
+        "count": len(sizes),
+        "mean": (sum(sizes) / len(sizes)) if sizes else 0.0,
+        "max": max(sizes) if sizes else 0,
+        "min": min(sizes) if sizes else 0,
+        #: the size a solver would have to return to make truth_in_candidates
+        #: trivially true -- reported alongside so the comparison is visible
+        "mean_pool_size": (
+            sum(len(item.pool_ids) for item in result.stage3.reconstructions
+                if isinstance(item.resolution, Ambiguous)) / len(sizes)
+        ) if sizes else 0.0,
+    }
+
+
 def false_positive_audit(result, truth: dict | None = None) -> dict:
     """The checks that matter more than the headline number.
 

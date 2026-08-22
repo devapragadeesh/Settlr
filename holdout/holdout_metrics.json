@@ -1,0 +1,98 @@
+{
+ "seed": 20260905,
+ "match_rate": 0.7311320754716981,
+ "precision": 0.7862595419847328,
+ "recall": 1.0,
+ "placed_correctly": 155,
+ "placed_incorrectly": 50,
+ "declined_as_ambiguous": 7,
+ "missed": 0,
+ "correctly_left_unmatched": 28,
+ "wrongly_placed": 0,
+ "truly_settled": 212,
+ "balance_violations": [],
+ "candidates": {
+  "sizes": [
+   2,
+   2,
+   2,
+   29
+  ],
+  "count": 4,
+  "mean": 8.75,
+  "max": 29,
+  "min": 2,
+  "mean_pool_size": 27.0
+ },
+ "ambiguity_flagged": 4,
+ "ambiguity_planted": 3,
+ "ambiguity_detected": 3,
+ "truth_always_enumerated": false,
+ "mean_seconds": 10.454808763660063,
+ "deterministic": true,
+ "predictions": [
+  {
+   "id": "P1",
+   "held": true,
+   "outcome": "0 of 3 debits joined"
+  },
+  {
+   "id": "P2",
+   "held": true,
+   "outcome": "0 of 3 joined"
+  },
+  {
+   "id": "P3",
+   "held": true,
+   "outcome": "3/3 credit-A lines resolved Determinate; 3/3 took rows; 50 reversal rows scored placed_incorrectly"
+  },
+  {
+   "id": "P4",
+   "held": true,
+   "outcome": "3 of 3 credit-B lines failed to reconstruct their true rows"
+  },
+  {
+   "id": "P5",
+   "held": false,
+   "outcome": "0 of 3 debits absorbed; the rest resolved Unresolved"
+  },
+  {
+   "id": "P6",
+   "held": true,
+   "outcome": "0 violations"
+  },
+  {
+   "id": "P7",
+   "held": true,
+   "outcome": "match rate 73.11% vs 96.55%; precision 0.7863 vs 1.0000"
+  }
+ ],
+ "disaggregated": {
+  "correct": 155,
+  "wrong": 0,
+  "declined": 7,
+  "missed": 0,
+  "total": 162,
+  "match_rate": 0.9567901234567902,
+  "reversal_rows": 50,
+  "misplaced_total": 50,
+  "misplaced_attributable": 50
+ },
+ "primary": {
+  "match_rate": 0.9655172413793104,
+  "precision": 1.0,
+  "recall": 1.0,
+  "candidates": {
+   "sizes": [
+    2,
+    2,
+    2
+   ],
+   "count": 3,
+   "mean": 2.0,
+   "max": 2,
+   "min": 2,
+   "mean_pool_size": 23.333333333333332
+  }
+ }
+}
