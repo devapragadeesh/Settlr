@@ -1,0 +1,14 @@
+# SHA-256 of every frozen data file, written by engine/generator.py.
+#
+# This is TAMPER DETECTION, not proof of authorship order: it shows the
+# committed data is exactly what the committed generator produces. A file
+# cannot attest to what did not yet exist beside it. See ROBUSTNESS.md
+# for the multi-seed evidence that the data was not tuned to a solver.
+# Verify:  shasum -a 256 -c <(sed 's|^\([0-9a-f]*\) |\1  |' DATASET_HASHES.txt)
+
+005903f44ab2956e9629ee3d14105e5f83cafd65ea4f6bdbc7e625fd936b6e11 holdout/data/recon_combined.json
+dea8492236bd932af1d37f749d6f113ce194a431f9a3ea5748d1ce64f9d6630b holdout/data/disputes.json
+4d4d96402caed7b258e4a2fa6572fa1da72ae02cfe1f335b9ec6e5c5465ab05d holdout/data/bank_statement.csv
+01ebffceb325e32ddb7e7828eb5206376222adb7e0ae34d181dad38e613375b9 holdout/data/erp_orders.csv
+69dda365af6e3290c55d3e5a80b757ab9643e5de3fa438d1549dfe3a09cac332 holdout/data/gstr2b.csv
+9b65a5693ffe2bd2b9ee99ca14f3b9708b279924eee35d8d2bd26b4657e8ccda holdout/ground_truth/ground_truth.json
