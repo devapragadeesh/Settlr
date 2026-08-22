@@ -1,0 +1,40 @@
+# The held-out seed.
+#
+# Committed BEFORE any held-out data was generated. That ordering is the
+# entire point and it is verifiable from `git log`: the commit carrying this
+# file contains no data/, no ground_truth/, and no generation script.
+#
+# A held-out set is not held-out because it is new. It is held-out because the
+# experimenter could not have chosen it after seeing the result.
+
+HELDOUT_SEED = 20260905
+
+# WHY THIS NUMBER, so that "you picked a seed that worked" has an answer.
+#
+# It is the Razorpay AI Buildathon submission deadline, 5 September 2026,
+# in the same YYYYMMDD form the primary set uses (20260822 = the date the
+# primary set was frozen). Both are dates fixed by something outside this
+# experiment, which is the property that matters: neither was searched for.
+#
+# NOT chosen by: sweeping seeds, running the cascade, inspecting class counts,
+# or any other look at a downstream number. No seed sweep is run in this phase
+# at all -- `engine/robustness.py` already sweeps 0..19 for the SEPARATE
+# question of whether the primary dataset was tuned, and its results are in
+# ROBUSTNESS.md. Reusing that machinery here would confuse the two questions.
+#
+# If the engine performs worse on this seed, that is the finding and it gets
+# reported as the headline. There is no second draw.
+
+# --- period -----------------------------------------------------------------
+# Deliberately NON-OVERLAPPING with the primary set, so that no timestamp,
+# entity id, invoice number or UTR can be accidentally shared between the two.
+#
+#   primary  ledger 2026-06-15 .. 2026-08-28, 12 weekly cut-offs 06-17 .. 09-02
+#   held-out ledger 2026-09-14 .. 2026-11-27, 12 weekly cut-offs 09-16 .. 12-02
+#
+# The held-out ledger opens 12 days after the primary ledger closes and its
+# first cut-off falls after the primary's last.
+
+HELDOUT_WINDOW_START = 2026-09-14
+HELDOUT_WINDOW_END   = 2026-11-27
+HELDOUT_FIRST_CUTOFF = 2026-09-16
