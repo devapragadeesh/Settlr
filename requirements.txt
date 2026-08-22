@@ -1,0 +1,6 @@
+# Phase 2 cascade. Phase 1 (generator, simulator, dataset) needs only pytest.
+ortools>=9.10        # CP-SAT: native solution enumeration for subset-sum
+scipy>=1.11          # linear_sum_assignment (Hungarian) for 1:1 residuals
+rapidfuzz>=3.0       # narration similarity
+pytest>=8.0
+# anthropic          # optional: `eval/report.py --llm claude` narration only
