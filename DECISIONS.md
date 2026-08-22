@@ -471,3 +471,117 @@ repo has. Held-out data is NEW files in a NEW directory; nothing under
 worse on held-out data, that is the finding and it is reported as the headline.
 Tuning the cascade until the held-out numbers improve would destroy the only
 thing the held-out set is for, and is worse than not running one.
+
+---
+
+## 18. Modelling a settlement reversal, and where it lives
+
+**Decision.** `h01_settlement_reversal_resettled` exists **only in `holdout/`**,
+never in `engine/`. The frozen set stays frozen; the unseen class is introduced
+in new files in a new directory.
+
+**Provenance is `synthesized_modelled` and this is not a hedge.** Razorpay
+documents no reversal or failed-payout behaviour that this project could find,
+and `SETTLEMENT_SPEC.md` §10 has always said so. Nothing about the mechanism is
+claimed to be observed Razorpay behaviour. It is the standard bank/aggregator
+mechanism: credit under UTR-A, NEFT return, debit referencing UTR-A,
+re-settlement under UTR-B.
+
+**Why it had to be a new bank-statement shape.** §10 originally listed
+reversals as "genuinely absent" precisely because modelling one needs two
+things the primary statement does not have: a **negative amount**, and a
+**credit whose composition duplicates an earlier credit's**. Adding either to
+`engine/data/` would have meant regenerating the frozen set — trading the
+strongest integrity property in the repo for one extra class. The held-out
+directory is what makes having both possible.
+
+**Decision: the ledger rows re-point to settlement B.** `recon_combined.json`
+is a current-state snapshot and B is the settlement that actually paid them.
+The key retains A, marked `reversed_by`, because A genuinely occurred and was
+genuinely reversed; `resettlement_of` points back, so the linkage is
+recoverable in both directions.
+
+**Rejected: leave the rows attesting UTR-A and add B as an unattested credit.**
+It makes the re-settlement invisible to any consumer of the recon file, which
+is not how a merchant sees it — and it would have made the engine's job
+*easier*, which is the wrong direction for a test designed to find a gap.
+
+**Rejected: express the reversal as a ledger adjustment row.** Cheap, and
+wrong: a NEFT return is a bank-side event that the payment ledger does not
+witness. Modelling it inside the ledger would have let Stage 1 join it and
+would have tested nothing.
+
+**Which batches may carry one** is constrained — not the last two, not the
+blanked-UTR row, not an ambiguous batch, not one whose re-settlement crosses a
+month boundary — and each exclusion is documented in `_eligible_for_reversal`
+**with the direction of its bias**. The two substantive ones make the case
+*cleaner and therefore easier*: excluding ambiguous batches keeps `h01`
+attributable rather than confounded with `c07`, and excluding month-crossing
+re-settlements keeps monthly fee accrual and `gstr2b.csv` untouched so the
+reversal is not a tax finding in disguise. Both are stated rather than
+presented as neutral, and the untested harder cases are named as untested.
+
+---
+
+## 19. What the held-out run found, and why the engine is not patched for it
+
+**The result.** Match rate 96.55% → **73.11%**, precision 1.000 → **0.786**,
+50 rows placed in the wrong batch. Full detail in
+`holdout/HOLDOUT_RESULTS.md`.
+
+**The finding, stated as the headline rather than buried.** On a settlement
+reversal the engine does **not** decline. It places the affected rows into the
+*original* credit A, with a closing arithmetic proof, at full confidence — and
+the truth is that they belong to the re-settlement B. A confident wrong answer,
+which is the worse of the two failure modes.
+
+**Why it happens, mechanically.** `stage3_solver.run` walks bank lines in date
+order and asks of each: *which pool rows net to this amount?* At credit A's
+date the correct answer to **that question** is exactly those rows. They did
+compose that credit; the credit did post. The engine is not hallucinating — it
+is answering a question with no notion of revocation in it. Recognising the
+reversal requires relating a **later** debit to an **earlier** credit, which is
+state the cascade does not carry.
+
+**The second-order cost is worse than the first.** Credit A resolves
+`Determinate` and carries no attestation, so `run()` takes the `elif` branch
+and **consumes** those rows. Credit B then reconstructs from a pool its own
+rows are missing from. **One reversal damages two bank lines.** On `bank[9]`
+that surfaced as an ambiguity with 29 candidates that did not contain the truth,
+and it alone accounted for 9.4s of the 10.5s run.
+
+**What the engine got right, and it is not nothing.** All three reversal debits
+resolve `Unresolved` and reach the exception queue as `genuinely_unresolved`,
+with the damaged credit-B lines — 5 bank lines against 0 on the primary set. The
+queue does say *"I cannot explain these debits."* What it never says is
+*"...therefore my earlier answer about credit A is void."* Zero balance-identity
+violations: the engine is wrong about **which** rows, never about the sum.
+
+**Attribution is total, and that is the other half of the finding.** All 50
+mis-placed rows belong to a reversed batch; **zero** non-reversal rows were
+harmed. Excluding reversal rows, the held-out set scores 95.68% with 0 placed
+incorrectly, 0 missed, and the same 7 declined on proven ambiguity. Reported as
+an explicitly labelled diagnostic — **the headline stays 73.11%**, because an
+engine does not get to exclude the cases it failed.
+
+**Decision: `matching/` is NOT modified.** The fix is not difficult — carry
+reversal state, treat a debit referencing a prior UTR as revoking that credit,
+and release its rows back to the pool. It is deliberately not written.
+
+**Rejected: fix the cascade and re-run.** This is the one that matters. Tuning
+a solver until the held-out numbers improve destroys the only thing a held-out
+set is for, and the second run would no longer be held out. The engine is
+frozen at `81c04e0` and the number stands. A repo that reports 73.11% with the
+mechanism explained is worth more than one reporting 96% on a set it was
+allowed to see twice.
+
+**Rejected: regenerate the held-out set without reversals.** Same failure,
+dressed as data cleaning.
+
+**What a fix would have to be, recorded so the gap is bounded rather than
+open-ended.** Reconciliation state is not derivable from one date-ordered pass:
+a credit's resolution must remain revisable while any later line can revoke it.
+That is a two-pass or event-sourced formulation, not a new stage bolted to the
+end of a cascade — which is why it is a design change and not a patch, and why
+doing it under time pressure in the phase that discovered the problem would be
+the wrong order of operations.
