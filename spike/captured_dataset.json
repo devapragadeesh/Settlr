@@ -1,0 +1,1061 @@
+{
+  "_meta": {
+    "captured_at": "2026-08-22T06:08:37.540814+00:00",
+    "source": "Razorpay TEST MODE REST API, account merchant_id TShuVt2nlFfcNT",
+    "mode": "test",
+    "live_data": false,
+    "note": "Unmodified API responses. Test mode contains no real merchant or cardholder data; no redaction was required. Key id withheld.",
+    "recon_rows": "NONE - /v1/settlements/recon/combined returns count:0 for every month probed. Test mode produced no settlement in this session.",
+    "disputes": "EMPTY and unseedable. POST /v1/disputes returns HTTP 404 {\"message\":\"no Route matched with those values\"} - the endpoint does not exist. Note the empty dispute collection OMITS the 'items' key entirely, unlike settlements.",
+    "fee_tax_identity": "VERIFIED on payment entities: fee is INCLUSIVE of tax. credit = amount - fee. (fee-tax)/amount == 2.000000% on all 14 fee rows; balance identity closes with delta 0. See verify_fee_tax.py. UNVERIFIED for recon rows - test mode produced none."
+  },
+  "payments": [
+    {
+      "id": "pay_TSi7iYzv9ycljW",
+      "entity": "payment",
+      "amount": 90000,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "failed",
+      "order_id": "order_TSi7eEF4zjCaIh",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": false,
+      "description": null,
+      "card_id": null,
+      "bank": "ALLA",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "h_failed"
+      },
+      "fee": null,
+      "tax": null,
+      "error_code": "BAD_REQUEST_ERROR",
+      "error_description": "Your payment didn't go through as it was declined by the bank. Try another payment method or contact your bank.",
+      "error_source": "bank",
+      "error_step": "payment_authorization",
+      "error_reason": "payment_failed",
+      "acquirer_data": {
+        "bank_transaction_id": null
+      },
+      "created_at": 1787378822
+    },
+    {
+      "id": "pay_TSi7SuT7inlyh9",
+      "entity": "payment",
+      "amount": 155500,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi7PjQ4YYr1QA",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": "DEUT",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "f_nb_deut"
+      },
+      "fee": 3670,
+      "tax": 560,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "bank_transaction_id": "2403075"
+      },
+      "created_at": 1787378808
+    },
+    {
+      "id": "pay_TSi7BNwXHBpEaN",
+      "entity": "payment",
+      "amount": 144400,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi79Gsb81ZwM2",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": "BARB_R",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "f_nb_barb"
+      },
+      "fee": 3408,
+      "tax": 520,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "bank_transaction_id": "3306721"
+      },
+      "created_at": 1787378792
+    },
+    {
+      "id": "pay_TSi6w4q5o5r9yD",
+      "entity": "payment",
+      "amount": 133300,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi6uOpzwuHD8A",
+      "invoice_id": null,
+      "international": false,
+      "method": "wallet",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": null,
+      "wallet": "airtelmoney",
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "f_wallet_airtel"
+      },
+      "fee": 3146,
+      "tax": 480,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "transaction_id": null
+      },
+      "created_at": 1787378778
+    },
+    {
+      "id": "pay_TSi6hC2pPcq7hw",
+      "entity": "payment",
+      "amount": 122200,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi6gEaqBtgLtw",
+      "invoice_id": null,
+      "international": false,
+      "method": "wallet",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": null,
+      "wallet": "olamoney",
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "f_wallet_olamoney"
+      },
+      "fee": 2884,
+      "tax": 440,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "transaction_id": null
+      },
+      "created_at": 1787378764
+    },
+    {
+      "id": "pay_TSi6RwyfH4Ftlq",
+      "entity": "payment",
+      "amount": 111100,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi6ORZoe7MEjR",
+      "invoice_id": null,
+      "international": false,
+      "method": "wallet",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": null,
+      "wallet": "mobikwik",
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "f_wallet_mobikwik"
+      },
+      "fee": 2622,
+      "tax": 400,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "transaction_id": null
+      },
+      "created_at": 1787378750
+    },
+    {
+      "id": "pay_TSi5jJ8AtcFUlH",
+      "entity": "payment",
+      "amount": 198300,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi5gSC0jLQTit",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": "DCBL",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "c_subset4"
+      },
+      "fee": 4680,
+      "tax": 714,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "bank_transaction_id": "5147580"
+      },
+      "created_at": 1787378709
+    },
+    {
+      "id": "pay_TSi5QMKeUJx5cQ",
+      "entity": "payment",
+      "amount": 76400,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi5ORI56bIXaE",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": "CSBK",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "c_subset3"
+      },
+      "fee": 1804,
+      "tax": 276,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "bank_transaction_id": "1948782"
+      },
+      "created_at": 1787378692
+    },
+    {
+      "id": "pay_TSi53wUMiFjNGv",
+      "entity": "payment",
+      "amount": 415000,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi51Q4HSeHZ67",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": "CNRB",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "c_subset2"
+      },
+      "fee": 9794,
+      "tax": 1494,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "bank_transaction_id": "6768020"
+      },
+      "created_at": 1787378671
+    },
+    {
+      "id": "pay_TSi4oimlqwZlxM",
+      "entity": "payment",
+      "amount": 289900,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi4nZJ8h4BLTS",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": "CBIN",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "c_subset1"
+      },
+      "fee": 6842,
+      "tax": 1044,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "bank_transaction_id": "8754927"
+      },
+      "created_at": 1787378657
+    },
+    {
+      "id": "pay_TSi4cslMMVPqgW",
+      "entity": "payment",
+      "amount": 133700,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi4bNNseC7EzV",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": "ALLA",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "c_subset0"
+      },
+      "fee": 3156,
+      "tax": 482,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "bank_transaction_id": "2099863"
+      },
+      "created_at": 1787378647
+    },
+    {
+      "id": "pay_TSi4K4yG6DLwrw",
+      "entity": "payment",
+      "amount": 500000,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi4J1kv7nqW0n",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 200000,
+      "refund_status": "partial",
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": "ALLA",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "d_partialrefund"
+      },
+      "fee": 11800,
+      "tax": 1800,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "bank_transaction_id": "3872983"
+      },
+      "created_at": 1787378629
+    },
+    {
+      "id": "pay_TSi462SLqN2db4",
+      "entity": "payment",
+      "amount": 250000,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "refunded",
+      "order_id": "order_TSi44KEVckqTEt",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 250000,
+      "refund_status": "full",
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": "ALLA",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "b_fullrefund"
+      },
+      "fee": 5900,
+      "tax": 900,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "bank_transaction_id": "8621966"
+      },
+      "created_at": 1787378616
+    },
+    {
+      "id": "pay_TSi3qT6hGCkMgl",
+      "entity": "payment",
+      "amount": 100000,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi3pDIbkttve6",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": "ALLA",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "a_simple"
+      },
+      "fee": 2360,
+      "tax": 360,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "bank_transaction_id": "1358808"
+      },
+      "created_at": 1787378602
+    },
+    {
+      "id": "pay_TSi1yiwrdzsmLC",
+      "entity": "payment",
+      "amount": 222200,
+      "amount_captured": null,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi1xWmetuOWdQ",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": "ALLA",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": [],
+      "fee": 5244,
+      "tax": 800,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "bank_transaction_id": "3612485"
+      },
+      "created_at": 1787378496
+    }
+  ],
+  "refunds": [
+    {
+      "acquirer_data": {
+        "arn": "10000000000000"
+      },
+      "amount": 200000,
+      "batch_id": null,
+      "created_at": 1787378643,
+      "currency": "INR",
+      "entity": "refund",
+      "id": "rfnd_TSi4ZP1Ug9EjYd",
+      "notes": [],
+      "payment_id": "pay_TSi4K4yG6DLwrw",
+      "receipt": null,
+      "speed_processed": "normal",
+      "speed_requested": "normal",
+      "status": "processed"
+    },
+    {
+      "acquirer_data": {
+        "arn": "10000000000000"
+      },
+      "amount": 250000,
+      "batch_id": null,
+      "created_at": 1787378626,
+      "currency": "INR",
+      "entity": "refund",
+      "id": "rfnd_TSi4GtqmTmfZfx",
+      "notes": [],
+      "payment_id": "pay_TSi462SLqN2db4",
+      "receipt": null,
+      "speed_processed": "normal",
+      "speed_requested": "normal",
+      "status": "processed"
+    }
+  ],
+  "orders": [
+    {
+      "id": "order_TSi7eEF4zjCaIh",
+      "entity": "order",
+      "amount": 90000,
+      "amount_paid": null,
+      "amount_due": 90000,
+      "currency": "INR",
+      "receipt": "h_failed",
+      "offer_id": null,
+      "status": "attempted",
+      "attempts": 1,
+      "notes": {
+        "scenario": "h_failed"
+      },
+      "created_at": 1787378818
+    },
+    {
+      "id": "order_TSi7PjQ4YYr1QA",
+      "entity": "order",
+      "amount": 155500,
+      "amount_paid": 155500,
+      "amount_due": 0,
+      "currency": "INR",
+      "receipt": "f_nb_deut",
+      "offer_id": null,
+      "status": "paid",
+      "attempts": 1,
+      "notes": {
+        "scenario": "f_nb_deut"
+      },
+      "created_at": 1787378805
+    },
+    {
+      "id": "order_TSi79Gsb81ZwM2",
+      "entity": "order",
+      "amount": 144400,
+      "amount_paid": 144400,
+      "amount_due": 0,
+      "currency": "INR",
+      "receipt": "f_nb_barb",
+      "offer_id": null,
+      "status": "paid",
+      "attempts": 1,
+      "notes": {
+        "scenario": "f_nb_barb"
+      },
+      "created_at": 1787378789
+    },
+    {
+      "id": "order_TSi6uOpzwuHD8A",
+      "entity": "order",
+      "amount": 133300,
+      "amount_paid": 133300,
+      "amount_due": 0,
+      "currency": "INR",
+      "receipt": "f_wallet_airtel",
+      "offer_id": null,
+      "status": "paid",
+      "attempts": 1,
+      "notes": {
+        "scenario": "f_wallet_airtel"
+      },
+      "created_at": 1787378776
+    },
+    {
+      "id": "order_TSi6gEaqBtgLtw",
+      "entity": "order",
+      "amount": 122200,
+      "amount_paid": 122200,
+      "amount_due": 0,
+      "currency": "INR",
+      "receipt": "f_wallet_olamoney",
+      "offer_id": null,
+      "status": "paid",
+      "attempts": 1,
+      "notes": {
+        "scenario": "f_wallet_olamoney"
+      },
+      "created_at": 1787378763
+    },
+    {
+      "id": "order_TSi6ORZoe7MEjR",
+      "entity": "order",
+      "amount": 111100,
+      "amount_paid": 111100,
+      "amount_due": 0,
+      "currency": "INR",
+      "receipt": "f_wallet_mobikwik",
+      "offer_id": null,
+      "status": "paid",
+      "attempts": 1,
+      "notes": {
+        "scenario": "f_wallet_mobikwik"
+      },
+      "created_at": 1787378747
+    },
+    {
+      "id": "order_TSi5gSC0jLQTit",
+      "entity": "order",
+      "amount": 198300,
+      "amount_paid": 198300,
+      "amount_due": 0,
+      "currency": "INR",
+      "receipt": "c_subset4",
+      "offer_id": null,
+      "status": "paid",
+      "attempts": 1,
+      "notes": {
+        "scenario": "c_subset4"
+      },
+      "created_at": 1787378706
+    },
+    {
+      "id": "order_TSi5ORI56bIXaE",
+      "entity": "order",
+      "amount": 76400,
+      "amount_paid": 76400,
+      "amount_due": 0,
+      "currency": "INR",
+      "receipt": "c_subset3",
+      "offer_id": null,
+      "status": "paid",
+      "attempts": 1,
+      "notes": {
+        "scenario": "c_subset3"
+      },
+      "created_at": 1787378690
+    },
+    {
+      "id": "order_TSi51Q4HSeHZ67",
+      "entity": "order",
+      "amount": 415000,
+      "amount_paid": 415000,
+      "amount_due": 0,
+      "currency": "INR",
+      "receipt": "c_subset2",
+      "offer_id": null,
+      "status": "paid",
+      "attempts": 1,
+      "notes": {
+        "scenario": "c_subset2"
+      },
+      "created_at": 1787378669
+    },
+    {
+      "id": "order_TSi4nZJ8h4BLTS",
+      "entity": "order",
+      "amount": 289900,
+      "amount_paid": 289900,
+      "amount_due": 0,
+      "currency": "INR",
+      "receipt": "c_subset1",
+      "offer_id": null,
+      "status": "paid",
+      "attempts": 1,
+      "notes": {
+        "scenario": "c_subset1"
+      },
+      "created_at": 1787378656
+    },
+    {
+      "id": "order_TSi4bNNseC7EzV",
+      "entity": "order",
+      "amount": 133700,
+      "amount_paid": 133700,
+      "amount_due": 0,
+      "currency": "INR",
+      "receipt": "c_subset0",
+      "offer_id": null,
+      "status": "paid",
+      "attempts": 1,
+      "notes": {
+        "scenario": "c_subset0"
+      },
+      "created_at": 1787378645
+    },
+    {
+      "id": "order_TSi4J1kv7nqW0n",
+      "entity": "order",
+      "amount": 500000,
+      "amount_paid": 500000,
+      "amount_due": 0,
+      "currency": "INR",
+      "receipt": "d_partialrefund",
+      "offer_id": null,
+      "status": "paid",
+      "attempts": 1,
+      "notes": {
+        "scenario": "d_partialrefund"
+      },
+      "created_at": 1787378628
+    },
+    {
+      "id": "order_TSi44KEVckqTEt",
+      "entity": "order",
+      "amount": 250000,
+      "amount_paid": 250000,
+      "amount_due": 0,
+      "currency": "INR",
+      "receipt": "b_fullrefund",
+      "offer_id": null,
+      "status": "paid",
+      "attempts": 1,
+      "notes": {
+        "scenario": "b_fullrefund"
+      },
+      "created_at": 1787378615
+    },
+    {
+      "id": "order_TSi3pDIbkttve6",
+      "entity": "order",
+      "amount": 100000,
+      "amount_paid": 100000,
+      "amount_due": 0,
+      "currency": "INR",
+      "receipt": "a_simple",
+      "offer_id": null,
+      "status": "paid",
+      "attempts": 1,
+      "notes": {
+        "scenario": "a_simple"
+      },
+      "created_at": 1787378601
+    },
+    {
+      "id": "order_TSi1xWmetuOWdQ",
+      "entity": "order",
+      "amount": 222200,
+      "amount_paid": 222200,
+      "amount_due": 0,
+      "currency": "INR",
+      "receipt": "probe_nb",
+      "offer_id": null,
+      "status": "paid",
+      "attempts": 1,
+      "notes": [],
+      "created_at": 1787378495
+    },
+    {
+      "id": "order_TSi1vfw8JWNr8r",
+      "entity": "order",
+      "amount": 100000,
+      "amount_paid": null,
+      "amount_due": 100000,
+      "currency": "INR",
+      "receipt": "probe_card",
+      "offer_id": null,
+      "status": "created",
+      "attempts": 0,
+      "notes": [],
+      "created_at": 1787378493
+    },
+    {
+      "id": "order_TSi0saZVNm9Y4f",
+      "entity": "order",
+      "amount": 90000,
+      "amount_paid": null,
+      "amount_due": 90000,
+      "currency": "INR",
+      "receipt": "sc_h_failed",
+      "offer_id": null,
+      "status": "created",
+      "attempts": 0,
+      "notes": {
+        "scenario": "sc_h_failed"
+      },
+      "created_at": 1787378433
+    },
+    {
+      "id": "order_TSi0nQnFiVpg92",
+      "entity": "order",
+      "amount": 90000,
+      "amount_paid": null,
+      "amount_due": 90000,
+      "currency": "INR",
+      "receipt": "sc_h_uncaptured",
+      "offer_id": null,
+      "status": "created",
+      "attempts": 0,
+      "notes": {
+        "scenario": "sc_h_uncaptured"
+      },
+      "created_at": 1787378429
+    },
+    {
+      "id": "order_TSi0gq3gf2cLLr",
+      "entity": "order",
+      "amount": 333300,
+      "amount_paid": null,
+      "amount_due": 333300,
+      "currency": "INR",
+      "receipt": "sc_f_wallet",
+      "offer_id": null,
+      "status": "attempted",
+      "attempts": 1,
+      "notes": {
+        "scenario": "sc_f_wallet"
+      },
+      "created_at": 1787378423
+    },
+    {
+      "id": "order_TSi0bYzjQ0M6Ex",
+      "entity": "order",
+      "amount": 222200,
+      "amount_paid": null,
+      "amount_due": 222200,
+      "currency": "INR",
+      "receipt": "sc_f_netbanking",
+      "offer_id": null,
+      "status": "attempted",
+      "attempts": 1,
+      "notes": {
+        "scenario": "sc_f_netbanking"
+      },
+      "created_at": 1787378418
+    },
+    {
+      "id": "order_TSi0VC7egwKw9R",
+      "entity": "order",
+      "amount": 111100,
+      "amount_paid": null,
+      "amount_due": 111100,
+      "currency": "INR",
+      "receipt": "sc_f_upi",
+      "offer_id": null,
+      "status": "attempted",
+      "attempts": 1,
+      "notes": {
+        "scenario": "sc_f_upi"
+      },
+      "created_at": 1787378412
+    },
+    {
+      "id": "order_TSi0PKcnPv3Dvr",
+      "entity": "order",
+      "amount": 76400,
+      "amount_paid": null,
+      "amount_due": 76400,
+      "currency": "INR",
+      "receipt": "sc_c_subset_3",
+      "offer_id": null,
+      "status": "created",
+      "attempts": 0,
+      "notes": {
+        "scenario": "sc_c_subset_3"
+      },
+      "created_at": 1787378407
+    },
+    {
+      "id": "order_TSi0DdtrOzVduu",
+      "entity": "order",
+      "amount": 415000,
+      "amount_paid": null,
+      "amount_due": 415000,
+      "currency": "INR",
+      "receipt": "sc_c_subset_2",
+      "offer_id": null,
+      "status": "created",
+      "attempts": 0,
+      "notes": {
+        "scenario": "sc_c_subset_2"
+      },
+      "created_at": 1787378396
+    },
+    {
+      "id": "order_TSi084IfkiR83M",
+      "entity": "order",
+      "amount": 289900,
+      "amount_paid": null,
+      "amount_due": 289900,
+      "currency": "INR",
+      "receipt": "sc_c_subset_1",
+      "offer_id": null,
+      "status": "created",
+      "attempts": 0,
+      "notes": {
+        "scenario": "sc_c_subset_1"
+      },
+      "created_at": 1787378391
+    },
+    {
+      "id": "order_TSi046Tx6hyrJV",
+      "entity": "order",
+      "amount": 133700,
+      "amount_paid": null,
+      "amount_due": 133700,
+      "currency": "INR",
+      "receipt": "sc_c_subset_0",
+      "offer_id": null,
+      "status": "created",
+      "attempts": 0,
+      "notes": {
+        "scenario": "sc_c_subset_0"
+      },
+      "created_at": 1787378387
+    },
+    {
+      "id": "order_TShzxZtkZ18oAt",
+      "entity": "order",
+      "amount": 500000,
+      "amount_paid": null,
+      "amount_due": 500000,
+      "currency": "INR",
+      "receipt": "sc_d_partial_refund",
+      "offer_id": null,
+      "status": "created",
+      "attempts": 0,
+      "notes": {
+        "scenario": "sc_d_partial_refund"
+      },
+      "created_at": 1787378381
+    },
+    {
+      "id": "order_TShzrxTRXK3i0B",
+      "entity": "order",
+      "amount": 250000,
+      "amount_paid": null,
+      "amount_due": 250000,
+      "currency": "INR",
+      "receipt": "sc_b_full_refund",
+      "offer_id": null,
+      "status": "created",
+      "attempts": 0,
+      "notes": {
+        "scenario": "sc_b_full_refund"
+      },
+      "created_at": 1787378376
+    },
+    {
+      "id": "order_TShzjYVThNBomW",
+      "entity": "order",
+      "amount": 100000,
+      "amount_paid": null,
+      "amount_due": 100000,
+      "currency": "INR",
+      "receipt": "sc_a_simple",
+      "offer_id": null,
+      "status": "created",
+      "attempts": 0,
+      "notes": {
+        "scenario": "sc_a_simple"
+      },
+      "created_at": 1787378368
+    }
+  ],
+  "balance": {
+    "id": "TShuWByxA2GVIm",
+    "merchant_id": "TShuVt2nlFfcNT",
+    "type": "primary",
+    "currency": "INR",
+    "name": "enabled",
+    "balance": 2334690,
+    "credits": 0,
+    "fee_credits": 0,
+    "refund_credits": 0,
+    "account_number": null,
+    "account_type": null,
+    "channel": null,
+    "updated_at": 1787378813,
+    "locked_balance": 0,
+    "last_fetched_at": null
+  },
+  "settlements": [],
+  "recon_combined_2026_08": {
+    "entity": "collection",
+    "count": 0,
+    "items": []
+  },
+  "disputes": {
+    "entity": "collection",
+    "has_more": false
+  }
+}

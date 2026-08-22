@@ -1,0 +1,36 @@
+{
+  "seq": 11,
+  "tag": "rest_recon_2026_06",
+  "ts": 1787378331,
+  "request": {
+    "method": "GET",
+    "url": "https://api.razorpay.com/v1/settlements/recon/combined?year=2026&month=06",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": null
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 05:58:50 GMT",
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked",
+      "Connection": "close",
+      "Cache-Control": "max-age=0, must-revalidate, no-store, nocache, private",
+      "Expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+      "Pragma": "no-cache",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Via": "rws",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Pam": "0",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "entity": "collection",
+      "count": 0,
+      "items": []
+    }
+  }
+}

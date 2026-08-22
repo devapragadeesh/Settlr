@@ -1,0 +1,50 @@
+{
+  "seq": 25,
+  "tag": "order_sc_f_netbanking",
+  "ts": 1787378418,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/orders",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": {
+      "amount": 222200,
+      "currency": "INR",
+      "receipt": "sc_f_netbanking",
+      "notes": {
+        "scenario": "sc_f_netbanking"
+      }
+    }
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:00:18 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "254",
+      "Connection": "close",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Vary": "Origin",
+      "Via": "rws",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "amount": 222200,
+      "amount_due": 222200,
+      "amount_paid": 0,
+      "attempts": 0,
+      "created_at": 1787378418,
+      "currency": "INR",
+      "entity": "order",
+      "id": "order_TSi0bYzjQ0M6Ex",
+      "notes": {
+        "scenario": "sc_f_netbanking"
+      },
+      "offer_id": null,
+      "receipt": "sc_f_netbanking",
+      "status": "created"
+    }
+  }
+}

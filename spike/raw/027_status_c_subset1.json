@@ -1,0 +1,67 @@
+{
+  "seq": 27,
+  "tag": "status_c_subset1",
+  "ts": 1787378667,
+  "request": {
+    "method": "GET",
+    "url": "https://api.razorpay.com/v1/payments/pay_TSi4oimlqwZlxM",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": null
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:04:28 GMT",
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked",
+      "Connection": "close",
+      "Cache-Control": "max-age=0, must-revalidate, no-store, nocache, private",
+      "Expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+      "Pragma": "no-cache",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Uber-Trace-Id": "d6ce374a483da88a82914f10f0cf7697:f01f89282f86adc5:0000000000000000:1",
+      "Via": "rws",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Pam": "0",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "id": "pay_TSi4oimlqwZlxM",
+      "entity": "payment",
+      "amount": 289900,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi4nZJ8h4BLTS",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": "CBIN",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "c_subset1"
+      },
+      "fee": 6842,
+      "tax": 1044,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "bank_transaction_id": "8754927"
+      },
+      "created_at": 1787378657
+    }
+  }
+}

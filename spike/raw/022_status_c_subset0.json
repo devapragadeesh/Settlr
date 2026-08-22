@@ -1,0 +1,67 @@
+{
+  "seq": 22,
+  "tag": "status_c_subset0",
+  "ts": 1787378655,
+  "request": {
+    "method": "GET",
+    "url": "https://api.razorpay.com/v1/payments/pay_TSi4cslMMVPqgW",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": null
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:04:14 GMT",
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked",
+      "Connection": "close",
+      "Cache-Control": "max-age=0, must-revalidate, no-store, nocache, private",
+      "Expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+      "Pragma": "no-cache",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Uber-Trace-Id": "140e5755dcac072d291accf6d6dc2b0f:a2bf806df7d2ca8b:0000000000000000:1",
+      "Via": "rws",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Pam": "0",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "id": "pay_TSi4cslMMVPqgW",
+      "entity": "payment",
+      "amount": 133700,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi4bNNseC7EzV",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": "ALLA",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "c_subset0"
+      },
+      "fee": 3156,
+      "tax": 482,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "bank_transaction_id": "2099863"
+      },
+      "created_at": 1787378647
+    }
+  }
+}

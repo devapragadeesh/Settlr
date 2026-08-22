@@ -1,0 +1,1655 @@
+{
+  "seq": 3,
+  "tag": "mcp_tools_list",
+  "ts": 1787378315,
+  "request": {
+    "method": "POST",
+    "url": "https://mcp.razorpay.com/mcp",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>",
+      "Accept": "application/json, text/event-stream"
+    },
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "method": "tools/list",
+      "params": {}
+    }
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 05:58:34 GMT",
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked",
+      "Connection": "close",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Via": "rws",
+      "Www-Authenticate": "Bearer resource_metadata=\"https://mcp.razorpay.com/.well-known/oauth-protected-resource\""
+    },
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "result": {
+        "tools": [
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Use this tool to capture a previously authorized payment. Only payments with 'authorized' status can be captured",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "description": "The amount to be captured in paise. For INR: 100 paise = ₹1. Should be equal to the authorized amount",
+                  "type": "number"
+                },
+                "currency": {
+                  "description": "ISO code of the currency in which the payment was made (e.g., INR)",
+                  "type": "string"
+                },
+                "payment_id": {
+                  "description": "Unique identifier of the payment to be captured. Should start with 'pay_'",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "payment_id",
+                "amount",
+                "currency"
+              ]
+            },
+            "name": "capture_payment"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Create a new order in Razorpay. Supports both regular orders and mandate orders. \n\nFor REGULAR ORDERS: Provide amount, currency, and optional receipt/notes. \n\nFor MANDATE ORDERS (recurring payments): You MUST provide ALL of these fields: amount, currency, method='upi', customer_id (starts with 'cust_'), and token object. \n\nThe token object is required for mandate orders and must contain: max_amount (positive number in paise - For INR: 100 paise = ₹1), frequency (as_presented/monthly/one_time/yearly/weekly/daily), type='single_block_multiple_debit', and optionally expire_at (defaults to today+60days). \n\nIMPORTANT: When token.type is 'single_block_multiple_debit', the method MUST be 'upi'. \n\nExample mandate order payload: {\"amount\": 100, \"currency\": \"INR\", \"method\": \"upi\", \"customer_id\": \"cust_abc123\", \"token\": {\"max_amount\": 100, \"frequency\": \"as_presented\", \"type\": \"single_block_multiple_debit\"}, \"receipt\": \"Receipt No. 1\", \"notes\": {\"key\": \"value\"}}",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "description": "Payment amount in paise (smallest currency sub-unit). For INR: 100 paise = ₹1. Example: for ₹295, use 29500",
+                  "minimum": 100,
+                  "type": "number"
+                },
+                "currency": {
+                  "description": "ISO code for the currency (e.g., INR, USD, SGD)",
+                  "pattern": "^[A-Z]{3}$",
+                  "type": "string"
+                },
+                "customer_id": {
+                  "description": "Customer ID for mandate orders. REQUIRED for mandate orders. Must start with 'cust_' followed by alphanumeric characters. Example: 'cust_xxx'. This identifies the customer for recurring payments.",
+                  "type": "string"
+                },
+                "first_payment_min_amount": {
+                  "description": "Minimum amount in paise for first partial payment (only if partial_payment is true). For INR: 100 paise = ₹1",
+                  "minimum": 100,
+                  "type": "number"
+                },
+                "method": {
+                  "description": "Payment method for mandate orders. REQUIRED for mandate orders. Must be 'upi' when using token.type='single_block_multiple_debit'. This field is used only for mandate/recurring payment orders.",
+                  "type": "string"
+                },
+                "notes": {
+                  "description": "Key-value pairs for additional information (max 15 pairs, 256 chars each)",
+                  "maxProperties": 15,
+                  "properties": {},
+                  "type": "object"
+                },
+                "partial_payment": {
+                  "default": false,
+                  "description": "Whether the customer can make partial payments",
+                  "type": "boolean"
+                },
+                "receipt": {
+                  "description": "Receipt number for internal reference (max 40 chars, must be unique)",
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                "token": {
+                  "description": "Token object for mandate orders. REQUIRED for mandate orders. Must contain: max_amount (positive number in paise, maximum debit amount - For INR: 100 paise = ₹1), frequency (as_presented/monthly/one_time/yearly/weekly/daily), type='single_block_multiple_debit' (only supported type), and optionally expire_at (Unix timestamp, defaults to today+60days). Example: {\"max_amount\": 100, \"frequency\": \"as_presented\", \"type\": \"single_block_multiple_debit\"}",
+                  "properties": {},
+                  "type": "object"
+                },
+                "transfers": {
+                  "description": "Array of transfer objects for distributing payment amounts among multiple linked accounts. Each transfer object should contain: account (linked account ID), amount (in currency subunits), currency (ISO code), and optional fields like notes, linked_account_notes, on_hold, on_hold_until",
+                  "items": {
+                    "properties": {
+                      "account": {
+                        "description": "Linked account ID",
+                        "type": "string"
+                      },
+                      "amount": {
+                        "description": "Amount to transfer in paise (currency subunits). For INR: 100 paise = ₹1",
+                        "minimum": 1,
+                        "type": "number"
+                      },
+                      "currency": {
+                        "description": "ISO currency code",
+                        "pattern": "^[A-Z]{3}$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "account",
+                      "amount",
+                      "currency"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ]
+            },
+            "name": "create_order"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Create a new standard payment link in Razorpay with a specified amount",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "accept_partial": {
+                  "description": "Indicates whether customers can make partial payments using the Payment Link. Default: false",
+                  "type": "boolean"
+                },
+                "amount": {
+                  "description": "Amount to be paid using the link in paise (smallest currency unit). For INR: 100 paise = ₹1. Example: for ₹300, use 30000",
+                  "minimum": 100,
+                  "type": "number"
+                },
+                "callback_method": {
+                  "description": "HTTP method for callback redirection. Must be 'get' if callback_url is set.",
+                  "type": "string"
+                },
+                "callback_url": {
+                  "description": "If specified, adds a redirect URL to the Payment Link. Customer will be redirected here after payment.",
+                  "type": "string"
+                },
+                "currency": {
+                  "description": "Three-letter ISO code for the currency (e.g., INR)",
+                  "type": "string"
+                },
+                "customer_contact": {
+                  "description": "Contact number of the customer.",
+                  "type": "string"
+                },
+                "customer_email": {
+                  "description": "Email address of the customer.",
+                  "type": "string"
+                },
+                "customer_name": {
+                  "description": "Name of the customer.",
+                  "type": "string"
+                },
+                "description": {
+                  "description": "A brief description of the Payment Link explaining the intent of the payment.",
+                  "type": "string"
+                },
+                "expire_by": {
+                  "description": "Timestamp, in Unix, when the Payment Link will expire. By default, a Payment Link will be valid for six months.",
+                  "type": "number"
+                },
+                "first_min_partial_amount": {
+                  "description": "Minimum amount in paise that must be paid by the customer as the first partial payment. For INR: 100 paise = ₹1. Default value is 100.",
+                  "type": "number"
+                },
+                "notes": {
+                  "description": "Key-value pairs that can be used to store additional information. Maximum 15 pairs, each value limited to 256 characters.",
+                  "properties": {},
+                  "type": "object"
+                },
+                "notify_email": {
+                  "description": "Send email notifications for the Payment Link.",
+                  "type": "boolean"
+                },
+                "notify_sms": {
+                  "description": "Send SMS notifications for the Payment Link.",
+                  "type": "boolean"
+                },
+                "reference_id": {
+                  "description": "Reference number tagged to a Payment Link. Must be unique for each Payment Link. Max 40 characters.",
+                  "type": "string"
+                },
+                "reminder_enable": {
+                  "description": "Enable payment reminders for the Payment Link.",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ]
+            },
+            "name": "create_payment_link"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Create a new QR code in Razorpay that can be used to accept UPI payments",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "close_by": {
+                  "description": "Unix timestamp at which QR Code should be automatically closed (min 2 mins after current time)",
+                  "type": "number"
+                },
+                "customer_id": {
+                  "description": "The unique identifier of the customer to link with the QR Code",
+                  "type": "string"
+                },
+                "description": {
+                  "description": "A brief description about the QR Code",
+                  "type": "string"
+                },
+                "fixed_amount": {
+                  "default": false,
+                  "description": "Whether QR should accept only specific amount (true) or any amount (false)",
+                  "type": "boolean"
+                },
+                "name": {
+                  "description": "Label to identify the QR Code (e.g., 'Store Front Display')",
+                  "type": "string"
+                },
+                "notes": {
+                  "description": "Key-value pairs for additional information (max 15 pairs, 256 chars each)",
+                  "maxProperties": 15,
+                  "properties": {},
+                  "type": "object"
+                },
+                "payment_amount": {
+                  "description": "The specific amount allowed for transaction in smallest currency unit",
+                  "minimum": 1,
+                  "type": "number"
+                },
+                "type": {
+                  "description": "The type of the QR Code. Currently only supports 'upi_qr'",
+                  "pattern": "^upi_qr$",
+                  "type": "string"
+                },
+                "usage": {
+                  "description": "Whether QR should accept single or multiple payments. Possible values: 'single_use', 'multiple_use'",
+                  "enum": [
+                    "single_use",
+                    "multiple_use"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type",
+                "usage"
+              ]
+            },
+            "name": "create_qr_code"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Create a registration link (auth link) for subscription registration in Razorpay to set up recurring payments via card, emandate, NACH, or UPI.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "description": "Amount in the smallest currency unit (e.g., paise for INR).",
+                  "type": "number"
+                },
+                "currency": {
+                  "description": "Three-letter ISO currency code (e.g., INR, MYR).",
+                  "type": "string"
+                },
+                "customer_contact": {
+                  "description": "Contact number of the customer.",
+                  "type": "string"
+                },
+                "customer_email": {
+                  "description": "Email address of the customer.",
+                  "type": "string"
+                },
+                "customer_name": {
+                  "description": "Name of the customer.",
+                  "type": "string"
+                },
+                "description": {
+                  "description": "Brief description of the registration link.",
+                  "type": "string"
+                },
+                "email_notify": {
+                  "description": "Send email notification. Default: true",
+                  "type": "boolean"
+                },
+                "expire_by": {
+                  "description": "Unix timestamp when the registration link expires.",
+                  "type": "number"
+                },
+                "notes": {
+                  "description": "Key-value pairs for additional info. Max 15 pairs, each up to 256 characters.",
+                  "properties": {},
+                  "type": "object"
+                },
+                "receipt": {
+                  "description": "Unique receipt identifier provided by the merchant.",
+                  "type": "string"
+                },
+                "sms_notify": {
+                  "description": "Send SMS notification. Default: true",
+                  "type": "boolean"
+                },
+                "subscription_registration": {
+                  "description": "Subscription registration details. Must include 'method' (card, emandate, nach, upi). May include 'max_amount', 'expire_at' (Unix timestamp), and 'frequency' (as_presented, monthly, weekly, yearly, daily).",
+                  "properties": {},
+                  "type": "object"
+                },
+                "type": {
+                  "description": "Type of registration link. Use 'link'.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type",
+                "amount",
+                "currency",
+                "description",
+                "subscription_registration"
+              ]
+            },
+            "name": "create_registration_link"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Detect the technology stack of a project based on file information. Returns language, framework, frontend framework, and package manager. IMPORTANT: Always call this tool FIRST before calling integrate_razorpay_checkout. Before calling this tool, you MUST: 1) List the project's files and pass them in the 'files' parameter, 2) Read the relevant dependency file (package.json for Node.js, requirements.txt for Python, go.mod for Go, pubspec.yaml for Flutter, Cargo.toml for Rust, pom.xml for Java, etc.) and pass its contents in the corresponding parameter. Then pass the detected language, framework, and frontend to integrate_razorpay_checkout.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "cargoToml": {
+                  "description": "Contents of Cargo.toml if it exists (Rust)",
+                  "type": "string"
+                },
+                "composerJson": {
+                  "description": "Contents of composer.json if it exists (PHP)",
+                  "type": "string"
+                },
+                "csproj": {
+                  "description": "Contents of .csproj if it exists (.NET)",
+                  "type": "string"
+                },
+                "files": {
+                  "description": "List of file paths in the project",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "gemfile": {
+                  "description": "Contents of Gemfile if it exists (Ruby)",
+                  "type": "string"
+                },
+                "goMod": {
+                  "description": "Contents of go.mod if it exists (Go)",
+                  "type": "string"
+                },
+                "packageJson": {
+                  "description": "Contents of package.json if it exists (Node.js)",
+                  "properties": {},
+                  "type": "object"
+                },
+                "pomXml": {
+                  "description": "Contents of pom.xml if it exists (Java/Maven)",
+                  "type": "string"
+                },
+                "pubspecYaml": {
+                  "description": "Contents of pubspec.yaml if it exists (Flutter)",
+                  "type": "string"
+                },
+                "requirementsTxt": {
+                  "description": "Contents of requirements.txt if it exists (Python)",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "files"
+              ]
+            },
+            "name": "detect_stack"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch all instant settlements with optional filtering, pagination, and payout details",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "count": {
+                  "description": "Number of instant settlement records to fetch (default: 10, max: 100)",
+                  "maximum": 100,
+                  "minimum": 1,
+                  "type": "number"
+                },
+                "expand": {
+                  "description": "Pass this if you want to fetch payout details as part of the response for all instant settlements. Supported values: ondemand_payouts",
+                  "items": {
+                    "enum": [
+                      "ondemand_payouts"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "from": {
+                  "description": "Unix timestamp (in seconds) from when instant settlements are to be fetched",
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "skip": {
+                  "description": "Number of instant settlement records to skip (default: 0)",
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "to": {
+                  "description": "Unix timestamp (in seconds) up till when instant settlements are to be fetched",
+                  "minimum": 0,
+                  "type": "number"
+                }
+              }
+            },
+            "name": "fetch_all_instant_settlements"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch all orders with optional filtering and pagination",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "authorized": {
+                  "description": "Filter orders based on payment authorization status. Values: 0 (orders with unauthorized payments), 1 (orders with authorized payments)",
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "count": {
+                  "description": "Number of orders to be fetched (default: 10, max: 100)",
+                  "maximum": 100,
+                  "minimum": 1,
+                  "type": "number"
+                },
+                "expand": {
+                  "description": "Used to retrieve additional information. Supported values: payments, payments.card, transfers, virtual_account",
+                  "items": {
+                    "enum": [
+                      "payments",
+                      "payments.card",
+                      "transfers",
+                      "virtual_account"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "from": {
+                  "description": "Timestamp (in Unix format) from when the orders should be fetched",
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "receipt": {
+                  "description": "Filter orders that contain the provided value for receipt",
+                  "type": "string"
+                },
+                "skip": {
+                  "description": "Number of orders to be skipped (default: 0)",
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "to": {
+                  "description": "Timestamp (in Unix format) up till when orders are to be fetched",
+                  "minimum": 0,
+                  "type": "number"
+                }
+              }
+            },
+            "name": "fetch_all_orders"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch all payment links with optional filtering by payment ID or reference ID.You can specify the upi_link parameter to filter by link type.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "payment_id": {
+                  "description": "Optional: Filter by payment ID associated with payment links",
+                  "type": "string"
+                },
+                "reference_id": {
+                  "description": "Optional: Filter by reference ID used when creating payment links",
+                  "type": "string"
+                },
+                "upi_link": {
+                  "description": "Optional: Filter only upi links. Value should be 1 if you want only upi links, 0 for only standard linksIf not provided, all types of links will be returned",
+                  "type": "number"
+                }
+              }
+            },
+            "name": "fetch_all_payment_links"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch all payments with optional filtering and pagination",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "count": {
+                  "description": "Number of payments to fetch (default: 10, max: 100)",
+                  "maximum": 100,
+                  "minimum": 1,
+                  "type": "number"
+                },
+                "from": {
+                  "description": "Unix timestamp (in seconds) from when payments are to be fetched",
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "skip": {
+                  "description": "Number of payments to skip (default: 0)",
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "to": {
+                  "description": "Unix timestamp (in seconds) up till when payments are to be fetched",
+                  "minimum": 0,
+                  "type": "number"
+                }
+              }
+            },
+            "name": "fetch_all_payments"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch all payouts for a bank account number",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "account_number": {
+                  "description": "The account from which the payouts were done.For example, 7878780080316316",
+                  "type": "string"
+                },
+                "count": {
+                  "description": "Number of payouts to be fetched. Default value is 10.Maximum value is 100. This can be used for pagination,in combination with the skip parameter",
+                  "minimum": 1,
+                  "type": "number"
+                },
+                "skip": {
+                  "description": "Numbers of payouts to be skipped. Default value is 0.This can be used for pagination, in combination with count",
+                  "minimum": 0,
+                  "type": "number"
+                }
+              },
+              "required": [
+                "account_number"
+              ]
+            },
+            "name": "fetch_all_payouts"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch all QR codes with optional filtering and pagination",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "count": {
+                  "description": "Number of QR Codes to be retrieved (default: 10, max: 100)",
+                  "maximum": 100,
+                  "minimum": 1,
+                  "type": "number"
+                },
+                "from": {
+                  "description": "Unix timestamp, in seconds, from when QR Codes are to be retrieved",
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "skip": {
+                  "description": "Number of QR Codes to be skipped (default: 0)",
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "to": {
+                  "description": "Unix timestamp, in seconds, till when QR Codes are to be retrieved",
+                  "minimum": 0,
+                  "type": "number"
+                }
+              }
+            },
+            "name": "fetch_all_qr_codes"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Use this tool to retrieve details of all refunds. By default, only the last 10 refunds are returned.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "count": {
+                  "description": "The number of refunds to fetch. You can fetch a maximum of 100 refunds",
+                  "type": "number"
+                },
+                "from": {
+                  "description": "Unix timestamp at which the refunds were created",
+                  "type": "number"
+                },
+                "skip": {
+                  "description": "The number of refunds to be skipped",
+                  "type": "number"
+                },
+                "to": {
+                  "description": "Unix timestamp till which the refunds were created",
+                  "type": "number"
+                }
+              }
+            },
+            "name": "fetch_all_refunds"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch all settlements with optional filtering and pagination",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "count": {
+                  "description": "Number of settlement records to fetch (default: 10, max: 100)",
+                  "maximum": 100,
+                  "minimum": 1,
+                  "type": "number"
+                },
+                "from": {
+                  "description": "Unix timestamp (in seconds) from when settlements are to be fetched",
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "skip": {
+                  "description": "Number of settlement records to skip (default: 0)",
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "to": {
+                  "description": "Unix timestamp (in seconds) up till when settlements are to be fetched",
+                  "minimum": 0,
+                  "type": "number"
+                }
+              }
+            },
+            "name": "fetch_all_settlements"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch details of a specific instant settlement using its ID",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "settlement_id": {
+                  "description": "The ID of the instant settlement to fetch. ID starts with 'setlod_'",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "settlement_id"
+              ]
+            },
+            "name": "fetch_instant_settlement_with_id"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Use this tool to retrieve multiple refunds for a payment. By default, only the last 10 refunds are returned.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "count": {
+                  "description": "The number of refunds to fetch for the payment.",
+                  "type": "number"
+                },
+                "from": {
+                  "description": "Unix timestamp at which the refunds were created.",
+                  "type": "number"
+                },
+                "payment_id": {
+                  "description": "Unique identifier of the payment for which refunds are to be retrieved. ID should have a pay_ prefix.",
+                  "type": "string"
+                },
+                "skip": {
+                  "description": "The number of refunds to be skipped for the payment.",
+                  "type": "number"
+                },
+                "to": {
+                  "description": "Unix timestamp till which the refunds were created.",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "payment_id"
+              ]
+            },
+            "name": "fetch_multiple_refunds_for_payment"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch an order's details using its ID",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "order_id": {
+                  "description": "Unique identifier of the order to be retrieved",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "order_id"
+              ]
+            },
+            "name": "fetch_order"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch all payments made for a specific order in Razorpay",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "order_id": {
+                  "description": "Unique identifier of the order for which payments should be retrieved. Order id should start with `order_`",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "order_id"
+              ]
+            },
+            "name": "fetch_order_payments"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Use this tool to retrieve the details of a specific payment using its id. Amount returned is in paisa",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "payment_id": {
+                  "description": "payment_id is unique identifier of the payment to be retrieved.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "payment_id"
+              ]
+            },
+            "name": "fetch_payment"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Use this tool to retrieve the details of the card used to make a payment. Only works for payments made using a card.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "payment_id": {
+                  "description": "Unique identifier of the payment for which you want to retrieve card details. Must start with 'pay_'",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "payment_id"
+              ]
+            },
+            "name": "fetch_payment_card_details"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch payment link details using it's ID. Response contains the basic details like amount, status etc. The link could be of any type(standard or UPI)",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "payment_link_id": {
+                  "description": "ID of the payment link to be fetched(ID should have a plink_ prefix).",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "payment_link_id"
+              ]
+            },
+            "name": "fetch_payment_link"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch all payments made on a QR code",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "count": {
+                  "description": "Number of payments to be fetched (default: 10, max: 100)",
+                  "maximum": 100,
+                  "minimum": 1,
+                  "type": "number"
+                },
+                "from": {
+                  "description": "Unix timestamp, in seconds, from when payments are to be retrieved",
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "qr_code_id": {
+                  "description": "The unique identifier of the QR Code to fetch payments forThe QR code id should start with 'qr_'",
+                  "type": "string"
+                },
+                "skip": {
+                  "description": "Number of records to be skipped while fetching the payments",
+                  "minimum": 0,
+                  "type": "number"
+                },
+                "to": {
+                  "description": "Unix timestamp, in seconds, till when payments are to be fetched",
+                  "minimum": 0,
+                  "type": "number"
+                }
+              },
+              "required": [
+                "qr_code_id"
+              ]
+            },
+            "name": "fetch_payments_for_qr_code"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch a payout's details using its ID",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "payout_id": {
+                  "description": "The unique identifier of the payout. For example, 'pout_00000000000001'",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "payout_id"
+              ]
+            },
+            "name": "fetch_payout_with_id"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch a QR code's details using it's ID",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "qr_code_id": {
+                  "description": "Unique identifier of the QR Code to be retrievedThe QR code id should start with 'qr_'",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "qr_code_id"
+              ]
+            },
+            "name": "fetch_qr_code"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch all QR codes for a specific customer",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "customer_id": {
+                  "description": "The unique identifier of the customer",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "customer_id"
+              ]
+            },
+            "name": "fetch_qr_codes_by_customer_id"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch all QR codes for a specific payment",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "payment_id": {
+                  "description": "The unique identifier of the paymentThe payment id always should start with 'pay_'",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "payment_id"
+              ]
+            },
+            "name": "fetch_qr_codes_by_payment_id"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Use this tool to retrieve the details of a specific refund using its id.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "refund_id": {
+                  "description": "Unique identifier of the refund which is to be retrieved. ID should have a rfnd_ prefix.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "refund_id"
+              ]
+            },
+            "name": "fetch_refund"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch settlement reconciliation report for a specific time period",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "count": {
+                  "description": "Optional: Number of records to fetch (default: 10, max: 100)",
+                  "type": "number"
+                },
+                "day": {
+                  "description": "Optional: Day for which the settlement report is requested (DD format)",
+                  "type": "number"
+                },
+                "month": {
+                  "description": "Month for which the settlement report is requested (MM format)",
+                  "type": "number"
+                },
+                "skip": {
+                  "description": "Optional: Number of records to skip for pagination",
+                  "type": "number"
+                },
+                "year": {
+                  "description": "Year for which the settlement report is requested (YYYY format)",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "year",
+                "month"
+              ]
+            },
+            "name": "fetch_settlement_recon_details"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Fetch details of a specific settlement using its ID",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "settlement_id": {
+                  "description": "The ID of the settlement to fetch.ID starts with the 'setl_'",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "settlement_id"
+              ]
+            },
+            "name": "fetch_settlement_with_id"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Use this tool to retrieve details of a specific refund made for a payment.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "payment_id": {
+                  "description": "Unique identifier of the payment for which the refund has been made. ID should have a pay_ prefix.",
+                  "type": "string"
+                },
+                "refund_id": {
+                  "description": "Unique identifier of the refund to be retrieved. ID should have a rfnd_ prefix.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "payment_id",
+                "refund_id"
+              ]
+            },
+            "name": "fetch_specific_refund_for_payment"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Get all saved payment methods (cards, UPI) for a customer. Accepts either a customer_id (preferred) or a contact number. When customer_id is provided it is used directly to fetch tokens; otherwise the contact number is used to find or create the customer first. Returns saved payment tokens including credit/debit cards, UPI IDs, digital wallets, and other tokenized payment instruments.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "contact": {
+                  "description": "Contact number of the customer to fetch all saved payment methods for. For example, 9876543210 or +919876543210. Used only when customer_id is not provided.",
+                  "type": "string"
+                },
+                "customer_id": {
+                  "description": "Razorpay customer ID to fetch saved payment methods for. Must start with 'cust_' followed by alphanumeric characters. Example: 'cust_xxx'. When provided, this takes priority over the contact parameter.",
+                  "type": "string"
+                }
+              }
+            },
+            "name": "fetch_tokens"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Initiate a payment using the S2S JSON v1 flow. Required parameters: amount and order_id. For saved payment methods, provide token. For UPI collect flow, provide 'vpa' parameter which automatically sets UPI with flow='collect' and expiry_time='6'. For UPI intent flow, set 'upi_intent=true' parameter which automatically sets UPI with flow='intent' and API returns UPI URL. Supports additional parameters like customer_id, email, contact, save, and recurring. Returns payment details including next action steps if required.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "description": "Payment amount in paise (smallest currency sub-unit). For INR: 100 paise = ₹1. Example: for ₹100, use 10000",
+                  "minimum": 100,
+                  "type": "number"
+                },
+                "contact": {
+                  "description": "Customer's phone number",
+                  "type": "string"
+                },
+                "currency": {
+                  "description": "Currency code for the payment. Default is 'INR'",
+                  "type": "string"
+                },
+                "customer_id": {
+                  "description": "Customer ID for the payment. Must start with 'cust_'",
+                  "type": "string"
+                },
+                "email": {
+                  "description": "Customer's email address (optional)",
+                  "type": "string"
+                },
+                "force_terminal_id": {
+                  "description": "Terminal ID to be passed in case of single block multiple debit order.",
+                  "type": "string"
+                },
+                "order_id": {
+                  "description": "Order ID for which the payment is being initiated. Must start with 'order_'",
+                  "type": "string"
+                },
+                "recurring": {
+                  "description": "Set this to true for recurring payments like single block multiple debit.",
+                  "type": "boolean"
+                },
+                "save": {
+                  "description": "Whether to save the payment method for future use",
+                  "type": "boolean"
+                },
+                "token": {
+                  "description": "Token ID of the saved payment method. Must start with 'token_'",
+                  "type": "string"
+                },
+                "upi_intent": {
+                  "description": "Enable UPI intent flow. When set to true, automatically sets method='upi' and UPI parameters with flow='intent'. The API will return a UPI URL in the response.",
+                  "type": "boolean"
+                },
+                "vpa": {
+                  "description": "Virtual Payment Address (VPA) for UPI payment. When provided, automatically sets method='upi' and UPI parameters with flow='collect' and expiry_time='6' (e.g., '9876543210@ptsbi')",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "amount",
+                "order_id"
+              ]
+            },
+            "name": "initiate_payment"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": true,
+              "destructiveHint": false,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Complete Razorpay Standard Checkout integration. Returns ALL code needed - backend routes, frontend integration, and payment verification. IMPORTANT: Before calling this tool, ALWAYS call detect_stack first to determine the project's language, backendFramework, and frontendFramework. Do NOT ask the user for these values. The AI should apply ALL returned files and modifications without asking the user for additional steps.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "backendFramework": {
+                  "description": "Backend framework: express, fastify, koa, nextjs, nuxt, django, flask, fastapi, gin, echo, fiber, spring, spring-boot, laravel, rails, actix, aspnet, react-native, flutter, android, ios, cordova, ionic, or capacitor",
+                  "enum": [
+                    "express",
+                    "fastify",
+                    "koa",
+                    "nextjs",
+                    "nuxt",
+                    "django",
+                    "flask",
+                    "fastapi",
+                    "gin",
+                    "echo",
+                    "fiber",
+                    "spring",
+                    "spring-boot",
+                    "laravel",
+                    "rails",
+                    "actix",
+                    "aspnet",
+                    "react-native",
+                    "flutter",
+                    "android",
+                    "ios",
+                    "cordova",
+                    "ionic",
+                    "capacitor"
+                  ],
+                  "type": "string"
+                },
+                "frontendFramework": {
+                  "description": "Frontend framework: vanilla, react, nextjs, vue, angular, svelte, or native (for mobile apps)",
+                  "enum": [
+                    "vanilla",
+                    "react",
+                    "nextjs",
+                    "vue",
+                    "angular",
+                    "svelte",
+                    "native"
+                  ],
+                  "type": "string"
+                },
+                "language": {
+                  "description": "Programming language: javascript, typescript, python, go, java, php, ruby, rust, csharp, dart, swift, or kotlin",
+                  "enum": [
+                    "javascript",
+                    "typescript",
+                    "python",
+                    "go",
+                    "java",
+                    "php",
+                    "ruby",
+                    "rust",
+                    "csharp",
+                    "dart",
+                    "swift",
+                    "kotlin"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "language",
+                "backendFramework",
+                "frontendFramework"
+              ]
+            },
+            "name": "integrate_razorpay_checkout"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Send or resend notification for a payment link via SMS or email.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "medium": {
+                  "description": "Medium through which to send the notification. Must be either 'sms' or 'email'.",
+                  "enum": [
+                    "sms",
+                    "email"
+                  ],
+                  "type": "string"
+                },
+                "payment_link_id": {
+                  "description": "ID of the payment link for which to send notification (ID should have a plink_ prefix).",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "payment_link_id",
+                "medium"
+              ]
+            },
+            "name": "payment_link_notify"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Create a new UPI payment link in Razorpay with a specified amount and additional options.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "accept_partial": {
+                  "description": "Indicates whether customers can make partial payments using the Payment Link. Default: false",
+                  "type": "boolean"
+                },
+                "amount": {
+                  "description": "Amount to be paid using the link in paise (smallest currency unit). For INR: 100 paise = ₹1. Example: for ₹300, use 30000. Only accepted currency is INR",
+                  "minimum": 100,
+                  "type": "number"
+                },
+                "callback_method": {
+                  "description": "HTTP method for callback redirection. Must be 'get' if callback_url is set.",
+                  "type": "string"
+                },
+                "callback_url": {
+                  "description": "If specified, adds a redirect URL to the Payment Link. Customer will be redirected here after payment.",
+                  "type": "string"
+                },
+                "currency": {
+                  "description": "Three-letter ISO code for the currency (e.g., INR). UPI links are only supported in INR",
+                  "type": "string"
+                },
+                "customer_contact": {
+                  "description": "Contact number of the customer.",
+                  "type": "string"
+                },
+                "customer_email": {
+                  "description": "Email address of the customer.",
+                  "type": "string"
+                },
+                "customer_name": {
+                  "description": "Name of the customer.",
+                  "type": "string"
+                },
+                "description": {
+                  "description": "A brief description of the Payment Link explaining the intent of the payment.",
+                  "type": "string"
+                },
+                "expire_by": {
+                  "description": "Timestamp, in Unix, when the Payment Link will expire. By default, a Payment Link will be valid for six months.",
+                  "type": "number"
+                },
+                "first_min_partial_amount": {
+                  "description": "Minimum amount in paise that must be paid by the customer as the first partial payment. For INR: 100 paise = ₹1. Default value is 100.",
+                  "type": "number"
+                },
+                "notes": {
+                  "description": "Key-value pairs that can be used to store additional information. Maximum 15 pairs, each value limited to 256 characters.",
+                  "properties": {},
+                  "type": "object"
+                },
+                "notify_email": {
+                  "description": "Send email notifications for the Payment Link.",
+                  "type": "boolean"
+                },
+                "notify_sms": {
+                  "description": "Send SMS notifications for the Payment Link.",
+                  "type": "boolean"
+                },
+                "reference_id": {
+                  "description": "Reference number tagged to a Payment Link. Must be unique for each Payment Link. Max 40 characters.",
+                  "type": "string"
+                },
+                "reminder_enable": {
+                  "description": "Enable payment reminders for the Payment Link.",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ]
+            },
+            "name": "payment_link_upi_create"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Resend OTP to the customer's registered mobile number if the previous OTP was not received or has expired.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "payment_id": {
+                  "description": "Unique identifier of the payment for which OTP needs to be generated. Must start with 'pay_'",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "payment_id"
+              ]
+            },
+            "name": "resend_otp"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Revoke a saved payment method (token) for a customer. This tool revokes the specified token associated with the given customer ID. Once revoked, the token cannot be used for future payments.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "customer_id": {
+                  "description": "Customer ID for which the token should be revoked. Must start with 'cust_' followed by alphanumeric characters. Example: 'cust_xxx'",
+                  "type": "string"
+                },
+                "token_id": {
+                  "description": "Token ID of the saved payment method to be revoked. Must start with 'token_' followed by alphanumeric characters. Example: 'token_xxx'",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "customer_id",
+                "token_id"
+              ]
+            },
+            "name": "revoke_token"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Verify and submit the OTP received by the customer to complete the payment authentication process.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "otp_string": {
+                  "description": "OTP string received from the user",
+                  "type": "string"
+                },
+                "payment_id": {
+                  "description": "Unique identifier of the payment for which OTP needs to be submitted. Must start with 'pay_'",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "otp_string",
+                "payment_id"
+              ]
+            },
+            "name": "submit_otp"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Use this tool to update the notes for a specific order. Only the notes field can be modified.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "notes": {
+                  "description": "Key-value pairs used to store additional information about the order. A maximum of 15 key-value pairs can be included, with each value not exceeding 256 characters.",
+                  "properties": {},
+                  "type": "object"
+                },
+                "order_id": {
+                  "description": "Unique identifier of the order which needs to be updated. ID should have an order_ prefix.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "order_id",
+                "notes"
+              ]
+            },
+            "name": "update_order"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Use this tool to update the notes field of a payment. Notes are key-value pairs that can be used to store additional information.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "notes": {
+                  "description": "Key-value pairs that can be used to store additional information about the payment. Values must be strings or integers.",
+                  "properties": {},
+                  "type": "object"
+                },
+                "payment_id": {
+                  "description": "Unique identifier of the payment to be updated. Must start with 'pay_'",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "payment_id",
+                "notes"
+              ]
+            },
+            "name": "update_payment"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Update any existing standard or UPI payment link with new details such as reference ID, expiry date, or notes.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "accept_partial": {
+                  "description": "Allow customers to make partial payments. Not allowed with UPI payment links.",
+                  "type": "boolean"
+                },
+                "expire_by": {
+                  "description": "Timestamp, in Unix format, when the payment link should expire.",
+                  "type": "number"
+                },
+                "notes": {
+                  "description": "Key-value pairs for additional information. Maximum 15 pairs, each value limited to 256 characters.",
+                  "properties": {},
+                  "type": "object"
+                },
+                "payment_link_id": {
+                  "description": "ID of the payment link to update (ID should have a plink_ prefix).",
+                  "type": "string"
+                },
+                "reference_id": {
+                  "description": "Adds a unique reference number to the payment link.",
+                  "type": "string"
+                },
+                "reminder_enable": {
+                  "description": "Enable or disable reminders for the payment link.",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "payment_link_id"
+              ]
+            },
+            "name": "update_payment_link"
+          },
+          {
+            "annotations": {
+              "readOnlyHint": false,
+              "destructiveHint": true,
+              "idempotentHint": false,
+              "openWorldHint": false
+            },
+            "description": "Use this tool to update the notes for a specific refund. Only the notes field can be modified.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "notes": {
+                  "description": "Key-value pairs used to store additional information. A maximum of 15 key-value pairs can be included, with each value not exceeding 256 characters.",
+                  "properties": {},
+                  "type": "object"
+                },
+                "refund_id": {
+                  "description": "Unique identifier of the refund which needs to be updated. ID should have a rfnd_ prefix.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "refund_id",
+                "notes"
+              ]
+            },
+            "name": "update_refund"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "seq": 18,
+  "tag": "pays2s_card_OzVduu",
+  "ts": 1787378405,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/payments/create",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": {
+      "amount": 415000,
+      "currency": "INR",
+      "order_id": "order_TSi0DdtrOzVduu",
+      "email": "spike@example.com",
+      "contact": "9999999999",
+      "method": "card"
+    }
+  },
+  "response": {
+    "http_status": 400,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:00:05 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "161",
+      "Connection": "close",
+      "Cache-Control": "max-age=0, must-revalidate, no-store, nocache, private",
+      "Expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+      "Pragma": "no-cache",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Vary": "Origin",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Pam": "0",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "error": {
+        "code": "BAD_REQUEST_ERROR",
+        "description": "The requested URL was not found on the server.",
+        "source": "internal",
+        "step": "NA",
+        "reason": "NA",
+        "metadata": {}
+      }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "seq": 6,
+  "tag": "order_f_wallet_olamoney",
+  "ts": 1787378763,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/orders",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": {
+      "amount": 122200,
+      "currency": "INR",
+      "receipt": "f_wallet_olamoney",
+      "notes": {
+        "scenario": "f_wallet_olamoney"
+      }
+    }
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:06:03 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "258",
+      "Connection": "close",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Vary": "Origin",
+      "Via": "rws",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "amount": 122200,
+      "amount_due": 122200,
+      "amount_paid": 0,
+      "attempts": 0,
+      "created_at": 1787378763,
+      "currency": "INR",
+      "entity": "order",
+      "id": "order_TSi6gEaqBtgLtw",
+      "notes": {
+        "scenario": "f_wallet_olamoney"
+      },
+      "offer_id": null,
+      "receipt": "f_wallet_olamoney",
+      "status": "created"
+    }
+  }
+}

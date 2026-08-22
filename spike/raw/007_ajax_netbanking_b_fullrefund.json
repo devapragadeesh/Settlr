@@ -1,0 +1,54 @@
+{
+  "seq": 7,
+  "tag": "ajax_netbanking_b_fullrefund",
+  "ts": 1787378617,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/payments/create/ajax",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": "key_id=rzp_test_TShxMEHBMJUhan&amount=250000&currency=INR&order_id=order_TSi44KEVckqTEt&email=spike%40example.com&contact=9999999999&method=netbanking&_%5Blibrary%5D=checkoutjs&bank=ALLA"
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:03:37 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "750",
+      "Connection": "close",
+      "Access-Control-Allow-Origin": "*",
+      "Cache-Control": "max-age=0, must-revalidate, no-store, nocache, private",
+      "Expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+      "Pragma": "no-cache",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Uber-Trace-Id": "8702d6e74aa9da87ac7c7e6129ea600d:658a18d8f6de15f9:0000000000000000:1",
+      "Vary": "Origin",
+      "Via": "rws",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Pam": "0",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "type": "first",
+      "request": {
+        "url": "https://api.razorpay.com/v1/gateway/mocksharp/payment?key_id=rzp_test_TShxMEHBMJUhan",
+        "method": "post",
+        "content": {
+          "action": "authorize",
+          "amount": 250000,
+          "method": "netbanking",
+          "payment_id": "TSi462SLqN2db4",
+          "callback_url": "https://api.razorpay.com/v1/payments/pay_TSi462SLqN2db4/callback/85963241001f3f221a0340504f9ee3087381e39b/rzp_test_TShxMEHBMJUhan",
+          "recurring": 0
+        }
+      },
+      "version": 1,
+      "payment_id": "pay_TSi462SLqN2db4",
+      "gateway": "eyJpdiI6ImlVUi9wUXluejRBS0hxeXVFbWNqZEE9PSIsInZhbHVlIjoiaUpEa3g0SWtpR3UxazNVeVVtS0twTXVVQldyaCtBL3E3UkExK3hGNWJ1QT0iLCJtYWMiOiI5ZjA5NDY4ZTRlODg3YTAzMmRiM2QzZDIyZDQyMWIzNGM1YmNkMzQ3Y2YyMzBkMzhkM2FlMDA0NGE3ZGE5ZDlhIiwidGFnIjoiIn0=",
+      "amount": "₹ 2500",
+      "image": null,
+      "magic": false
+    }
+  }
+}

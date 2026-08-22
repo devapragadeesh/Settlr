@@ -1,0 +1,66 @@
+{
+  "seq": 2,
+  "tag": "verify_refunds",
+  "ts": 1787380115,
+  "request": {
+    "method": "GET",
+    "url": "https://api.razorpay.com/v1/refunds?count=100",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": null
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:28:35 GMT",
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Length": "635",
+      "Connection": "close",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Via": "rws",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "count": 2,
+      "entity": "collection",
+      "items": [
+        {
+          "acquirer_data": {
+            "arn": "10000000000000"
+          },
+          "amount": 200000,
+          "batch_id": null,
+          "created_at": 1787378643,
+          "currency": "INR",
+          "entity": "refund",
+          "id": "rfnd_TSi4ZP1Ug9EjYd",
+          "notes": [],
+          "payment_id": "pay_TSi4K4yG6DLwrw",
+          "receipt": null,
+          "speed_processed": "normal",
+          "speed_requested": "normal",
+          "status": "processed"
+        },
+        {
+          "acquirer_data": {
+            "arn": "10000000000000"
+          },
+          "amount": 250000,
+          "batch_id": null,
+          "created_at": 1787378626,
+          "currency": "INR",
+          "entity": "refund",
+          "id": "rfnd_TSi4GtqmTmfZfx",
+          "notes": [],
+          "payment_id": "pay_TSi462SLqN2db4",
+          "receipt": null,
+          "speed_processed": "normal",
+          "speed_requested": "normal",
+          "status": "processed"
+        }
+      ]
+    }
+  }
+}

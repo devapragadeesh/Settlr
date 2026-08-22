@@ -1,0 +1,49 @@
+{
+  "seq": 4,
+  "tag": "mcp_tool_fetch_all_settlements",
+  "ts": 1787378319,
+  "request": {
+    "method": "POST",
+    "url": "https://mcp.razorpay.com/mcp",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>",
+      "Accept": "application/json, text/event-stream"
+    },
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 4,
+      "method": "tools/call",
+      "params": {
+        "name": "fetch_all_settlements",
+        "arguments": {
+          "count": 100
+        }
+      }
+    }
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 05:58:38 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "145",
+      "Connection": "close",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Via": "rws",
+      "Www-Authenticate": "Bearer resource_metadata=\"https://mcp.razorpay.com/.well-known/oauth-protected-resource\""
+    },
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 4,
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"count\":0,\"entity\":\"collection\",\"has_more\":false,\"items\":[]}"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "seq": 22,
+  "tag": "order_sc_f_upi",
+  "ts": 1787378412,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/orders",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": {
+      "amount": 111100,
+      "currency": "INR",
+      "receipt": "sc_f_upi",
+      "notes": {
+        "scenario": "sc_f_upi"
+      }
+    }
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:00:12 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "240",
+      "Connection": "close",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Vary": "Origin",
+      "Via": "rws",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "amount": 111100,
+      "amount_due": 111100,
+      "amount_paid": 0,
+      "attempts": 0,
+      "created_at": 1787378412,
+      "currency": "INR",
+      "entity": "order",
+      "id": "order_TSi0VC7egwKw9R",
+      "notes": {
+        "scenario": "sc_f_upi"
+      },
+      "offer_id": null,
+      "receipt": "sc_f_upi",
+      "status": "created"
+    }
+  }
+}

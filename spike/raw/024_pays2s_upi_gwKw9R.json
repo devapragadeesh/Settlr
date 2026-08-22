@@ -1,0 +1,55 @@
+{
+  "seq": 24,
+  "tag": "pays2s_upi_gwKw9R",
+  "ts": 1787378417,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/payments/create/upi",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": {
+      "amount": 111100,
+      "currency": "INR",
+      "order_id": "order_TSi0VC7egwKw9R",
+      "email": "spike@example.com",
+      "contact": "9999999999",
+      "method": "upi",
+      "upi": {
+        "flow": "collect",
+        "vpa": "success@razorpay",
+        "expiry_time": 5
+      }
+    }
+  },
+  "response": {
+    "http_status": 400,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:00:17 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "194",
+      "Connection": "close",
+      "Cache-Control": "max-age=0, must-revalidate, no-store, nocache, private",
+      "Expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+      "Pragma": "no-cache",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Vary": "Origin",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Pam": "0",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "error": {
+        "code": "BAD_REQUEST_ERROR",
+        "description": "The requested URL was not found on the server.",
+        "source": "internal",
+        "step": "NA",
+        "reason": "NA",
+        "metadata": {
+          "order_id": "order_TSi0VC7egwKw9R"
+        }
+      }
+    }
+  }
+}

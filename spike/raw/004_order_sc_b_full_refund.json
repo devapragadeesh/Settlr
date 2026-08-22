@@ -1,0 +1,50 @@
+{
+  "seq": 4,
+  "tag": "order_sc_b_full_refund",
+  "ts": 1787378376,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/orders",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": {
+      "amount": 250000,
+      "currency": "INR",
+      "receipt": "sc_b_full_refund",
+      "notes": {
+        "scenario": "sc_b_full_refund"
+      }
+    }
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 05:59:36 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "256",
+      "Connection": "close",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Vary": "Origin",
+      "Via": "rws",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "amount": 250000,
+      "amount_due": 250000,
+      "amount_paid": 0,
+      "attempts": 0,
+      "created_at": 1787378376,
+      "currency": "INR",
+      "entity": "order",
+      "id": "order_TShzrxTRXK3i0B",
+      "notes": {
+        "scenario": "sc_b_full_refund"
+      },
+      "offer_id": null,
+      "receipt": "sc_b_full_refund",
+      "status": "created"
+    }
+  }
+}

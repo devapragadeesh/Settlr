@@ -1,0 +1,32 @@
+{
+  "seq": 16,
+  "tag": "rest_ondemand_all",
+  "ts": 1787378337,
+  "request": {
+    "method": "GET",
+    "url": "https://api.razorpay.com/v1/settlements/ondemand?count=100",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": null
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 05:58:57 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "44",
+      "Connection": "close",
+      "Grpc-Metadata-Content-Type": "application/grpc",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Via": "rws",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "entity": "collection",
+      "count": 0,
+      "items": []
+    }
+  }
+}

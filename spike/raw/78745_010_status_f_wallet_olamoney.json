@@ -1,0 +1,67 @@
+{
+  "seq": 10,
+  "tag": "status_f_wallet_olamoney",
+  "ts": 1787378775,
+  "request": {
+    "method": "GET",
+    "url": "https://api.razorpay.com/v1/payments/pay_TSi6hC2pPcq7hw",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": null
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:06:15 GMT",
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked",
+      "Connection": "close",
+      "Cache-Control": "max-age=0, must-revalidate, no-store, nocache, private",
+      "Expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+      "Pragma": "no-cache",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Uber-Trace-Id": "74d5916f7d31dcc7b624542ec3762063:2fd0cdacf837ef59:0000000000000000:1",
+      "Via": "rws",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Pam": "0",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "id": "pay_TSi6hC2pPcq7hw",
+      "entity": "payment",
+      "amount": 122200,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi6gEaqBtgLtw",
+      "invoice_id": null,
+      "international": false,
+      "method": "wallet",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": null,
+      "wallet": "olamoney",
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "f_wallet_olamoney"
+      },
+      "fee": 2884,
+      "tax": 440,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "transaction_id": null
+      },
+      "created_at": 1787378764
+    }
+  }
+}

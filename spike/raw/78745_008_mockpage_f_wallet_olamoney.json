@@ -1,0 +1,28 @@
+{
+  "seq": 8,
+  "tag": "mockpage_f_wallet_olamoney",
+  "ts": 1787378766,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/gateway/mocksharp/payment?key_id=rzp_test_TShxMEHBMJUhan",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": "action=authorize&amount=122200&method=wallet&payment_id=TSi6hC2pPcq7hw&callback_url=https%3A%2F%2Fapi.razorpay.com%2Fv1%2Fpayments%2Fpay_TSi6hC2pPcq7hw%2Fcallback%2Fede2a753ebc0025744b18741762b32adaaa3c7cf%2Frzp_test_TShxMEHBMJUhan&recurring=0&gateway=eyJpdiI6IjF0bkhnTTE2b0srVHJ6a204b1gzUFE9PSIsInZhbHVlIjoiWFR6eCtRZVBISDRrZjYrTkU1ZWxGYTd3NmRWRkhkYXI5V0hRZmxMWGd1dz0iLCJtYWMiOiIxYjIwYjZmM2M4YjE5MmQ5ZmE2MmE1MGJiMGIzMGQ0YjdiMDBiNDM1YmUwNzZjNDEyYTA1MDMzMWYyZGI0NjQzIiwidGFnIjoiIn0%3D"
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:06:05 GMT",
+      "Content-Type": "text/html; charset=UTF-8",
+      "Transfer-Encoding": "chunked",
+      "Connection": "close",
+      "Cache-Control": "no-cache, private",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Via": "rws",
+      "X-Pam": "0",
+      "X-Xss-Protection": "0"
+    },
+    "body": "<!doctype html>\n<html>\n  <head>\n    <title>Razorpay Bank</title>\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n    <meta name=\"viewport\" content=\"user-scalable=no,width=device-width,initial-scale=1,maximum-scale=1\">\n    <meta http-equiv=\"pragma\" content=\"no-cache\">\n    <meta http-equiv=\"cache-control\" content=\"no-cache\">\n    <meta http-equiv=\"expires\" content=\"0\">\n    <link rel=\"icon\" href=\"/favicon.ico\" type=\"image/x-icon\" />\n    <style>\n      img{max-width: 100%; height: auto;}\n      body{font-family: ubuntu,helvetica,verdana,sans-serif; font-size: 14px; text-align: center; color: #414141; padding-top: 40px; line-height: 24px;background:#fff;}\n      label{position: absolute; top: 0; left: 0; right: 0; height: 100%; line-height: 32px; padding-left: 30px;}\n      button{\n        font-family: inherit;\n        height: 60px;\n        line-height: 60px;\n        vertical-align: middle;\n        text-decoration: none;\n        border-radius: 2px;\n        border: 0;\n        width: 164px;\n        font-size: 16px;\n        background: none;\n        margin: 0 5px;\n        color: #fff;\n        cursor: pointer;\n        -webkit-appearance: none;\n      }\n      .em {\n        font-size: 13px;\n        line-height: 20px;\n      }\n      input[type=button]:hover{background-image: linear-gradient(transparent,rgba(0,0,0,.05) 40%,rgba(0,0,0,.1))}\n      .grey{color: #777; margin-top: 20px; font-size: 12px; line-height: 18px;}\n      .danger{background-color:#EF6050}\n      .success{background-color:#27ae60}\n      .warn{background-color:#e67e22}\n    </style>\n  </head>\n  <body>\n    <h1><img src=\"https://rzp-1415-prod-dashboard-activation.s3.ap-south-1.amazonaws.com/org_100000razorpay/main_logo/phplgbGKN\" width=\"316\" height=\"67\"></h1>\n    <h3>Welcome to Razorpay Software Private Ltd Bank</h3>\n    This is just a demo bank page.<br>\n    You can choose whether to make this payment successful or not: <br><br>\n    <form onsubmit=\"return false\" method=\"post\" action=\"https://api.razorpay.com/v1/gateway/mocksharp/payment/submit?key_id=rzp_test_TShxMEHBMJUhan\">\n              <button data-val=\"S\" class=\"success\">Success</button>\n            <button data-val=\"F\" class=\"danger\">Failure</button>\n      <input type=\"hidden\" name=\"callback_url\" value=\"https://api.razorpay.com/v1/payments/pay_TSi6hC2pPcq7hw/callback/ede2a753ebc0025744b18741762b32adaaa3c7cf/rzp_test_TShxMEHBMJUhan\">\n              <input type=\"hidden\" name=\"language_code\" value=\"en\">\n            <input type=\"hidden\" name=\"success\">\n    </form>\n    <script>\n      document.forms[0].onclick = function(e) {\n        var event = e || window.event;\n        var target = event.target || event.srcElement;\n\n        if (target.nodeName === 'BUTTON') {\n          var value = target.getAttribute('data-val');\n          var em = document.querySelector('[name=emandate_success]');\n          var success = document.querySelector('[name=success]');\n          if (em) {\n            if (value === 'S') {\n              success.value = em.value = 'S';\n            } else if (value === 'M') {\n              success.value = 'S';\n              em.value = 'F';\n            } else if (value === 'F') {\n              success.value = 'F';\n              em.parentNode.removeChild(em);\n            }\n          } else {\n            success.value = value;\n          }\n          document.forms[0].submit();\n        }\n      }\n    </script>\n  </body>\n</html>\n"
+  }
+}

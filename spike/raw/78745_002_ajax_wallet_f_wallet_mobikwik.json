@@ -1,0 +1,54 @@
+{
+  "seq": 2,
+  "tag": "ajax_wallet_f_wallet_mobikwik",
+  "ts": 1787378753,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/payments/create/ajax",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": "key_id=rzp_test_TShxMEHBMJUhan&amount=111100&currency=INR&order_id=order_TSi6ORZoe7MEjR&email=spike%40example.com&contact=9999999999&method=wallet&_%5Blibrary%5D=checkoutjs&wallet=mobikwik"
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:05:53 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "746",
+      "Connection": "close",
+      "Access-Control-Allow-Origin": "*",
+      "Cache-Control": "max-age=0, must-revalidate, no-store, nocache, private",
+      "Expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+      "Pragma": "no-cache",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Uber-Trace-Id": "159c48c58a91c50b4362faada3bc8d07:c8d6e971ecc038cc:0000000000000000:1",
+      "Vary": "Origin",
+      "Via": "rws",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Pam": "0",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "type": "first",
+      "request": {
+        "url": "https://api.razorpay.com/v1/gateway/mocksharp/payment?key_id=rzp_test_TShxMEHBMJUhan",
+        "method": "post",
+        "content": {
+          "action": "authorize",
+          "amount": 111100,
+          "method": "wallet",
+          "payment_id": "TSi6RwyfH4Ftlq",
+          "callback_url": "https://api.razorpay.com/v1/payments/pay_TSi6RwyfH4Ftlq/callback/e222205081513ac439d3755c0f5d6522a2157a9f/rzp_test_TShxMEHBMJUhan",
+          "recurring": 0
+        }
+      },
+      "version": 1,
+      "payment_id": "pay_TSi6RwyfH4Ftlq",
+      "gateway": "eyJpdiI6InV4MFk4NnowOHVZRUFRdHBoZGFCWmc9PSIsInZhbHVlIjoiSmJXc1VpeStFLytqQUJLbmFSb3Q1Q1BkTy9FblpiM0lHNm9TVHA4bWhjaz0iLCJtYWMiOiI4OTcxYWEyMTY5OWYyMjU3N2Y4NGQ3MGExNWEyYTEyNmIwYTRhOWIxMDk3NWMxY2I0NjJiMWUzNzZiYjRmODRiIiwidGFnIjoiIn0=",
+      "amount": "₹ 1111",
+      "image": null,
+      "magic": false
+    }
+  }
+}

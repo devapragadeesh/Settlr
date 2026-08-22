@@ -1,0 +1,50 @@
+{
+  "seq": 13,
+  "tag": "order_sc_c_subset_1",
+  "ts": 1787378391,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/orders",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": {
+      "amount": 289900,
+      "currency": "INR",
+      "receipt": "sc_c_subset_1",
+      "notes": {
+        "scenario": "sc_c_subset_1"
+      }
+    }
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 05:59:51 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "250",
+      "Connection": "close",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Vary": "Origin",
+      "Via": "rws",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "amount": 289900,
+      "amount_due": 289900,
+      "amount_paid": 0,
+      "attempts": 0,
+      "created_at": 1787378391,
+      "currency": "INR",
+      "entity": "order",
+      "id": "order_TSi084IfkiR83M",
+      "notes": {
+        "scenario": "sc_c_subset_1"
+      },
+      "offer_id": null,
+      "receipt": "sc_c_subset_1",
+      "status": "created"
+    }
+  }
+}

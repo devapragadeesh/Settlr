@@ -1,0 +1,45 @@
+{
+  "seq": 26,
+  "tag": "payajax_netbanking_Q0M6Ex",
+  "ts": 1787378420,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/payments/create/ajax",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": "key_id=rzp_test_TShxMEHBMJUhan&amount=222200&currency=INR&order_id=order_TSi0bYzjQ0M6Ex&email=spike%40example.com&contact=9999999999&method=netbanking&_%5Bshield%5D%5Bfhash%5D=&_%5Blibrary%5D=checkoutjs&bank=HDFC"
+  },
+  "response": {
+    "http_status": 400,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:00:20 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "334",
+      "Connection": "close",
+      "Access-Control-Allow-Origin": "*",
+      "Cache-Control": "max-age=0, must-revalidate, no-store, nocache, private",
+      "Expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+      "Pragma": "no-cache",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Uber-Trace-Id": "6f9e281ca6c3a0705fcc7560cfac9c16:30755ddb60b21d8b:0000000000000000:1",
+      "Vary": "Origin",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Pam": "0",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "error": {
+        "code": "BAD_REQUEST_ERROR",
+        "description": "Your payment could not be completed as this bank is not enabled by the business. To complete the payment, use another account.",
+        "source": "business",
+        "step": "payment_initiation",
+        "reason": "bank_not_enabled",
+        "metadata": {
+          "payment_id": "TSi0dl1bXYxzNf",
+          "order_id": "order_TSi0bYzjQ0M6Ex"
+        }
+      }
+    }
+  }
+}

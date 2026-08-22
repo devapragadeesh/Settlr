@@ -1,0 +1,54 @@
+{
+  "seq": 17,
+  "tag": "ajax_netbanking_f_nb_barb",
+  "ts": 1787378793,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/payments/create/ajax",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": "key_id=rzp_test_TShxMEHBMJUhan&amount=144400&currency=INR&order_id=order_TSi79Gsb81ZwM2&email=spike%40example.com&contact=9999999999&method=netbanking&_%5Blibrary%5D=checkoutjs&bank=BARB_R"
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:06:32 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "750",
+      "Connection": "close",
+      "Access-Control-Allow-Origin": "*",
+      "Cache-Control": "max-age=0, must-revalidate, no-store, nocache, private",
+      "Expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+      "Pragma": "no-cache",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Uber-Trace-Id": "ac2abd860ee2da5edf663b774bc2ac08:ac9ccdc0ecec27e4:0000000000000000:1",
+      "Vary": "Origin",
+      "Via": "rws",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Pam": "0",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "type": "first",
+      "request": {
+        "url": "https://api.razorpay.com/v1/gateway/mocksharp/payment?key_id=rzp_test_TShxMEHBMJUhan",
+        "method": "post",
+        "content": {
+          "action": "authorize",
+          "amount": 144400,
+          "method": "netbanking",
+          "payment_id": "TSi7BNwXHBpEaN",
+          "callback_url": "https://api.razorpay.com/v1/payments/pay_TSi7BNwXHBpEaN/callback/55509f4cad7f4f7f6273d5e3ed42606d68dacfd8/rzp_test_TShxMEHBMJUhan",
+          "recurring": 0
+        }
+      },
+      "version": 1,
+      "payment_id": "pay_TSi7BNwXHBpEaN",
+      "gateway": "eyJpdiI6Imc5SDJ5T05iNVYvY3FuMzN2RWhrNlE9PSIsInZhbHVlIjoidVdZSCtBV1p1LzFyTjRMY0drQlpoTG55TXl2NUVTNTI2MXJST3hVYVhPdz0iLCJtYWMiOiI1ZjcwZjY4NWZhOWFmYTQyNmI3YWUzNGZiY2RmYTBkZGU2MzE2ZDhlYzRkNjUwYTIzZDM3NDMxNTcxZGQwNWI3IiwidGFnIjoiIn0=",
+      "amount": "₹ 1444",
+      "image": null,
+      "magic": false
+    }
+  }
+}

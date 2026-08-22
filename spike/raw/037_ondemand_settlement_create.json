@@ -1,0 +1,44 @@
+{
+  "seq": 37,
+  "tag": "ondemand_settlement_create",
+  "ts": 1787378439,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/settlements/ondemand",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": {
+      "amount": 100000,
+      "settle_full_balance": false,
+      "description": "spike forced settlement",
+      "notes": {
+        "spike": "part_b"
+      }
+    }
+  },
+  "response": {
+    "http_status": 400,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:00:39 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "246",
+      "Connection": "close",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "error": {
+        "action": null,
+        "code": "BAD_REQUEST_ERROR",
+        "description": "Instant Settlements cannot be created in test mode",
+        "field": null,
+        "metadata": {},
+        "reason": "instant_settlements_test_mode_blocked",
+        "source": "business",
+        "step": "settlement_initiation"
+      }
+    }
+  }
+}

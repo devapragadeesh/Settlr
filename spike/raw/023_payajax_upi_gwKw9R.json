@@ -1,0 +1,44 @@
+{
+  "seq": 23,
+  "tag": "payajax_upi_gwKw9R",
+  "ts": 1787378416,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/payments/create/ajax",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": "key_id=rzp_test_TShxMEHBMJUhan&amount=111100&currency=INR&order_id=order_TSi0VC7egwKw9R&email=spike%40example.com&contact=9999999999&method=upi&_%5Bshield%5D%5Bfhash%5D=&_%5Blibrary%5D=checkoutjs&vpa=success%40razorpay&upi%5Bflow%5D=collect"
+  },
+  "response": {
+    "http_status": 400,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:00:16 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "191",
+      "Connection": "close",
+      "Access-Control-Allow-Origin": "*",
+      "Cache-Control": "max-age=0, must-revalidate, no-store, nocache, private",
+      "Expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+      "Pragma": "no-cache",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Uber-Trace-Id": "69c5a639bc59a272b40ca0b771d52fa8:336609a25c97b99a:0000000000000000:1",
+      "Vary": "Origin",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Pam": "0",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "error": {
+        "code": "BAD_REQUEST_ERROR",
+        "description": "UPI transactions are not enabled for the merchant",
+        "source": "NA",
+        "step": "NA",
+        "reason": "NA",
+        "metadata": {
+          "order_id": "order_TSi0VC7egwKw9R"
+        }
+      }
+    }
+  }
+}

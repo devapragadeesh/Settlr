@@ -1,0 +1,50 @@
+{
+  "seq": 26,
+  "tag": "order_h_failed",
+  "ts": 1787378818,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/orders",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": {
+      "amount": 90000,
+      "currency": "INR",
+      "receipt": "h_failed",
+      "notes": {
+        "scenario": "h_failed"
+      }
+    }
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:06:58 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "238",
+      "Connection": "close",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Vary": "Origin",
+      "Via": "rws",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "amount": 90000,
+      "amount_due": 90000,
+      "amount_paid": 0,
+      "attempts": 0,
+      "created_at": 1787378818,
+      "currency": "INR",
+      "entity": "order",
+      "id": "order_TSi7eEF4zjCaIh",
+      "notes": {
+        "scenario": "h_failed"
+      },
+      "offer_id": null,
+      "receipt": "h_failed",
+      "status": "created"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "seq": 2,
+  "tag": "mcp_notifications_initialized",
+  "ts": 1787378313,
+  "request": {
+    "method": "POST",
+    "url": "https://mcp.razorpay.com/mcp",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>",
+      "Accept": "application/json, text/event-stream"
+    },
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "method": "notifications/initialized"
+    }
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 05:58:33 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "104",
+      "Connection": "close",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Via": "rws",
+      "Www-Authenticate": "Bearer resource_metadata=\"https://mcp.razorpay.com/.well-known/oauth-protected-resource\""
+    },
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "error": {
+        "code": -32601,
+        "message": "Method notifications/initialized not found"
+      }
+    }
+  }
+}

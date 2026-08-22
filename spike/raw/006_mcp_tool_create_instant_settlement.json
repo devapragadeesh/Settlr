@@ -1,0 +1,47 @@
+{
+  "seq": 6,
+  "tag": "mcp_tool_create_instant_settlement",
+  "ts": 1787378322,
+  "request": {
+    "method": "POST",
+    "url": "https://mcp.razorpay.com/mcp",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>",
+      "Accept": "application/json, text/event-stream"
+    },
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 6,
+      "method": "tools/call",
+      "params": {
+        "name": "create_instant_settlement",
+        "arguments": {
+          "amount": 10000,
+          "settle_full_balance": false,
+          "description": "spike test instant settlement"
+        }
+      }
+    }
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 05:58:42 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "120",
+      "Connection": "close",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Via": "rws",
+      "Www-Authenticate": "Bearer resource_metadata=\"https://mcp.razorpay.com/.well-known/oauth-protected-resource\""
+    },
+    "body": {
+      "jsonrpc": "2.0",
+      "id": 6,
+      "error": {
+        "code": -32602,
+        "message": "tool 'create_instant_settlement' not found: tool not found"
+      }
+    }
+  }
+}

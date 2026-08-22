@@ -1,0 +1,24 @@
+{
+  "seq": 32,
+  "tag": "payajax_card_iVpg92",
+  "ts": 1787378431,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/payments/create/ajax",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": "key_id=rzp_test_TShxMEHBMJUhan&amount=90000&currency=INR&order_id=order_TSi0nQnFiVpg92&email=spike%40example.com&contact=9999999999&method=card&_%5Bshield%5D%5Bfhash%5D=&_%5Blibrary%5D=checkoutjs&card%5Bnumber%5D=4111111111111111&card%5Bcvv%5D=123&card%5Bexpiry_month%5D=12&card%5Bexpiry_year%5D=30&card%5Bname%5D=Spike+Test"
+  },
+  "response": {
+    "http_status": 403,
+    "headers": {
+      "Server": "awselb/2.0",
+      "Date": "Sat, 22 Aug 2026 06:00:31 GMT",
+      "Content-Type": "text/html",
+      "Content-Length": "118",
+      "Connection": "close"
+    },
+    "body": "<html>\r\n<head><title>403 Forbidden</title></head>\r\n<body>\r\n<center><h1>403 Forbidden</h1></center>\r\n</body>\r\n</html>\r\n"
+  }
+}

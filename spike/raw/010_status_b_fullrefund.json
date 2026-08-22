@@ -1,0 +1,67 @@
+{
+  "seq": 10,
+  "tag": "status_b_fullrefund",
+  "ts": 1787378624,
+  "request": {
+    "method": "GET",
+    "url": "https://api.razorpay.com/v1/payments/pay_TSi462SLqN2db4",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Basic <redacted>"
+    },
+    "body": null
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:03:44 GMT",
+      "Content-Type": "application/json",
+      "Transfer-Encoding": "chunked",
+      "Connection": "close",
+      "Cache-Control": "max-age=0, must-revalidate, no-store, nocache, private",
+      "Expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+      "Pragma": "no-cache",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Uber-Trace-Id": "6b3666075c62f100deb5f16eaea44342:6895f423c645cd39:0000000000000000:1",
+      "Via": "rws",
+      "X-Frame-Options": "SAMEORIGIN",
+      "X-Pam": "0",
+      "X-Xss-Protection": "0"
+    },
+    "body": {
+      "id": "pay_TSi462SLqN2db4",
+      "entity": "payment",
+      "amount": 250000,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_TSi44KEVckqTEt",
+      "invoice_id": null,
+      "international": false,
+      "method": "netbanking",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": null,
+      "card_id": null,
+      "bank": "ALLA",
+      "wallet": null,
+      "vpa": null,
+      "email": "spike@example.com",
+      "contact": "+919999999999",
+      "notes": {
+        "scenario": "b_fullrefund"
+      },
+      "fee": 5900,
+      "tax": 900,
+      "error_code": null,
+      "error_description": null,
+      "error_source": null,
+      "error_step": null,
+      "error_reason": null,
+      "acquirer_data": {
+        "bank_transaction_id": "8621966"
+      },
+      "created_at": 1787378616
+    }
+  }
+}

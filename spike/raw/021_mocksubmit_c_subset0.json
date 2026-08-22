@@ -1,0 +1,29 @@
+{
+  "seq": 21,
+  "tag": "mocksubmit_c_subset0",
+  "ts": 1787378653,
+  "request": {
+    "method": "POST",
+    "url": "https://api.razorpay.com/v1/gateway/mocksharp/payment/submit?key_id=rzp_test_TShxMEHBMJUhan",
+    "headers": {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": "success=S&language_code=en&callback_url=https%3A%2F%2Fapi.razorpay.com%2Fv1%2Fpayments%2Fpay_TSi4cslMMVPqgW%2Fcallback%2F5e8de84d8137f1d6d93f5242e89bf56edf3bb606%2Frzp_test_TShxMEHBMJUhan"
+  },
+  "response": {
+    "http_status": 200,
+    "headers": {
+      "Date": "Sat, 22 Aug 2026 06:04:13 GMT",
+      "Content-Type": "text/html; charset=UTF-8",
+      "Transfer-Encoding": "chunked",
+      "Connection": "close",
+      "Cache-Control": "no-cache, private",
+      "Strict-Transport-Security": "max-age=315360000; includeSubDomains",
+      "Uber-Trace-Id": "ce4ec521a641a88e0cb28bc2c13951ac:d55e57df768a2852:0000000000000000:1",
+      "Via": "rws",
+      "X-Pam": "1",
+      "X-Xss-Protection": "0"
+    },
+    "body": "<!doctype html><html style=\"height:100%\"><head><title>Razorpay - Payment in progress</title>\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<meta charset=\"utf-8\">\n<meta http-equiv=\"Content-Type\" content=\"text/html;charset=UTF-8\"><style>\nbody{background:#fff;font-family:ubuntu,helvetica,verdana,sans-serif;margin:0;padding:0;width:100%;height:100%;text-align:center;display:table}\n#text{vertical-align: middle; display: none; text-transform: uppercase; font-weight: bold; font-size: 30px; line-height: 40px}\n#icon{font-size: 60px;color: #fff; border-radius: 50%; width: 80px; height: 80px; line-height: 80px; margin: -60px auto 20px; display: inline-block}\n#text.show{display:table-cell}\n#text.s{color:#61BC6D;}\n#text.s #icon{background:#61BC6D}\n#text.f{color:#EF6050;}\n#text.f #icon{background:#EF6050}\n#delayed-prompt {position: fixed; top:70%; left: 0; right: 0;}\n.text {transition: 0.2s opacity; position: absolute; top: 0; width: 100%; opacity: 0; transition-delay: 0.2s;}\n.show-early .early, .show-late .late {opacity: 1}\n.show-early .late, .show-late .early {opacity: 0}\n#proceed-btn {color: #528ff0; text-decoration: underline; cursor: pointer; -webkit-tap-highlight-color: transparent;}\n</style>\n<meta name=\"viewport\" content=\"user-scalable=no,width=device-width,initial-scale=1,maximum-scale=1\">\n</head><body>\n<div id=\"text\"><div id=\"icon\"></div><br>Payment\n</div>\n<div id=\"delayed-prompt\">\n  <div class=\"early text\">Redirecting...</div>\n  <div class=\"late text\" id=\"proceed-btn\">Click here to proceed</div>\n</div>\n<script>\n\n\n\n// Callback data //\nvar data = {\"razorpay_payment_id\":\"pay_TSi4cslMMVPqgW\",\"razorpay_order_id\":\"order_TSi4bNNseC7EzV\",\"razorpay_signature\":\"6d4fe432264623783a9bd4a6771811669d75245014835ca87339ebb1036d568b\"};\n// Callback data //\n\nvar s = 'razorpay_payment_id' in data;\nvar netbanking_corporate_action = false;\n\nif (data &&\n    data.error &&\n    data.error.metadata &&\n    data.error.metadata['netbanking_corporate_action'] === \"pending\") {\n    netbanking_corporate_action = true;\n}\n\ndata = JSON.stringify(data);\nif (window.CheckoutBridge) {\n  if (typeof CheckoutBridge.oncomplete == 'function') {\n    function onComplete() { CheckoutBridge.oncomplete(data); }\n    setTimeout(onComplete, 30);\n    setTimeout(function () {\n      g('delayed-prompt').classList.add('show-early');\n    }, 500);\n    setTimeout(function () {\n      g('delayed-prompt').classList.add('show-late');\n      g('delayed-prompt').classList.remove('show-early');\n    }, 2000);\n    g('proceed-btn').onclick = onComplete;\n  }\n} else {\n  document.cookie =\n    'onComplete=' + data + ';expires=Fri, 31 Dec 9999 23:59:59 GMT;path=/';\n  try {\n    localStorage.setItem('onComplete', data);\n  } catch (e) {}\n}\n\nvar iosCheckoutBridgeNew = ((window.webkit || {}).messageHandlers || {})\n  .CheckoutBridge;\n\nif (iosCheckoutBridgeNew) {\n  iosCheckoutBridgeNew.postMessage({\n    action: 'success',\n    body: JSON.parse(data)\n  });\n}\n\nfunction g(id) {\n  return document.getElementById(id);\n}\nfunction razorpay_callback() {\n  return data;\n}\n\nvar t = g('text');\n\nif (!netbanking_corporate_action) {\n    t.innerHTML += '<br>';\n    t.innerHTML += s ? 'Successful' : 'Failed';\n    t.className = 'show ' + (s ? 's' : 'f');\n    g('icon').innerHTML = s ? '&#10004' : '!';\n} else{\n    t.innerHTML += 'is pending for authorization. <br> Request for authorization from approver.';\n    t.className = 'show f';\n    g('icon').innerHTML = '!';\n}\n\nif (!window.CheckoutBridge) {\n    if(!netbanking_corporate_action) {\n        try { window.opener.onComplete(data) } catch(e){}\n        try { (window.opener || window.parent).postMessage(data, '*') } catch(e){}\n        setTimeout(close, 999);\n    } else{\n        try { window.opener.onComplete(data) } catch(e){}\n        try { (window.opener || window.parent).postMessage(data, '*') } catch(e){}\n        setTimeout(close, 4999);\n    }\n}\n\n</script></body></html>\n"
+  }
+}
