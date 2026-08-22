@@ -1,4 +1,4 @@
-"""All 14 planted classes present, counts within tolerance. Task 2."""
+"""All 15 planted classes present, counts within tolerance. Task 2."""
 
 from collections import Counter
 
@@ -37,7 +37,7 @@ def counts(truth):
     return tally
 
 
-def test_all_fourteen_classes_are_present(truth):
+def test_all_fifteen_classes_are_present(truth):
     tally = counts(truth)
     missing = sorted(set(TARGETS) - set(tally))
     assert not missing, f"classes absent from the dataset: {missing}"

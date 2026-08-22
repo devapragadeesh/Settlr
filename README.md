@@ -171,7 +171,7 @@ Everything below is confirmed available:
 - ✅ **Recon data in the exact production schema** — via `fetch_settlement_recon_details` on the official MCP server, or `GET /v1/settlements/recon/combined` directly
 - ✅ **Test-mode orders, payments, refunds, settlements** — all callable with `rzp_test_*` keys
 - ✅ **The solver** — `scipy.optimize.linear_sum_assignment` for 1:1; PuLP or OR-Tools for subset-sum netting. Pure Python, no infrastructure
-- ✅ **Synthetic generator** — 240 rows / 12 batches, seeded and reproducible, emitting the verified schema with 14 classes of planted hard cases and a hidden ground-truth key
+- ✅ **Synthetic generator** — 240 rows / 12 batches, seeded and reproducible, emitting the verified schema with 15 classes of planted hard cases and a hidden ground-truth key
 - ⚠️ **MCP test-mode support is undocumented** — validate on day one; fall back to the local Docker MCP or direct REST if the hosted server rejects test keys
 
 ### The metrics line

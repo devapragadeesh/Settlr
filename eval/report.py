@@ -198,14 +198,26 @@ def main() -> None:
       f"{len(audit['orphan_invoices_wrongly_matched'])} |")
     w(f"| adjustment rows given a counterparty | "
       f"{len(audit['adjustments_given_a_counterparty'])} |")
-    w(f"| Hungarian assignments made | {audit['hungarian_assignments_made']} |")
-    w(f"| Hungarian pairs proposed then refused | {audit['hungarian_pairs_refused']} |")
+    w(f"| Hungarian pairs **proposed** | {audit['hungarian_pairs_proposed']} |")
+    w(f"| Hungarian pairs **refused** by the cost gate | "
+      f"{audit['hungarian_pairs_refused']} |")
+    w(f"| Hungarian assignments accepted | {audit['hungarian_assignments_made']} |")
     w(f"| fuzzy pairs proposed then refused | {audit['fuzzy_pairs_refused']} |")
     w("")
-    w("The ERP gaps are REAL gaps. Blocking proposes candidates on amount and")
-    w("date; the gate refuses every one for want of a shared identifier. An")
-    w("engine that never looked and an engine that looked and refused produce the")
-    w("same empty assignment, so the refusals are counted.\n")
+    w(f"### The Hungarian stage: {audit['hungarian_pairs_proposed']} proposed, "
+      f"{audit['hungarian_pairs_refused']} refused\n")
+    w("Read that as a sentence, not as the accepted count. "
+      f"`linear_sum_assignment` returned a complete matching over the "
+      f"{audit['hungarian_pairs_proposed']}-pair residual; the cost gate then "
+      "refused every pair for want of a shared identifier, so the accepted")
+    w("count is zero **and that is the correct answer** -- the ERP gaps are REAL")
+    w("gaps. Some settled payments genuinely have no ERP order and some ERP")
+    w("orders genuinely have no payment.\n")
+    w("The stage is reported by what it did, never by what it accepted. An")
+    w("engine that never looked and an engine that looked and refused produce")
+    w("the same empty assignment; only the refusal count distinguishes them,")
+    w("which is why a bare `0` would misrepresent the stage rather than")
+    w("summarise it.\n")
 
     # ---- exceptions -----------------------------------------------------
     w("## Exception queue, itemised\n")

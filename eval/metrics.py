@@ -256,6 +256,11 @@ def false_positive_audit(result, truth: dict | None = None) -> dict:
             orphans & set(result.stage1.row_to_erp.values())
             | orphans & set(result.stage3.erp_assignments.values())),
         "adjustments_given_a_counterparty": sorted(adjustments & matched_to_erp),
+        #: proposed == made + refused. Reported so the stage can never render
+        #: as a bare zero: a stage that appears to do nothing invites "why is
+        #: this here", where one that reports its refusals has already answered.
+        "hungarian_pairs_proposed": (len(result.stage3.erp_assignments)
+                                     + len(result.stage3.erp_rejected)),
         "hungarian_assignments_made": len(result.stage3.erp_assignments),
         "hungarian_pairs_refused": len(result.stage3.erp_rejected),
         "fuzzy_pairs_refused": len(result.stage2.rejected),

@@ -9,7 +9,7 @@ reconciliation logic exists here, by design — see [the freeze](#the-freeze).
 | [`GENERATION_REPORT.md`](GENERATION_REPORT.md) | class counts, provenance distribution, and what is *not* claimed — every figure derived from the data on disk |
 | [`ROBUSTNESS.md`](ROBUSTNESS.md) | the planted classes across 20 seeds nobody chose — the answer to "you tuned it until it worked" |
 | `simulator.py` | the settlement batching engine. Implements `SETTLEMENT_SPEC.md` and nothing else |
-| `generator.py` | builds the ledger, plants the 14 classes, emits the dataset and the isolated key |
+| `generator.py` | builds the ledger, plants the 15 classes, emits the dataset and the isolated key |
 | `report.py` | regenerates `GENERATION_REPORT.md` from the frozen files |
 | `robustness.py` | multi-seed sweep; writes `ROBUSTNESS.md` |
 | `data/` | the solver-visible dataset |

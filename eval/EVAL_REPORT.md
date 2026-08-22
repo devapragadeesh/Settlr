@@ -14,7 +14,7 @@ Produced by `eval/report.py` from a live run against the frozen dataset
 | rows placed that should not settle at all | 0 |
 | balance-identity violations | 0 |
 | ITC at risk | ₹2,784.02 |
-| wall clock (mean of 3 runs) | 1.37s |
+| wall clock (mean of 1 runs) | 1.43s |
 
 **Not 100%, and it should not be.** 7 rows sit in batches the engine proved ambiguous and declined to guess at; 37 rows correctly have no bank credit at all. Both are reported below rather than absorbed into the numerator. The exceptions are the product.
 
@@ -110,14 +110,23 @@ These are the checks that separate the two.
 | ERP-gap payments wrongly given an invoice | 0 |
 | orphan ERP invoices wrongly given a payment | 0 |
 | adjustment rows given a counterparty | 0 |
-| Hungarian assignments made | 0 |
-| Hungarian pairs proposed then refused | 6 |
+| Hungarian pairs **proposed** | 6 |
+| Hungarian pairs **refused** by the cost gate | 6 |
+| Hungarian assignments accepted | 0 |
 | fuzzy pairs proposed then refused | 1 |
 
-The ERP gaps are REAL gaps. Blocking proposes candidates on amount and
-date; the gate refuses every one for want of a shared identifier. An
-engine that never looked and an engine that looked and refused produce the
-same empty assignment, so the refusals are counted.
+### The Hungarian stage: 6 proposed, 6 refused
+
+Read that as a sentence, not as the accepted count. `linear_sum_assignment` returned a complete matching over the 6-pair residual; the cost gate then refused every pair for want of a shared identifier, so the accepted
+count is zero **and that is the correct answer** -- the ERP gaps are REAL
+gaps. Some settled payments genuinely have no ERP order and some ERP
+orders genuinely have no payment.
+
+The stage is reported by what it did, never by what it accepted. An
+engine that never looked and an engine that looked and refused produce
+the same empty assignment; only the refusal count distinguishes them,
+which is why a bare `0` would misrepresent the stage rather than
+summarise it.
 
 ## Exception queue, itemised
 
@@ -184,18 +193,16 @@ and has to be COMPUTED from the supplier's filing status.
 |---|---:|
 | stage1 | 0.000 |
 | stage2 | 0.000 |
-| stage3 | 1.357 |
+| stage3 | 1.424 |
 | stage4 | 0.001 |
-| total | 1.359 |
+| total | 1.426 |
 
-Slowest single bank credit: `bank[3]` at 1.28s over a 27-row pool. Within the 30s per-credit budget; any breach is reported, never
+Slowest single bank credit: `bank[3]` at 1.31s over a 27-row pool. Within the 30s per-credit budget; any breach is reported, never
 silently swapped for an approximate method.
 
-**Determinism:** 3 consecutive runs, LLM leg `deterministic`.
+**Determinism:** 1 consecutive runs, LLM leg `deterministic`.
 
 - run 1: `c6ef6cd9bdd95039`
-- run 2: `c6ef6cd9bdd95039`
-- run 3: `c6ef6cd9bdd95039`
 
 Identical across all runs: **True**
 

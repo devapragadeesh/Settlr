@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 
 ENGINE = Path(__file__).resolve().parent.parent
+REPO = ENGINE.parent
 DATA = ENGINE / "data"
 TRUTH = ENGINE / "ground_truth"
 
@@ -20,7 +21,7 @@ FORBIDDEN = [
     "ambiguous", "tying", "decomposition", "rolled_forward", "roll_forward",
     "subset_sum", "subset-sum", "ground_truth", "netted_out", "scenario",
     "planted", "c01_", "c02_", "c03_", "c04_", "c05_", "c06_", "c07_",
-    "c08_", "c09_", "c10_", "c11_", "c12_", "c13_", "c14_",
+    "c08_", "c09_", "c10_", "c11_", "c12_", "c13_", "c14_", "c15_",
     "clean_1to1", "cross_month", "schema_variance", "itc_at_risk",
     "on_hold_dispute", "corrupt", "unsettled_reason", "hard_case",
 ]
@@ -59,27 +60,77 @@ def test_ground_truth_lives_outside_the_data_directory():
     assert (TRUTH / "ground_truth.json").exists()
 
 
-#: the ONLY modules allowed to touch the ground-truth key. Both are data-side
-#: tooling that runs before any solver exists: the generator writes the key,
-#: the reporter reads it to describe the dataset. Any future solver module
-#: appearing here is a freeze violation.
-GROUND_TRUTH_ALLOWLIST = {"generator.py", "report.py"}
+#: the ONLY modules allowed to touch the ground-truth key, as REPO-RELATIVE
+#: paths. Basenames were used until Phase 4 and were too weak: `report.py`
+#: exists under both `engine/` and `eval/`, so an allowlist keyed on the name
+#: alone would have admitted any future file that happened to be called that.
+#:
+#: Two data-side modules that run before any solver exists -- the generator
+#: writes the key, the reporter reads it to describe the dataset -- and the
+#: two `eval/` modules, which score AGAINST the key by design and are the one
+#: package permitted to. Any `matching/` module appearing here is a freeze
+#: violation.
+GROUND_TRUTH_ALLOWLIST = {
+    "engine/generator.py",
+    "engine/report.py",
+    "eval/metrics.py",
+    "eval/report.py",
+}
+
+#: scanned repo-wide, not just under `engine/`. The original version of this
+#: test globbed `engine/` only, because it was written in Phase 1 when nothing
+#: else existed; it would NOT have caught a violation in `matching/`.
+#: `tests/test_isolation.py` independently enforces the same property over
+#: `matching/` by AST, and both are kept: one proves no solver module names
+#: the key, the other proves nothing ANYWHERE outside the allowlist does.
+SCANNED_PACKAGES = ("engine", "matching", "eval")
+
+
+def _scanned_modules():
+    for package in SCANNED_PACKAGES:
+        for path in sorted((REPO / package).rglob("*.py")):
+            if "tests" in path.relative_to(REPO).parts:
+                continue
+            yield path
 
 
 def test_no_module_outside_the_allowlist_reads_the_ground_truth_path():
     """The freeze is only meaningful if no solver can reach the key."""
     offenders = []
-    for path in sorted(ENGINE.rglob("*.py")):
-        if path.parent.name == "tests" or path.name in GROUND_TRUTH_ALLOWLIST:
+    for path in _scanned_modules():
+        relative = path.relative_to(REPO).as_posix()
+        if relative in GROUND_TRUTH_ALLOWLIST:
             continue
         if "ground_truth" in path.read_text():
-            offenders.append(path.name)
+            offenders.append(relative)
     assert not offenders, f"these modules reference the ground truth: {offenders}"
 
 
+def test_the_scan_actually_reaches_the_solver_package():
+    """Guards the bug this test itself had: a scan that silently covers
+    nothing proves nothing. If `matching/` stops being scanned, fail here
+    rather than passing vacuously."""
+    scanned = {p.relative_to(REPO).as_posix() for p in _scanned_modules()}
+    assert any(p.startswith("matching/") for p in scanned), scanned
+    assert "matching/stage3_solver.py" in scanned
+
+
+def test_no_matching_module_reads_the_ground_truth():
+    """Stated directly, so the property does not depend on reading an
+    allowlist correctly."""
+    offenders = [p.relative_to(REPO).as_posix()
+                 for p in sorted((REPO / "matching").rglob("*.py"))
+                 if "ground_truth" in p.read_text()]
+    assert not offenders, offenders
+
+
 def test_the_allowlist_stays_small():
-    assert GROUND_TRUTH_ALLOWLIST == {"generator.py", "report.py"}, \
-        "someone widened the ground-truth allowlist"
+    assert GROUND_TRUTH_ALLOWLIST == {
+        "engine/generator.py", "engine/report.py",
+        "eval/metrics.py", "eval/report.py",
+    }, "someone widened the ground-truth allowlist"
+    assert not any(p.startswith("matching/") for p in GROUND_TRUTH_ALLOWLIST), \
+        "a solver module was added to the ground-truth allowlist"
 
 
 def test_the_simulator_never_mentions_the_ground_truth():
