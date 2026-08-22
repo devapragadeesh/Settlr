@@ -75,6 +75,8 @@ GROUND_TRUTH_ALLOWLIST = {
     "engine/report.py",
     "eval/metrics.py",
     "eval/report.py",
+    "eval/holdout_report.py",
+    "eval/scale_report.py",
 }
 
 #: scanned repo-wide, not just under `engine/`. The original version of this
@@ -128,6 +130,7 @@ def test_the_allowlist_stays_small():
     assert GROUND_TRUTH_ALLOWLIST == {
         "engine/generator.py", "engine/report.py",
         "eval/metrics.py", "eval/report.py",
+        "eval/holdout_report.py", "eval/scale_report.py",
     }, "someone widened the ground-truth allowlist"
     assert not any(p.startswith("matching/") for p in GROUND_TRUTH_ALLOWLIST), \
         "a solver module was added to the ground-truth allowlist"
