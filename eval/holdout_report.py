@@ -518,6 +518,26 @@ def main() -> None:
         w(f"- run {index + 1}: `{dig[:16]}`")
     w(f"\nIdentical across all runs: **{len(set(digests)) == 1}**\n")
 
+    # A stronger check than three in-process runs: a FRESH interpreter, where
+    # hash seeds, dict iteration order and any accumulated solver state all
+    # differ. Three identical in-process runs can be reproducing one process's
+    # accidents.
+    import subprocess
+    fresh = subprocess.run(
+        [sys.executable, "-c",
+         "from pathlib import Path\n"
+         "from matching import run\n"
+         "from matching.loaders import load\n"
+         "from eval.report import fingerprint\n"
+         "print(fingerprint(run(dataset=load(Path('holdout/data')))))"],
+        capture_output=True, text=True, cwd=ROOT)
+    fresh_digest = fresh.stdout.strip()
+    w("**Across a separate process**, which is the stronger check — three")
+    w("in-process runs can be reproducing one process's accidents, whereas a")
+    w("fresh interpreter varies hash seed and dict iteration order:\n")
+    w(f"- fresh process: `{fresh_digest[:16]}`")
+    w(f"- matches the in-process digest: **{fresh_digest == digests[0]}**\n")
+
     (HOLDOUT / "HOLDOUT_RESULTS.md").write_text("\n".join(out) + "\n")
 
     # a machine-readable copy, so the narrative cannot drift from the run

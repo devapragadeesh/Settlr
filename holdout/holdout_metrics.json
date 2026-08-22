@@ -28,7 +28,7 @@
  "ambiguity_planted": 3,
  "ambiguity_detected": 3,
  "truth_always_enumerated": false,
- "mean_seconds": 10.454808763660063,
+ "mean_seconds": 10.417209097664454,
  "deterministic": true,
  "predictions": [
   {

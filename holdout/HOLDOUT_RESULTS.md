@@ -20,7 +20,7 @@ Period 2026-09-14 .. 2026-11-27. 240 rows, 18 bank lines (3 of them debits, a sh
 | ambiguous batches flagged | 3 | **4** | +1 |
 | **mean candidate set size** | 2.00 | **8.75** | +6.75 |
 | truth in candidates, every batch | True | **False** | |
-| wall clock (mean of 3) | — | **10.45s** | |
+| wall clock (mean of 3) | — | **10.42s** | |
 
 ## 2. Row accounting — the same three buckets
 
@@ -126,8 +126,8 @@ does not do is revisit the **rows** it already placed with confidence.
 The queue says "I cannot explain these three debits"; it does not say
 "...and therefore my earlier answer about credit A is void."
 
-**The reversal is also expensive.** Held-out wall clock is 10.45s against the primary's ~1.4s, and
-almost all of it is one line: the contaminated `bank[9]` takes 9.43s
+**The reversal is also expensive.** Held-out wall clock is 10.42s against the primary's ~1.4s, and
+almost all of it is one line: the contaminated `bank[9]` takes 9.32s
 alone, enumerating 29 candidates over a 33-row pool because the rows that
 would have closed it exactly were consumed by credit A. A pool polluted
 by an unrecognised reversal is both slower and less decisive — the two
@@ -245,12 +245,12 @@ worth much without the other.
 |---|---:|
 | stage1 | 0.000 |
 | stage2 | 0.000 |
-| stage3 | 10.484 |
+| stage3 | 10.366 |
 | stage4 | 0.001 |
-| total | 10.486 |
+| total | 10.367 |
 
-Mean wall clock over 3 runs: **10.45s** (min 10.39s, max 10.49s).
-Slowest single bank line: `bank[9]` at 9.43s over a 33-row pool.
+Mean wall clock over 3 runs: **10.42s** (min 10.37s, max 10.48s).
+Slowest single bank line: `bank[9]` at 9.32s over a 33-row pool.
 Bank lines over the 30s per-credit budget: **0**.
 
 **Determinism:** 3 consecutive runs on held-out data.
@@ -260,4 +260,11 @@ Bank lines over the 30s per-credit budget: **0**.
 - run 3: `6b811ef955b3a538`
 
 Identical across all runs: **True**
+
+**Across a separate process**, which is the stronger check — three
+in-process runs can be reproducing one process's accidents, whereas a
+fresh interpreter varies hash seed and dict iteration order:
+
+- fresh process: `6b811ef955b3a538`
+- matches the in-process digest: **True**
 

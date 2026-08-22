@@ -1,0 +1,60 @@
+{
+ "seed": 41,
+ "max_pool": 28,
+ "note": "runtime fixture only -- never used for an accuracy claim",
+ "sets": [
+  {
+   "target_rows": 250,
+   "rows": 246,
+   "batches": 12,
+   "mean_pool_size": 16.416666666666668,
+   "max_pool_size": 25,
+   "min_pool_size": 6,
+   "batches_selection_degraded": 0,
+   "degraded_pool_sizes": [],
+   "undegraded_pool_sizes": [
+    6,
+    9,
+    12,
+    13,
+    14,
+    16,
+    17,
+    19,
+    19,
+    23,
+    24,
+    25
+   ],
+   "data_dir": "scale/data_250",
+   "truth_dir": "scale/truth_250"
+  },
+  {
+   "target_rows": 1000,
+   "rows": 997,
+   "batches": 12,
+   "mean_pool_size": 64.16666666666667,
+   "max_pool_size": 86,
+   "min_pool_size": 15,
+   "batches_selection_degraded": 10,
+   "degraded_pool_sizes": [
+    62,
+    64,
+    65,
+    69,
+    73,
+    76,
+    76,
+    78,
+    81,
+    86
+   ],
+   "undegraded_pool_sizes": [
+    15,
+    25
+   ],
+   "data_dir": "scale/data_1000",
+   "truth_dir": "scale/truth_1000"
+  }
+ ]
+}

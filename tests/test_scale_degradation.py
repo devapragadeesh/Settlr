@@ -1,0 +1,105 @@
+"""SETTLEMENT_SPEC.md sec 1.5's documented degradation, checked where it FIRES.
+
+The primary dataset never crosses `SimulatorConfig.max_pool = 28`, so until
+Phase 4 the FIFO fallback was a documented branch that had never executed on
+shipped data. A rule that never runs is a rule that was never tested.
+
+The scale fixtures cross it by construction. These tests assert the property
+that actually matters -- **nothing degrades silently** -- in both directions:
+
+  * every batch above the ceiling carries `selection_degraded: true`;
+  * no batch at or below the ceiling carries it.
+
+One direction alone is not enough. Flagging everything satisfies the first and
+is useless; flagging nothing satisfies the second and is a lie.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parent.parent
+SCALE = ROOT / "scale"
+MANIFEST = SCALE / "MANIFEST.json"
+
+pytestmark = pytest.mark.skipif(
+    not MANIFEST.exists(), reason="scale fixtures not generated")
+
+
+def scale_sets():
+    return json.loads(MANIFEST.read_text())["sets"]
+
+
+def batches_of(record) -> list[dict]:
+    truth = json.loads(
+        (ROOT / record["truth_dir"] / "ground_truth.json").read_text())
+    return truth["batches"]
+
+
+def max_pool() -> int:
+    import sys
+    sys.path.insert(0, str(ROOT / "engine"))
+    from simulator import SimulatorConfig
+    return SimulatorConfig.max_pool
+
+
+@pytest.mark.parametrize("record", scale_sets(),
+                         ids=lambda r: f"{r['target_rows']}rows")
+def test_degradation_is_flagged_exactly_when_the_pool_exceeds_the_ceiling(record):
+    ceiling = max_pool()
+    for batch in batches_of(record):
+        above = batch["pool_size"] > ceiling
+        assert batch["selection_degraded"] == above, (
+            f"{batch['settlement_id']}: pool_size={batch['pool_size']}, "
+            f"ceiling={ceiling}, selection_degraded={batch['selection_degraded']}")
+
+
+@pytest.mark.parametrize("record", scale_sets(),
+                         ids=lambda r: f"{r['target_rows']}rows")
+def test_every_batch_records_the_pool_it_was_solved_over(record):
+    """The flag is only auditable if the quantity it depends on is published."""
+    for batch in batches_of(record):
+        assert isinstance(batch["pool_size"], int)
+        assert batch["pool_size"] >= 0
+
+
+def test_the_degradation_branch_actually_executes_somewhere():
+    """Guards the vacuous pass: if no fixture ever crossed the ceiling, the
+    tests above would all pass while proving nothing about the branch."""
+    degraded = sum(record["batches_selection_degraded"] for record in scale_sets())
+    assert degraded > 0, "no scale fixture crossed max_pool; sec 1.5 is untested"
+
+
+def test_a_regime_below_the_ceiling_also_exists():
+    """The converse guard: at least one fixture must sit entirely BELOW the
+    ceiling, or the tests could not distinguish "flagged correctly" from
+    "flagged always"."""
+    clean = [record for record in scale_sets()
+             if record["batches_selection_degraded"] == 0]
+    assert clean, "no fixture stays under max_pool; the negative case is untested"
+
+
+def test_the_primary_dataset_never_degraded():
+    """Which is why the primary run may claim exact reconstruction throughout.
+
+    Stated as a test rather than as a sentence in a report, because it is the
+    precondition for that claim.
+    """
+    truth = json.loads(
+        (ROOT / "engine" / "ground_truth" / "ground_truth.json").read_text())
+    degraded = [b["settlement_id"] for b in truth["batches"]
+                if b["selection_degraded"]]
+    assert not degraded, degraded
+    assert max(b["pool_size"] for b in truth["batches"]) <= max_pool()
+
+
+def test_the_scale_fixtures_are_never_used_for_an_accuracy_claim():
+    """Runtime only. If an accuracy metric ever reads a scale truth file, the
+    separation this phase depends on has been broken."""
+    text = (ROOT / "eval" / "scale_report.py").read_text()
+    for banned in ("score(", "false_positive_audit", "match_rate",
+                   "precision", "recall"):
+        assert banned not in text, f"scale_report.py computes {banned!r}"

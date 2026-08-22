@@ -4,3 +4,10 @@ __pycache__/
 .env
 .razorpay/
 graphify-out/
+
+# scale/ fixtures are large and fully reproducible from generate_scale.py at
+# the seed recorded in MANIFEST.json. The MEASUREMENTS are committed; the
+# regenerable bulk is not.
+scale/data_*/
+scale/truth_*/
+scale/DATASET_HASHES.txt
