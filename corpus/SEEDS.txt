@@ -1,0 +1,32 @@
+# corpus/SEEDS.txt -- committed BEFORE any corpus data is generated.
+
+The seeds below are chosen and committed in their own commit, whose message
+states that no corpus data exists yet. Only then is the data generated. The
+seeds are NEVER reselected and no seed sweep is run: a dataset that comes out
+awkward is reported as it is, or a BUG is fixed -- the seed is not changed.
+
+This is the protocol holdout/SEED.txt used (DECISIONS.md 17), for the same
+reason: a dataset is not held-out because it is new, it is held-out because
+the experimenter could not have chosen it after seeing the result. Points 1
+and 2 are verifiable from git log -- this commit precedes every dataset.
+
+| axis point | pool | coverage | selection rule | seed |
+|---|---|---|---|---|
+| A20_B100_Cmax | ~20 | 1 | max_under_cap | 20260824 |
+| A10_B100_Cmax | ~10 | 1 | max_under_cap | 20260825 |
+| A30_B100_Cmax | ~30 | 1 | max_under_cap | 20260826 |
+| A40_B100_Cmax | ~40 | 1 | max_under_cap | 20260827 |
+| A60_B100_Cmax | ~60 | 1 | max_under_cap | 20260828 |
+| A20_B75_Cmax | ~20 | 3/4 | max_under_cap | 20260829 |
+| A20_B50_Cmax | ~20 | 1/2 | max_under_cap | 20260830 |
+| A20_B0_Cmax | ~20 | 0 | max_under_cap | 20260831 |
+| A40_B50_Cmax | ~40 | 1/2 | max_under_cap | 20260901 |
+| A20_B100_Cfifo | ~20 | 1 | fifo_under_cap | 20260902 |
+| A20_B100_Crandom | ~20 | 1 | random_valid | 20260903 |
+| A40_B100_Cfifo | ~40 | 1 | fifo_under_cap | 20260904 |
+| A40_B100_Crandom | ~40 | 1 | random_valid | 20260905 |
+| A20_B100_Crandom0 | ~20 | 1 | random_valid | 20260906 |
+
+phi (random_valid floor fraction) is calibrated against MEASURED MEAN POOL
+SIZE only, before any resolver is run. Nothing about resolver performance is
+observable at the time it is picked.
