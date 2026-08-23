@@ -30,6 +30,33 @@
    "truth_dir": "scale/truth_250"
   },
   {
+   "target_rows": 500,
+   "rows": 505,
+   "batches": 12,
+   "mean_pool_size": 32.333333333333336,
+   "max_pool_size": 45,
+   "min_pool_size": 7,
+   "batches_selection_degraded": 9,
+   "degraded_pool_sizes": [
+    29,
+    29,
+    32,
+    38,
+    38,
+    41,
+    43,
+    44,
+    45
+   ],
+   "undegraded_pool_sizes": [
+    7,
+    17,
+    25
+   ],
+   "data_dir": "scale/data_500",
+   "truth_dir": "scale/truth_500"
+  },
+  {
    "target_rows": 1000,
    "rows": 997,
    "batches": 12,
@@ -55,6 +82,137 @@
    ],
    "data_dir": "scale/data_1000",
    "truth_dir": "scale/truth_1000"
+  },
+  {
+   "target_rows": 2500,
+   "rows": 2452,
+   "batches": 12,
+   "mean_pool_size": 158.16666666666666,
+   "max_pool_size": 187,
+   "min_pool_size": 22,
+   "batches_selection_degraded": 11,
+   "degraded_pool_sizes": [
+    107,
+    156,
+    165,
+    169,
+    176,
+    180,
+    181,
+    184,
+    184,
+    187,
+    187
+   ],
+   "undegraded_pool_sizes": [
+    22
+   ],
+   "data_dir": "scale/data_2500",
+   "truth_dir": "scale/truth_2500"
+  },
+  {
+   "target_rows": 5000,
+   "rows": 4876,
+   "batches": 12,
+   "mean_pool_size": 314.8333333333333,
+   "max_pool_size": 384,
+   "min_pool_size": 46,
+   "batches_selection_degraded": 12,
+   "degraded_pool_sizes": [
+    46,
+    222,
+    327,
+    338,
+    344,
+    350,
+    351,
+    352,
+    354,
+    355,
+    355,
+    384
+   ],
+   "undegraded_pool_sizes": [],
+   "data_dir": "scale/data_5000",
+   "truth_dir": "scale/truth_5000"
+  },
+  {
+   "target_rows": 10000,
+   "rows": 9732,
+   "batches": 12,
+   "mean_pool_size": 627.8333333333334,
+   "max_pool_size": 735,
+   "min_pool_size": 91,
+   "batches_selection_degraded": 12,
+   "degraded_pool_sizes": [
+    91,
+    399,
+    679,
+    684,
+    695,
+    698,
+    706,
+    707,
+    707,
+    707,
+    726,
+    735
+   ],
+   "undegraded_pool_sizes": [],
+   "data_dir": "scale/data_10000",
+   "truth_dir": "scale/truth_10000"
+  },
+  {
+   "target_rows": 25000,
+   "rows": 24298,
+   "batches": 12,
+   "mean_pool_size": 1567.5,
+   "max_pool_size": 1774,
+   "min_pool_size": 243,
+   "batches_selection_degraded": 12,
+   "degraded_pool_sizes": [
+    243,
+    1005,
+    1716,
+    1741,
+    1743,
+    1755,
+    1756,
+    1762,
+    1771,
+    1772,
+    1772,
+    1774
+   ],
+   "undegraded_pool_sizes": [],
+   "data_dir": "scale/data_25000",
+   "truth_dir": "scale/truth_25000"
+  },
+  {
+   "target_rows": 50000,
+   "rows": 48566,
+   "batches": 12,
+   "mean_pool_size": 3133.9166666666665,
+   "max_pool_size": 3589,
+   "min_pool_size": 481,
+   "batches_selection_degraded": 12,
+   "degraded_pool_sizes": [
+    481,
+    1974,
+    3448,
+    3476,
+    3483,
+    3509,
+    3514,
+    3519,
+    3529,
+    3535,
+    3550,
+    3589
+   ],
+   "undegraded_pool_sizes": [],
+   "data_dir": "scale/data_50000",
+   "truth_dir": "scale/truth_50000"
   }
  ]
 }
