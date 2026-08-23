@@ -31,9 +31,9 @@ tie was wanted, which is exactly the elevated-partial-sum-equality signature
 
 So ties are a **consequence**, not a target:
 
-* every amount in the ledger is drawn from a coarse **price lattice** -- real
-  merchant SKUs cluster on price points, and ₹50 granularity is *more*
-  realistic than a continuous draw, not less;
+* every amount in the ledger is drawn from a **price lattice** -- real
+  merchant SKUs cluster on price points crossed with a quantity and a
+  shipping line, which is *more* realistic than a continuous draw, not less;
 * multi-closure then arises naturally at larger pools in **every** batch, with
   no per-batch conditioning and no local signature;
 * `k` is measured post-hoc by `closure.py` and recorded. Ambiguity is
@@ -94,20 +94,59 @@ __all__ = ["LedgerSpec", "Ledger", "build_ledger", "PRICE_LATTICE",
 def _lattice() -> tuple[int, ...]:
     """Price points in paise. A merchant sells SKUs, not uniform random reals.
 
-    Deliberately coarse and deliberately not conditioned on anything: ₹50
-    steps in the mass of the distribution, a few psychological price points,
-    and a long tail of larger tickets. Subset-sum collisions arise from this
-    at any pool size, everywhere, for a reason a merchant would recognise.
+    Deliberately a lattice and deliberately not conditioned on anything: base
+    price points at 50-rupee steps, psychological price points, and larger
+    tickets -- crossed with a small quantity multiplier and an optional
+    shipping line, because an order is line items rather than a single SKU.
+
+    ## Why the granularity is a calibrated parameter, and what it was
+    ## calibrated against
+
+    The first draft used the 145 base points alone. Measured on 262 payments
+    that gave 114 distinct amounts and 66 duplicated CREDIT values, and
+    duplicate credits are swap-equivalent inside a batch, so closure counts
+    exploded: at pool ~20, **11 of 12 credits had multiple closing subsets and
+    7 of 12 exceeded 500**. That corpus sits entirely ABOVE the hard regime,
+    which is the mirror image of the frozen set's flaw of sitting entirely
+    below it, and it collapses axis A -- every pool size looks the same.
+
+    So the lattice is calibrated to make axis A **discriminate**, against
+    measured closure counts, **before any resolver exists**. Nothing about
+    resolver performance is observable at the time it is picked, which is the
+    same ordering discipline `phi` and the seeds are held to, and it is
+    recorded here rather than adjusted quietly.
+
+    What is NOT done, and is the whole point of D5: no per-batch conditioning,
+    no rejection sampling against a target, no amount chosen to make a sum
+    work. The distribution is global, and whatever closure counts fall out of
+    it are measured and reported.
     """
-    points: list[int] = []
-    points += [rupees * 100 for rupees in range(250, 5_001, 50)]
-    points += [rupees * 100 for rupees in (299, 499, 799, 999, 1_299, 1_499,
-                                           1_999, 2_499, 2_999, 4_999)]
-    points += [rupees * 100 for rupees in range(6_000, 25_001, 500)]
-    return tuple(sorted(set(points)))
+    base: list[int] = []
+    base += [rupees * 100 for rupees in range(250, 5_001, 50)]
+    base += [rupees * 100 for rupees in (299, 499, 799, 999, 1_299, 1_499,
+                                         1_999, 2_499, 2_999, 4_999)]
+    base += [rupees * 100 for rupees in range(6_000, 25_001, 500)]
+    points: set[int] = set()
+    for price in base:
+        for quantity in (1, 2, 3, 4):
+            for shipping in (0, 4_900, 9_900, 14_900):
+                points.add(price * quantity + shipping)
+    return tuple(sorted(points))
 
 
 PRICE_LATTICE = _lattice()
+
+def _draw_amount(rng: random.Random) -> int:
+    """Draw from the lattice with a realistic long tail.
+
+    Small tickets dominate an Indian retail book; large ones are rare and are
+    what make a batch's arithmetic interesting. Weighting by position rather
+    than sampling uniformly keeps that shape without leaving the lattice.
+    """
+    if rng.random() < 0.72:
+        return rng.choice(PRICE_LATTICE[:len(PRICE_LATTICE) // 2])
+    return rng.choice(PRICE_LATTICE[len(PRICE_LATTICE) // 2:])
+
 
 BANKS = ["ALLA", "CBIN", "CNRB", "CSBK", "DCBL", "BARB_R", "DEUT", "UTIB",
          "ICIC", "SBIN"]
@@ -287,7 +326,7 @@ def build_ledger(rng: random.Random, mk, spec: LedgerSpec) -> Ledger:
         order_no += 1
         method = _pick_method(rng)
         network, issuer, card_type, _bank, _wallet = _instrument(rng, method)
-        amount = rng.choice(PRICE_LATTICE)
+        amount = _draw_amount(rng)
         captured = role != "failed"
         # `tax: 0` shape of Razorpay's published recon sample -- the row on
         # which the two candidate fee identities are indistinguishable.

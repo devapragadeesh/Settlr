@@ -221,6 +221,12 @@ class CorpusBatch(Batch):
 
     selection_fallback: str | None = None
     sampler: str = "exact"
+    #: The exact eligible pool the rule was applied to, as (row_id, credit).
+    #: The frozen `Batch` records only `pool_size`, which is not enough to
+    #: rebuild the pool a closure register must enumerate over -- and a
+    #: register built over a RECONSTRUCTED pool measures the reconstruction,
+    #: not the truth.
+    pool_ids: tuple[str, ...] = ()
 
 
 def simulate(
@@ -309,7 +315,15 @@ def simulate(
 
         degraded = len(pool) > config.max_pool
         fallback = None
-        if degraded:
+        if degraded and config.selection_rule == "max_under_cap":
+            # SAME RULE, different algorithm. Degrading to FIFO here would
+            # make every large-pool dataset silently a FIFO dataset, moving
+            # axis A and axis C together. See max_subsets_under_cap_cpsat.
+            def select(items, cap, tie_limit=config.tie_limit):
+                return max_subsets_under_cap_cpsat(
+                    items, cap, tie_limit, seed=config.rng_seed)
+            sampler, fallback = "cpsat_exact", "meet_in_the_middle_intractable"
+        elif degraded:
             select, sampler = fifo_under_cap, "fifo_degraded"
         elif config.selection_rule == "random_valid":
             def select(items, cap, tie_limit=config.tie_limit):
@@ -364,7 +378,8 @@ def simulate(
             tying_decompositions=[tuple(w) for w in winners],
             tying_decompositions_truncated=truncated,
             selection_degraded=degraded, pool_size=len(pool),
-            selection_fallback=fallback, sampler=sampler))
+            selection_fallback=fallback, sampler=sampler,
+            pool_ids=tuple(row_id for row_id, _value in pool)))
 
     unsettled_reason: dict[str, str] = {}
     horizon = max(config.batch_times)
@@ -394,3 +409,93 @@ def simulate(
     return SimulationResult(batches=batches, settled_in=settled_in,
                             unsettled_reason=unsettled_reason,
                             netted_out=netted_out)
+
+
+# --------------------------------------------------------------------------
+# max_under_cap at pool sizes meet-in-the-middle cannot reach
+# --------------------------------------------------------------------------
+
+
+def max_subsets_under_cap_cpsat(
+    items: Sequence[tuple[str, int]], cap: int, tie_limit: int = 64, *,
+    time_budget: float = 20.0, seed: int = 0,
+) -> tuple[int, list[tuple[str, ...]], bool]:
+    """Reading (B) -- maximal subset under a cap -- solved by CP-SAT.
+
+    ## Why this exists
+
+    `engine/simulator.max_subsets_under_cap` is meet-in-the-middle, which
+    materialises 2**(n/2) subsets per half. `SETTLEMENT_SPEC.md` §1.5 states
+    the boundary plainly: *"40 is ~1M per half and effectively hangs"*. At
+    pool 60 it is 2**30 per half and it does not finish.
+
+    The spec's own answer above `max_pool` is to degrade to FIFO and record the
+    degradation. That is honest, and applied to axis A it would be a
+    **confound**: every dataset at pool 40 and 60 would silently become a FIFO
+    dataset, so axis A and axis C would move together and no axis-A result at
+    the interesting pool sizes would be attributable to pool size.
+
+    So this is the SAME RULE by a different method -- maximise `Σcredit(S)`
+    subject to `Σcredit(S) ≤ cap`, then enumerate every subset achieving that
+    optimum -- not a different reading. It is a change of algorithm, and
+    `corpus/tests/test_conformance.py` asserts it returns exactly what
+    meet-in-the-middle returns wherever meet-in-the-middle can be run.
+
+    Truncation is reported the same way: more than `tie_limit` tying subsets
+    makes the register a SAMPLE and the batch MORE ambiguous, not less.
+    """
+    from ortools.sat.python import cp_model
+
+    ordered = sorted(items, key=lambda kv: kv[0])
+    if not ordered or cap <= 0:
+        return 0, [()], False
+
+    def model_with(target: int | None):
+        model = cp_model.CpModel()
+        variables = [model.NewBoolVar(name) for name, _value in ordered]
+        total = sum(value * var for (_name, value), var
+                    in zip(ordered, variables))
+        model.Add(total <= cap)
+        if target is None:
+            model.Maximize(total)
+        else:
+            model.Add(total == target)
+        return model, variables
+
+    model, _variables = model_with(None)
+    solver = cp_model.CpSolver()
+    solver.parameters.num_workers = 1
+    solver.parameters.random_seed = seed
+    solver.parameters.max_time_in_seconds = time_budget
+    status = solver.Solve(model)
+    if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return 0, [()], False
+    best = int(solver.ObjectiveValue())
+
+    model, variables = model_with(best)
+
+    class Collector(cp_model.CpSolverSolutionCallback):
+        def __init__(self) -> None:
+            super().__init__()
+            self.subsets: list[tuple[str, ...]] = []
+
+        def on_solution_callback(self) -> None:
+            self.subsets.append(tuple(sorted(
+                name for (name, _value), var in zip(ordered, variables)
+                if self.Value(var))))
+            if len(self.subsets) >= tie_limit:
+                self.StopSearch()
+
+    collector = Collector()
+    enumerator = cp_model.CpSolver()
+    enumerator.parameters.enumerate_all_solutions = True
+    enumerator.parameters.num_workers = 1
+    enumerator.parameters.random_seed = seed
+    enumerator.parameters.max_time_in_seconds = time_budget
+    enumerator.Solve(model, collector)
+
+    winners = sorted(collector.subsets) or [()]
+    return best, winners, len(collector.subsets) >= tie_limit
+
+
+SELECTION_RULES["max_under_cap_cpsat"] = max_subsets_under_cap_cpsat

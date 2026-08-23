@@ -143,3 +143,56 @@ def test_frozen_simulator_derives_its_utr_and_this_test_proves_it():
     assert result.batches
     assert all(b.utr == f"{b.formed_at}{b.settlement_id[-6:]}"
                for b in result.batches)
+
+
+# --------------------------------------------------------------------------
+# the CP-SAT selection rule must BE reading (B), not merely resemble it
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("seed", range(40))
+def test_cpsat_max_under_cap_equals_meet_in_the_middle(seed):
+    """Same rule, different algorithm -- asserted wherever both can run.
+
+    `max_subsets_under_cap_cpsat` exists because meet-in-the-middle is
+    2**(n/2) per half and does not finish at pool 60 (SETTLEMENT_SPEC.md 1.5).
+    Swapping the algorithm is only legitimate if it computes the same thing,
+    and "it should" is not evidence. Below the boundary both are runnable, so
+    equality is asserted directly: the same optimum AND the same complete set
+    of tying subsets.
+    """
+    from engine.simulator import max_subsets_under_cap
+    from corpus.generator.sim import max_subsets_under_cap_cpsat
+
+    rng = random.Random(seed)
+    items = [(f"row_{i:03d}", rng.randrange(1000, 400_000))
+             for i in range(rng.randint(3, 16))]
+    cap = rng.randrange(int(sum(v for _n, v in items) * 0.3),
+                        int(sum(v for _n, v in items) * 0.95) + 2)
+
+    best_a, winners_a, truncated_a = max_subsets_under_cap(items, cap)
+    best_b, winners_b, truncated_b = max_subsets_under_cap_cpsat(items, cap)
+
+    assert best_a == best_b, "the two methods disagree on the maximum"
+    if not truncated_a and not truncated_b:
+        assert sorted(winners_a) == sorted(winners_b), (
+            "same optimum, different tie sets -- the register would differ")
+
+
+def test_cpsat_rule_is_recorded_when_it_is_used():
+    """A batch solved by the swapped algorithm must SAY so.
+
+    Silently swapping the method would misrepresent which batches were solved
+    by which, which is the failure `SETTLEMENT_SPEC.md` 1.5 calls out about
+    degradation: raising pretends the case does not arise, and silence
+    misrepresents. Both are worse than saying so.
+    """
+    payments, refunds, adjustments, times = frozen_ledger(FROZEN_SEED)
+    result = corpus_simulate(
+        payments, refunds, adjustments,
+        CorpusConfig(batch_times=times, max_pool=4))   # force the boundary
+    degraded = [b for b in result.batches if b.selection_degraded]
+    assert degraded, "max_pool=4 should push every real batch over the boundary"
+    assert all(b.sampler == "cpsat_exact" for b in degraded)
+    assert all(b.selection_fallback == "meet_in_the_middle_intractable"
+               for b in degraded)

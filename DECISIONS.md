@@ -585,3 +585,378 @@ That is a two-pass or event-sourced formulation, not a new stage bolted to the
 end of a cascade — which is why it is a design change and not a patch, and why
 doing it under time pressure in the phase that discovered the problem would be
 the wrong order of operations.
+
+---
+
+## 20. The resolver contract is written and committed before the corpus exists
+
+**Decision.** `resolver_contract/RESOLVER_CONTRACT.md` and `types.py` are
+interface and semantics only — no algorithm, no solver, no matching logic —
+and are committed in their own commit, before any corpus dataset is generated.
+`git log` shows the ordering.
+
+**Why the ordering is the point.** A corpus built before the contract gets
+shaped to whatever the implementation happens to do; a contract written after
+the corpus gets shaped to whatever the corpus happens to contain. Writing the
+contract first is what stops the benchmark measuring its own author's
+assumptions. This is the same argument §17 makes about the held-out seed, and
+it is verifiable the same way.
+
+**Rejected: define the outcomes as part of building the resolver.** Cheaper and
+the normal order of work. It also means the vocabulary is chosen by whoever
+knows what their code can already produce, which is precisely how
+`Determinate` came to mean "unique among subsets maximising applied debits"
+while being read as "this is the answer."
+
+**Rejected: a confidence score in [0,1].** Makes every wrong answer a
+threshold-tuning exercise and makes the KIND of claim invisible — 0.9 cannot
+distinguish "two independent parties agree" from "one party asserted it and
+the arithmetic is consistent with itself." A score can live inside an outcome;
+it cannot replace one.
+
+**Rejected: keep `Determinate` / `Ambiguous` / `Unresolved`.** They are a
+taxonomy of the solver's epistemic state. They have no vocabulary for *the
+record being wrong* — the most valuable thing a reconciliation engine can say —
+and none for the difference between corroborated and arithmetically unique.
+
+---
+
+## 21. Independence is counted over PARTIES, and evidence declares what it attests to
+
+**Decision.** `Evidence` carries `derived_from` (which source systems its
+content came from) and a FIXED `attests_to` from a table the resolver cannot
+override: `COMPOSITION`, `EXISTENCE`, `CONSEQUENCE`, `ROW_EXISTENCE`.
+`SOURCE_PARTY` collapses source systems to parties, and only parties count.
+
+**The measurement that forced it.** On the frozen set
+`settlement_utr == str(settled_at) + settlement_id[-6:]` on 11 of 11 batches
+and the narration embeds it on 9 of 12 lines. The settlement id and the bank
+UTR look like two sources and are one. A rule counting *evidence kinds* would
+have called that corroboration.
+
+**And existence is not composition.** A bank reference says ₹99,329.23 arrived
+on a date under a reference. It says nothing about which of 21 eligible rows
+composed it. **A bank knows what it paid; it never knows what it paid *for*.**
+Letting existence evidence corroborate a composition claim certifies a
+composition on evidence that cannot bear on it. Same one level down for ERP: an
+`order_id` proves a row is a real sale and carries zero batch-membership
+information, because no ERP file contains a settlement reference.
+
+**So `Verified` claims something weaker, stated precisely.** Not "the
+composition is proven" — no party outside the PSP ever watches a batch form, so
+that outcome could never occur. It claims: *one party made a composition claim,
+that claim entailed a falsifiable prediction about an independent party's
+records, and the prediction held.* It could have failed, and
+`AttestationDiscrepancy` is what happens when it does.
+
+**Rejected: require independent witness of composition.** Correct in principle,
+empty in practice — every dataset would score zero `Verified`. Naming the limit
+beats defining an unreachable ideal.
+
+**Rejected: let the resolver declare what its evidence attests to.** Then the
+oracle checks the resolver's rule against the resolver's own self-report, which
+is a tautology. The resolver declares only `derived_from`, and §7 of the
+contract has the oracle validate that against the corpus provenance graph.
+
+**Consequence, accepted and measured rather than hidden:** corroboration is
+only as strong as the prediction was discriminating. So
+`Verified.rival_closure_count` is mandatory — the number of subsets closing to
+the same amount under no objective — and `rival_closure_count = 0` is rejected
+at construction because 0 means it was never measured. Decisiveness is
+reported, not required: requiring it would make `Verified` unreachable on
+exactly the large pools the corpus exists to explore, converting an honest
+weakness into a hidden abstention.
+
+---
+
+## 22. `Reconstructed` requires cross-line exclusivity, not merely unique closure
+
+**Decision.** An unattested reconstruction is only representable when the
+subset closes uniquely under no objective **and** closes no other unexplained
+credit in the window.
+
+**Why uniqueness alone is not enough, measured.** At all three bank lines that
+produced the 50 wrong rows, the pool admitted **exactly one** closing subset —
+`OPTIMAL`, untruncated, no tie to miss (`investigation/DEFECT_REPORT.md` §1).
+Per-credit uniqueness held perfectly and the answer was still wrong, because
+those rows were the true composition of a *later* credit. **Uniqueness is a
+per-credit predicate answering a cross-credit question.**
+
+**Rejected: `Reconstructed` on unique closure alone.** This is remediation
+option 5 in §6 of the defect report, already costed: 67.00% on the primary set
+and 40.57% on held-out **with all 50 rows still wrong**. Adopting it would have
+shipped the known failure with a warrant attached, making it look *more*
+credible.
+
+**Disclosed limit.** Cross-line exclusivity is necessary, not sufficient — a
+credit that has not posted yet cannot be excluded against. §2 records that the
+global formulation returned UNKNOWN at 60s on 1,347 booleans, so satisfying
+this cheaply is open work. Named rather than discovered later.
+
+---
+
+## 23. Abstention is gated, on a subpopulation the corpus can prove is determined
+
+**Decision.** `DeterminedInstance` = unique closure under a complete
+objective-free enumeration, attestation present, attestation correct. On those,
+`Unresolved` and `Ambiguous` are **failures**, gated at zero.
+
+**The hole it closes.** Every other hard guarantee in the contract is a
+soundness guarantee, and every soundness guarantee is satisfied by a resolver
+that returns `Unresolved` to everything: no wrong `Verified`, no uncorroborated
+warrant, no ambiguity missing its truth, no unwarranted assignment — all zero,
+all vacuous. Worse, enumeration truncates first on the biggest pools, so **the
+most adversarial cells of the corpus would produce the cleanest numbers in the
+report.** A contract with only soundness gates is a certificate of abstention.
+
+`DeterminedInstance.__post_init__` refuses construction from a capped
+enumeration, so the subpopulation cannot be quietly widened to flatter a
+resolver.
+
+**Rejected: gate on overall coverage or match rate.** A coverage gate rewards
+guessing — which is how a 1.000 precision that the defect report calls "a
+property of the dataset and the tie-breaker" got reported as an engine
+property. Gate soundness broadly, coverage **narrowly**. Both are needed;
+neither is sufficient.
+
+**Rejected: free-text `Unresolved` reasons.** They aggregate to nothing.
+`no_subset_closes` and `enumeration_truncated` are different findings and the
+second is the loophole; an enum forces both to be counted.
+
+---
+
+## 24. The bank becomes an independent source, enforced by a function signature
+
+**Decision.** `corpus/generator/bank.py` takes a `Payout` carrying an amount
+and an initiation timestamp and **nothing else** — no settlement id, no entity
+ids, no `Batch`. It mints its own reference on its own counter with its own
+gaps, posts on its own clock with a lag that crosses weekends, formats its own
+narration (sometimes without the reference), interleaves foreign credits and
+debits, and emits in its own order.
+
+**The guarantee is the signature; the tests corroborate it.** If a field is not
+on `Payout`, no bank-side artefact can encode it. Compare
+`engine/generator.build_bank_statement(rng, batches, ...)`, which receives
+`Batch` objects and writes `b.utr` into two columns.
+
+**Where the line is.** *A bank field may correlate with a ledger field through
+a modelled physical mechanism; it may not be computed from one.* Amount,
+approximate date and the remitter's name are permitted and enumerated. The
+amount **must** leak — it is the join evidence and the reason reconciliation is
+possible at all.
+
+**Rejected: hash the derived UTR (`sha256(settlement_id)[:12]`).** Still a
+total function of ledger state. A solver that thinks to hash wins for free, and
+a string-similarity test would pass while the leak persists. The fix has to be
+at the information source, not the encoding.
+
+**Rejected: keep the batch↔bank-line bijection and rely on the lag alone.**
+Line counts alone would still give a solver `n_bank_lines == n_settlements` and
+a near-perfect ordering prior. Foreign lines are cheap and remove both — and
+they add a question the frozen set cannot ask at all: *is this credit even
+ours?*
+
+**Correction to the received account, recorded because precision matters.**
+Measured: shuffling `engine/data/bank_statement.csv` changes the frozen
+cascade's output not at all — 196/12/9/3 either way — because
+`stage3_solver.run` re-sorts by `value_date`. "File order leaks" is **false**.
+The real defect is stronger: unique dates at zero lag mean date-sorting alone
+recovers the true settlement sequence, and a same-day collision is structurally
+impossible. Fixing file order would have fixed nothing.
+
+---
+
+## 25. Calibration by selection: ties are a consequence of a price lattice, never a target
+
+**Decision.** No row is ever minted to make arithmetic work. Every amount in
+the ledger is drawn from a **price lattice** — price points crossed with a
+quantity and a shipping line — so multi-closure arises everywhere as a
+consequence of the draw. Ambiguity is `planted: false` throughout the corpus,
+by construction. Every adjustment has a real cause: clawbacks tie to a
+dispute's amount, fee reversals to a computed overcharge.
+
+**The measurement.** The frozen minted debits are 1,200,573–3,295,351 paise
+while every organic adjustment is 3,195–39,197. **Perfect separation on the
+`amount` column alone**, before any description string is read. That is the
+third leak of this shape after `source_ref` and `notes.reason`, and it
+generalises: *any row minted to make arithmetic work will leak, in some
+coordinate, whether or not anyone anticipated which one.*
+
+**Rejected: rejection-sample amounts until a tie exists.** The obvious way to
+keep targets while dropping minted rows — and it is **D5 in a new coordinate**.
+Batch composition is determined by the rule given the ledger, so the only lever
+is the draw; conditioning the draw on a subset-sum coincidence localises a
+distributional signature in exactly the window where the tie was wanted. That
+is precisely what `corpus/leakage_audit.py` hunts, so the generator would have
+contained a step the audit is built to fail.
+
+**Rejected: keep minting but randomise the description strings.** Closes the
+string coordinate and leaves the amount coordinate wide open, which is the
+lesson of the frozen set restated rather than learned.
+
+**One parameter was calibrated after a measurement, and it is recorded rather
+than adjusted quietly.** The first lattice draft had 145 points for 262
+payments — 66 duplicated *credit* values, which are swap-equivalent inside a
+batch — and put the entire corpus **above** the hard regime: at pool ~20, 11 of
+12 credits had multiple closing subsets and 7 of 12 exceeded 500. That collapses
+axis A and is the mirror image of the frozen set's flaw. The lattice was
+widened against **measured closure counts, before any resolver existed**, so
+nothing about resolver performance was observable when it was picked — the same
+ordering discipline the seeds and φ are held to.
+
+---
+
+## 26. `corpus/generator/sim.py` re-implements the loop and imports every primitive
+
+**Decision.** Only the ~90-line batch-formation loop is re-implemented. The fee
+model, `ceil_div`, the MDR tables, `add_working_days`, both selection rules and
+every event dataclass are **imported** from the frozen `engine/simulator.py`.
+
+**Why a new file at all.** Two things the corpus needs sit inside frozen
+function bodies, not in rebindable module constants: `utr = f"{t}{sid[-6:]}"`
+and a two-entry `SELECTION_RULES`. The monkeypatch pattern
+`holdout/generate_holdout.py` uses cannot reach either.
+
+**Rejected: unfreeze and parameterise `simulator.py`.** Destroys the freeze,
+which is the strongest integrity property in the repo.
+`tests/test_holdout_freeze.py` derives its entire value from the on-disk
+generator being bit-identical to the one that produced the committed data; a
+backward-compatible parameterisation still changes the hash and reduces the
+claim to "trust me, the default path is unchanged."
+
+**Rejected: copy `simulator.py` into `corpus/` and edit it.** Duplicates ~260
+lines of fee and eligibility arithmetic that must never diverge, and gives a
+future spec fix two places to land. Importing the primitives means the
+arithmetic *cannot* drift; only the loop can, and the loop is under test.
+
+**The drift risk is closed by differential test, not by review.**
+`corpus/tests/test_conformance.py` asserts exact equality with the frozen
+simulator at the frozen configuration point, on the frozen ledger under both
+rules and on 25 seeded random ledgers — 29/29 passing. **The frozen
+configuration is therefore a corpus axis point**, and every other point is a
+controlled deviation from a verified baseline rather than an unanchored new
+artefact.
+
+---
+
+## 27. `random_valid` samples uniformly from a band, and the band is a stated assumption
+
+**Decision.** `S ~ Uniform{ S ⊆ E(t) : φ·available ≤ Σcredit(S) ≤ available }`,
+φ = 9/10, sampled exactly by a counting DP over achievable sums. One axis point
+runs at φ = 0.
+
+**Why a band.** `Σcredit(S) ≤ available` alone admits `S = ∅`: money would
+rarely settle, pools would grow without bound, and pool size would become an
+*outcome* rather than a controlled variable — confounding axis A with axis C.
+
+**Rejected: uniform over all feasible subsets.** By mass it concentrates near
+half the rows, draining about half the pool per batch. Same confound.
+
+**Rejected: shuffle the pool then FIFO-fill.** Simple and drains near-maximally,
+and rejected specifically: it is biased toward many-small-rows, so a solver
+preferring cardinality-maximal closing subsets systematically agrees with it.
+That is §4's premise sharing reintroduced through the back door.
+
+**Rejected: random tie-break inside `max_under_cap`.** Not a third rule — it is
+`max_under_cap` with a different tie-break, and it keeps the maximality
+objective the solver shares. It does not test what axis C exists to test.
+
+**Flagged.** At φ = 0.9 the rule still weakly shares "bigger is likelier" with
+any resolver preferring large closing subsets. φ is the knob trading economic
+realism against premise independence; it is recorded per dataset and was
+calibrated against measured mean pool size only.
+
+---
+
+## 28. Ground truth records `composition` and `closure` as two separate facts
+
+**Decision.** `composition` is the subset the generator selected — a fact about
+the generative process, exact at any pool size. `closure` is every subset
+closing to the payout under **no objective** — a fact about the reconstruction
+problem, capped at 500 with `recoverable ∈ {unique, not_unique, unknown,
+no_closure}` and `unknown` first-class.
+
+**Why the frozen key cannot express this.** It records
+`tying_decompositions` — subsets tying at the *maximum*. §2 of the defect
+report measured what that means: two primary credits had three closing subsets
+each and were recorded, and reported, as determinate. A register built with an
+objective can only ever confirm the objective.
+
+**Rejected: score against `composition` alone.** Rewards guessing where the
+answer is unrecoverable, which is exactly how a 1.000 precision the defect
+report calls a property of the dataset got reported as an engine property. Both
+fields exist, and a resolver returning a confident answer where
+`closure.count > 1` is **wrong even when it matches `composition`**, because it
+cannot have known.
+
+**Rejected: keep `tie_limit=64` plus a `truncated` boolean.** One boolean
+cannot distinguish 65 ties from 10⁷, and at pool 60 every batch is truncated so
+the flag carries no information at all.
+
+**Rejected: cap the corpus at pool 28 and drop A=40/60.** The safe choice, and
+rejected deliberately: closure uniqueness collapsing with pool size is the one
+variable already measured to be interesting, and dropping it would reproduce
+the frozen set's central flaw.
+
+---
+
+## 29. The leak audit gates on effect size and reports significance beside it
+
+**Decision.** A separator fails the build at precision ≥ 0.90 and recall ≥ 0.50.
+The hypergeometric p-value, Bonferroni-corrected **within family**, is reported
+as `certified` and does **not** gate. Classes too small to be certifiable are
+named UNDERPOWERED rather than reported clean.
+
+**The measurement that forced it.** `description == 'Settlement processing fee'`
+isolates frozen minted rows at precision 1.000, recall 0.500 — p = 8.79e-06
+against α = 3.79e-06 over 2,641 single-column hypotheses. It **misses
+significance by a factor of 2.3** and it is a leak anyone can exploit in ten
+seconds. A six-row class in a 240-row file cannot be certified by a
+thousands-of-hypotheses search; that is a statement about power, not about the
+rows being clean.
+
+**Rejected: gate on Bonferroni significance.** Would have passed the frozen set
+on D5 — the exact defect the audit exists to catch. The costs are asymmetric: a
+false alarm costs one regeneration, a missed leak costs the submission.
+
+**Rejected: a deny-list of known leaky tokens.** Four leaks were closed that way
+one at a time. The fifth will not be a token.
+
+**A fifth family the other four cannot express: class efficacy.** D7 is not a
+leak — it is a class that is perfectly hidden and simply does not do what it
+claims. A separator search cannot find it because there is nothing to find, so
+efficacy is asked as its own question, and the audit reproduces the frozen
+credit deltas (−8,711 / −3,670 / 0 / +11,732) unprompted.
+
+**Validation.** `--validate-frozen` must rediscover D4, D5, D6 and D7 without
+being told what to look for. It does. The D5 class is derived by driving the
+frozen generator as a library and diffing row ids across the planter calls —
+deriving it from the leak itself would assume the answer.
+
+---
+
+## 30. The corpus is a screening design, and the untested cells are named
+
+**Decision.** 14 datasets, not the full 5 × 4 × 3 = 60: a spine at the
+configuration closest to the frozen set, one factor moved at a time, and two
+interaction cells chosen for cause (`A40_B50_Cmax`, because the branch that
+produced the 50 wrong rows needs coverage < 100% *and* D1 needs a big pool;
+`A40_B100_Crandom`, because no objective can help at a pool size where
+non-uniqueness is measurable).
+
+**Rejected: the full grid.** Closure enumeration at pool 60 already dominates
+generation time, and 60 cells buy interaction terms nobody has a hypothesis
+about at the cost of the cells that test something specific.
+
+**Rejected: a single "hard" dataset.** One point cannot show a gradient, and
+the gradient is the finding — whether confidence tracks determinacy is not
+answerable at one pool size.
+
+**Named gaps, because silence reads as ignorance.** B × C is untested entirely.
+The GST leg is barely improved and **D9 stands** — all four axes are
+settlement-side, so any GST claim in a headline remains substantially unearned,
+and the fix is a fifth axis this corpus does not have. And there is **no
+wrong-bank-side class**: the corpus plants an attestation that is wrong but
+never a case where the two sources contradict and truth is on the *bank* side,
+so "two independent sources agree" is not tested at the one point where the
+direction of the disagreement matters. That is the most significant single gap.

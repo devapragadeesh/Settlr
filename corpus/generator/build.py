@@ -107,10 +107,15 @@ class AxisPoint:
 def _point(name, pool, coverage, rule, seed, **kwargs) -> AxisPoint:
     # arrival volume is the knob for pool size: pool ~ arrivals/day * cadence
     volume = {10: 130, 20: 250, 30: 370, 40: 490, 60: 730}[pool]
+    # max_pool stays at the FROZEN value of 28 for every axis point, so the
+    # meet-in-the-middle boundary sits in the same place everywhere and axis A
+    # crosses it rather than moving it. Above it, `max_under_cap` is solved by
+    # CP-SAT -- the same rule by a tractable method, asserted equal to
+    # meet-in-the-middle wherever both can run -- rather than degrading to
+    # FIFO, which would move axis A and axis C together.
     return AxisPoint(name=name, pool_target=pool,
                      attestation_coverage=Fraction(coverage),
-                     selection_rule=rule, seed=seed, payments=volume,
-                     max_pool=max(pool + 8, 28), **kwargs)
+                     selection_rule=rule, seed=seed, payments=volume, **kwargs)
 
 
 #: A SCREENING design, not the full 5x4x3 = 60 grid. A spine at the frozen
@@ -538,10 +543,25 @@ def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
     line_of_batch = {line.payout_index: line.line_index
                      for line in bank_file.truth if line.kind == "settlement"}
     for index, batch in enumerate(batches):
-        pool = _pool_at(rows, batch, batches, index, config)
+        # the EXACT pool the rule was applied to, recorded by the simulator,
+        # plus the debits that were pending. A register built over a
+        # RECONSTRUCTED pool measures the reconstruction, not the truth.
+        pool = [(row_id, rows_by_id[row_id]["credit"] - rows_by_id[row_id]["debit"])
+                for row_id in batch.pool_ids if row_id in rows_by_id]
+        pool += [(row_id, rows_by_id[row_id]["credit"] - rows_by_id[row_id]["debit"])
+                 for row_id in _pending_debits(rows, batch, batches, index)]
         register = enumerate_closing_subsets(pool, batch.payout,
                                              seed=point.seed)
         composition = tuple(sorted(batch.credit_ids + batch.debit_ids))
+        # O(1) and ALWAYS checkable, unlike membership of a capped register:
+        # does the true composition actually close? If this is ever False the
+        # generator is broken, and it is asserted rather than reported.
+        closes = sum(rows_by_id[r]["credit"] - rows_by_id[r]["debit"]
+                     for r in composition) == batch.payout
+        if not closes:
+            raise AssertionError(
+                f"{batch.settlement_id}: true composition does not close to "
+                f"the payout -- the generator is wrong, not the data")
         entry = {
             "settlement_id": batch.settlement_id,
             "bank_line_index": line_of_batch.get(index),
@@ -555,7 +575,14 @@ def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
             "composition": list(composition),
             # FACT ABOUT THE RECONSTRUCTION PROBLEM -- may be capped, says so
             "closure": register.to_json(),
-            "truth_in_closure": register.contains(composition),
+            # THREE-VALUED. "the truth is not in the register" and "the
+            # register stopped before it could look" are different statements,
+            # and only the first would be a defect.
+            "truth_in_closure": (register.contains(composition)
+                                 if register.complete
+                                 else ("yes" if register.contains(composition)
+                                       else "unknown_enumeration_capped")),
+            "composition_closes": closes,
         }
         batch_truth.append(entry)
         if (register.is_determined and batch.settlement_id in attested
@@ -581,6 +608,10 @@ def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
             "detail": wrong_attestation},
         "d04_unattested_settlements": {
             "planted": point.attestation_coverage < 1, "table": "recon",
+            "reason": "" if point.attestation_coverage < 1 else
+                      "attestation coverage is 100% at this axis point, so "
+                      "there is nothing unattested -- absent by design, not "
+                      "by failure",
             "members": sorted({row["entity_id"] for row in rows
                                if row["settlement_id"]
                                and row["settlement_id"] not in attested})},
@@ -702,6 +733,23 @@ PROVENANCE = {
 }
 
 
+def _pending_debits(rows, batch, batches, index):
+    """Debits pending at a batch: created by then, not settled earlier.
+
+    The simulator's `pool` is the eligible PAYMENTS only -- debits are applied,
+    not selected -- so a closure register over the pool alone could not
+    reproduce a payout that nets debits.
+    """
+    consumed: set[str] = set()
+    for earlier in batches[:index]:
+        consumed.update(earlier.credit_ids)
+        consumed.update(earlier.debit_ids)
+    return [row["entity_id"] for row in rows
+            if row["type"] in ("refund", "adjustment")
+            and row["entity_id"] not in consumed
+            and row["created_at"] <= batch.formed_at]
+
+
 def _pool_at(rows, batch, batches, index, config):
     """The eligible pool at a batch, as signed net contributions.
 
@@ -757,6 +805,7 @@ def _report(point, truth, bank_file, rows, erp, gst_rows) -> str:
     closure_states = Counter(b["closure"]["recoverable"]
                              for b in truth["batches"])
     types = Counter(row["type"] for row in rows)
+    truth_in = Counter(str(b["truth_in_closure"]) for b in truth["batches"])
     planted = truth["planted_classes"]
     not_planted = [(name, spec.get("reason", "")) for name, spec
                    in sorted(planted.items()) if not spec.get("planted")]
@@ -786,9 +835,10 @@ def _report(point, truth, bank_file, rows, erp, gst_rows) -> str:
         "every subset that closes, under no objective at all -- which is what",
         "makes D1 measurable rather than latent.", "",
         f"- {dict(closure_states)}",
-        f"- truth present in the closure register: "
-        f"{sum(1 for b in truth['batches'] if b['truth_in_closure'])}"
-        f"/{len(truth['batches'])}",
+        f"- true composition closes arithmetically: "
+        f"{sum(1 for b in truth['batches'] if b['composition_closes'])}"
+        f"/{len(truth['batches'])} (asserted at generation, not merely reported)",
+        f"- truth present in the closure register: {dict(truth_in)}",
         f"- **determined instances** (unique closure, complete enumeration, "
         f"attested, attestation correct): {len(truth['determined_instances'])}",
         "  These are the lines on which `Unresolved` is a DEFECT, gated at",
