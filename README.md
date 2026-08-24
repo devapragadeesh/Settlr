@@ -1,223 +1,268 @@
-# Razorpay AI Buildathon — Council Conclusion
+# Settlement Truth Engine
 
-**Decision: Track 04 — AI Finance Controller. Build the "Settlement Truth Engine."**
+Reconciles a payment ledger against a bank statement, an ERP order book and
+GSTR-2B, and — the part that matters — **says what it does not know.**
 
-A research council of six agents investigated the event, Razorpay's real product surface, and all five tracks. Every claim about an existing Razorpay feature below was then **verified against primary sources** (Razorpay docs, product pages, official GitHub). Verification status is marked throughout.
+A settlement batch is a *subset* of eligible payments, net of refunds and
+adjustments: Razorpay's own documentation states that "when settling
+transactions, we will only choose the ones that add up to your current live
+balance." So a bank credit of ₹99,329.23 does not identify which of the 21
+eligible ledger rows composed it. Often several different subsets close to the
+same amount. A reconciliation engine that always names one is guessing on most
+of them and cannot tell you which.
 
----
+This repository is two things:
 
-## 1. What this event actually is
+1. a **resolver** that assigns rows to bank credits only when it can state what
+   evidence supports the assignment, and declines with a reason otherwise;
+2. a **benchmark** that can tell whether any resolver — including this one — is
+   lying, built before the resolver and never tuned against it.
 
-Not a weekend team hackathon. It is a **student-only hiring funnel** for an "AI Builder Intern" role.
-
-| | |
-|---|---|
-| Role | AI Builder Intern — ₹75,000/month, 6 or 12 months |
-| Location | Bangalore, in-person, from September |
-| Eligibility | Enrolled students, graduating 2027–2029 |
-| Registration | Reported 5 September 2026 *(third-party sources only — not on the official page)* |
-| Process | Pick track → build → **public GitHub repo** → **5-min recorded video** → architecture walkthrough → panel interview |
-| Not included | No resume screen, no aptitude test, no group discussion |
-
-**Three consequences that drive everything else:**
-
-1. **The pitch is recorded, not live.** Demo craft is a production problem, not a nerves problem. There is no excuse for an unrehearsed failure moment.
-2. **You are cross-examined.** The architecture walkthrough plus panel interview means the repo must survive *"why did you choose this?"* from Razorpay engineers. Defensibility beats polish.
-3. **Downside risk dominates.** In a hackathon a broken demo costs a prize. Here one unjustifiable decision costs the offer.
-
-⚠️ **The application form is a 5-field lead capture** (email, name, college, grad year, September availability). It does **not** collect a repo or a track. So the build is gated later in the funnel — the September date is likely *registration*, not *submission*. **Confirm before compressing scope.**
+The second exists because the first version of this project reported **96.55%
+match rate at 1.000 precision** on its own dataset, and then produced **50
+confident wrong answers** the first time it saw data it had not been built
+against. Both numbers were true. Neither meant anything, because the dataset
+was structurally incapable of exposing the engine's defects. Everything here
+follows from taking that seriously.
 
 ---
 
-## 2. The verification pass — what Razorpay already ships
+## Run it
 
-This is the single most important input, because building something Razorpay already sells means demoing a competitor's product to its own team.
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 
-### ✅ VERIFIED — Razorpay Agent Studio exists, and ships 7 agents
-
-Source: `razorpay.com/agent-studio/`. **All seven are early access, not GA.**
-
-| Agent | What it does |
-|---|---|
-| Dispute Responder | Auto-responds to chargebacks with optimised evidence |
-| Subscription Recovery | Analyses failed subscription payments, smarter retries, nudges |
-| Abandoned Cart Conversion | Re-engages via WhatsApp/email with personalised offers |
-| RTO Shield | Detects high-risk COD orders using LLM address validation |
-| RTO Insights | Analyses RTO patterns across pincodes, products, customers |
-| Settlement Insights | **Sends a daily settlement summary via WhatsApp** |
-| Cashflow Forecaster | Predicts cash position 3–7 days ahead |
-
-**Treat this as a "do not build" list.** It covers the obvious idea in Tracks 01, 02 and 03.
-
-**But note the two finance agents are shallow.** "Settlement Insights" is a *WhatsApp summary*. "Cashflow Forecaster" is a *3–7 day notifier*. Neither reconciles anything. This is the gap.
-
-### ✅ VERIFIED — the subset-sum settlement behaviour (the key technical finding)
-
-Razorpay's settlement docs state **verbatim**:
-
-> "when settling transactions, we will only choose the ones that add up to your current live balance"
-
-With a worked example: three payments totalling ₹1000, a ₹100 refund drops live balance to ₹900, so only the payments summing to ₹900 settle — the rest rolls to the next slot.
-
-**This is the entire justification for the constraint solver.** A settlement batch is a *subset-sum* of eligible payments, not "everything from T-2." Naive 1:1 matching cannot represent this. Primary-source confirmed.
-
-### ✅ VERIFIED — the recon API schema
-
-`GET /v1/settlements/recon/combined?year=yyyy&month=mm` returns:
-
-```
-entity_id, type, debit, credit, amount, currency, fee, tax, on_hold, settled,
-created_at, settled_at, settlement_id, description, notes, payment_id,
-settlement_utr, order_id, order_receipt, method, card_network, card_issuer,
-card_type, dispute_id
+python3 run_all.py            # the whole comparison, ~N minutes
 ```
 
-Amounts in **paise**. Sample confirms `amount 100000, fee 2900, tax 0, credit 97100`.
+`run_all.py` runs three systems over every dataset and writes
+`corpus/THREE_SYSTEMS.md`. Nothing in this repo hand-writes a number into a
+markdown file; every figure below is produced by a script from a live run.
 
-### ✅ VERIFIED — Optimizer Single View Recon does NOT close the loop
+Individual pieces:
 
-It consolidates multi-gateway payments and settlements into one dashboard: status, UTR, settlement IDs, gateway fees, settlement↔payment mapping. Claims 20–40 hours/month saved.
-
-**It explicitly does not cover: GST/tax lines, ERP matching, accounting-software connectivity, or automated bank-statement matching.** Its one stated limitation is late authorisations. This directly confirms the white space.
-
-### ✅ VERIFIED — Razorpay MCP server, 47 tools, includes recon
-
-Includes `fetch_settlement_recon_details`, `fetch_all_settlements`, `create_instant_settlement`, plus `detect_stack` and `integrate_razorpay_checkout` codegen helpers. **Test-mode support is not documented — verify with a test key on day one.**
-
-### ✅ VERIFIED — Thirdwatch merged into Magic Checkout, and publishes no model metrics
-
-Confirmed verbatim: "Thirdwatch offerings have been merged with Razorpay Magic Checkout." Features include auto-disabling COD on risky orders and ML RTO probability.
-
-**No precision, recall, accuracy or false-positive metrics are published anywhere.** Only business outcomes: "40% more conversions" and "30% lesser RTOs." That gap is real — but see Track 02 below for why exploiting it is harder than it looks.
-
-### ✅ VERIFIED — Intelligent Retry Engine exists (beta)
-
-Configurable retry cadence and templates, smart retries timed on user context and bank availability, WhatsApp recovery links, smart routing on latency/downtime. **Introduced in beta at FTX 2026.** This occupies most of Track 03's mandate-retry space.
-
-### ⚠️ UNVERIFIED — treat with caution
-
-- **"Razorpay Recon" metrics** (200M txns/month, 80% productivity). The blog post is pure marketing: no sources named, no metrics, no scope. Does not specify what it connects to. **Do not cite.**
-- **Vulcan payments foundation model** — announced via press release, not independently confirmed here.
-- Bank narration templates and UTR formats — vendor blogs only. Design input, not stage claims.
-- The Sec 194-O → Sec 393(1) renumbering under the Income Tax Act 2025 — practitioner blogs only. Verify against the bare act before stating publicly.
+```bash
+pytest tests engine/tests corpus/tests resolver/tests -q   # the full suite
+python3 -m resolver.run --all                              # resolver only
+python3 corpus/triviality_check.py --all                   # is the task trivial?
+python3 corpus/leakage_audit.py --all                      # is the data leaking?
+```
 
 ---
 
-## 3. Every track, in simple words
+## The three systems
 
-### Track 01 — AI Growth & Agentic Commerce
+| system | what it does |
+|---|---|
+| **naive GROUP BY** | groups recon rows by `settlement_id`, nets credit − debit, matches the total to a bank credit. Fifteen lines. Trusts the PSP completely. |
+| **frozen cascade** | the previous engine: exact join → fuzzy → CP-SAT subset-sum under an objective → exception routing. No evidence model. Three known defects, unpatched, documented. |
+| **new resolver** | evidence-tiered. Assigns only with a warrant naming which parties the evidence came from, and reports the number of rival compositions that would have passed the same check. |
 
-**Why:** It's the frontier problem, and Razorpay is genuinely invested — live NPCI pilots, an official MCP server, partnerships with Anthropic and OpenAI. Their internals researcher ranked merchant-side agentic infrastructure as the **#1 white space** in the whole company. Highest ceiling on the board.
+The full per-dataset table, generated: **[`corpus/THREE_SYSTEMS.md`](corpus/THREE_SYSTEMS.md)**.
 
-**Why not:** It's the hype track, so most applicants will pick it. Razorpay's own MCP server makes the happy path *too* easy — hundreds of people will wire the same tool calls and ship the same conversational checkout. You'd compete directly against Agent Studio, built by the people interviewing you. And NPCI's UAP is still **pre-spec** — no published circular, no sandbox, no RBI approval — so your central claim is about a future you can't demonstrate.
-
-**Verdict:** Best idea in the track (a mandate broker bridging ACP/UCP checkout to UPI Reserve Pay) is genuinely unbuilt. But high variance, and you're arguing about the future instead of showing a working present.
-
-### Track 02 — AI Risk Manager
-
-**Why:** Least crowded. Razorpay *themselves* wrote that this track "surfaces the risk and ML minded builders the others miss" — that is the organisers admitting they under-recruit here. And they publish no model metrics at all, so a cost-calibrated decision layer is genuinely additive.
-
-**Why not:** **There is no public Indian RTO dataset.** So you generate your own — and in fraud detection, ground truth *is your own generative choice*. You plant the fraud, then detect it. That's circular: you're measuring how well your model learned your simulator, and a sharp judge kills it in one question. You'd also be building next to Thirdwatch, RTO Shield *and* Vulcan.
-
-**Verdict:** Real opportunity, permanently capped by the data problem.
-
-### Track 03 — AI Revenue Recovery
-
-**Why:** Big, real, quantified pain. UPI Autopay fails at 8–15% vs 2–3% for card mandates. A legally compliant retry sequencer is a genuinely interesting *constrained optimisation* problem — NPCI allows max 1 original + 3 retries per mandate sequence, non-peak hours only, with 24h pre-debit notice.
-
-**Why not:** Agent Studio ships Subscription Recovery *and* Abandoned Cart Conversion, and the Intelligent Retry Engine is in beta. Most of this track is already product. Checkout drop-off recovery is the single most saturated direction in the entire event.
-
-**Verdict:** One live corner remains — **B2B receivables**, which Agent Studio doesn't touch, with a sharp hook: Section 43B(h) means overdue MSME payables are disallowed as a tax deduction until paid, so an agent can quantify the *buyer's tax exposure* as leverage. Strong, but narrower than it first appears.
-
-### Track 04 — AI Finance Controller ⭐
-
-**Why:** Least crowded — reconciliation is invisible to students and unglamorous. The bar (50+ records, match rate, honest exception list) is **bounded, gradeable, and closed-form** — the only track where you can be *certain* you cleared it, because you control the data. The evidence *is* the product: the exception list is your graceful-failure moment, for free. And Razorpay's own framing for this track — *"verification capacity, not generation speed, is the bottleneck"* — means you'd be building a verification system for a company that just said verification is their bottleneck.
-
-Crucially, **synthetic data is legitimate here in a way it isn't for fraud.** Ground truth is an *arithmetic identity* (`credit = amount − fee − tax`, and `Σcredit − Σdebit == bank_amount`). The answer key is derivable and independently checkable. A judge can verify your matcher without trusting your generator. That asymmetry is the deciding argument.
-
-**Why not:** Not virgin territory — Razorpay Recon exists (though its marketing is unverifiable) and Optimizer has Single View Recon. Lower ceiling than Track 01: it will not make anyone gasp. You must resist the phrase "AI reconciliation," which is crowded globally (Basis, Numeric, Ramp, HighRadius).
-
-**Verdict:** Highest floor. The wedge is specific and verified — the constraint solver plus the India tax leg plus evidence-backed exception *resolution*, none of which Single View Recon covers.
-
-### Track 05 — Open Track
-
-**Why:** Freedom to build the thing you understand best.
-
-**Why not:** "Open doesn't mean easier" — same bar, but you also carry the burden of proving the problem is real, with none of the scaffolding a track gives you. Likely to attract pet projects, so the shallow end is crowded even if the deep end isn't. For a hiring funnel where alignment with the company matters, choosing a track signals you engaged with their actual business.
-
-**Verdict:** Only worth it with a problem you have unfair personal insight into.
+<!-- THREE-SYSTEM-SUMMARY -->
 
 ---
 
-## 4. The build: Settlement Truth Engine
+## What the resolver actually claims
 
-Closes one loop end to end: **PG payments → settlement batches → bank credits → ERP orders → GST/tax lines**, for one month.
+The outcome vocabulary is fixed by
+[`resolver_contract/RESOLVER_CONTRACT.md`](resolver_contract/RESOLVER_CONTRACT.md),
+which was committed **before any benchmark data existed** — the ordering is
+visible in `git log` and is the point.
 
-### Architecture — a 4-stage cascade
-
-| Stage | Method | Target |
+| outcome | what it means | may consume rows? |
 |---|---|---|
-| 1. Exact join | `payment_id` / `order_id` / `settlement_id` / UTR | ~75% |
-| 2. Fuzzy blocking | ±3d window, ±₹1 or 0.5% tolerance, rapidfuzz on narration | ~88% cumulative |
-| 3. **Constraint solver** | Hungarian for 1:1; **ILP/subset-sum** for netting | ~94–97% cumulative |
-| 4. Exception routing | LLM emits `{type, evidence, proposed_JE, confidence, owner}` | 3–6% honest residual |
+| `Verified` | one party claimed a composition; that claim entailed a falsifiable prediction about an independent party's records; the prediction was checked and held | **yes, only this** |
+| `AttestationDiscrepancy` | the sources disagree. Carries **no composition** — a discrepancy is a finding about the record, not a claim about which rows settled | no |
+| `Reconstructed` | unattested, exactly one subset closes under **no objective filter**, and that subset closes no other unexplained credit in the window. Strictly weaker than `Verified` | no |
+| `Ambiguous` | two or more compositions explain the credit. Carries the whole candidate set and its size. Has no `decomposition` attribute and never will | no |
+| `Unresolved` | insufficient evidence, with a reason from an enum — `no_subset_closes` and `enumeration_truncated` are different findings | no |
+| `CorrectlyUnmatched` | these rows correctly have no bank credit, for a *derived* reason | n/a |
 
-**The governing rule: LLM-as-explainer and LLM-as-router — never LLM-as-matcher.** Matching is arithmetic. A model asked to match rows hallucinates, is non-deterministic across runs, and cannot show a proof. Stage 3 is the differentiator: `Σcredit − Σdebit over rows assigned to batch X == bank_amount(UTR) ± tolerance`.
+`Verified` is not "the composition is proven." No party outside the PSP ever
+witnesses which rows formed a batch, so an outcome demanding independent
+witness of composition could never occur. `Verified` claims the weaker thing
+precisely, and every `Verified` carries `rival_closure_count` — how many other
+subsets would have satisfied the same check — so a weakly corroborated answer
+cannot be reported as if it were a strong one.
 
-### What can actually be implemented today
+Three defects of the previous engine are **unrepresentable** in this vocabulary
+rather than merely discouraged:
 
-Everything below is confirmed available:
-
-- ✅ **Recon data in the exact production schema** — via `fetch_settlement_recon_details` on the official MCP server, or `GET /v1/settlements/recon/combined` directly
-- ✅ **Test-mode orders, payments, refunds, settlements** — all callable with `rzp_test_*` keys
-- ✅ **The solver** — `scipy.optimize.linear_sum_assignment` for 1:1; PuLP or OR-Tools for subset-sum netting. Pure Python, no infrastructure
-- ✅ **Synthetic generator** — 240 rows / 12 batches, seeded and reproducible, emitting the verified schema with 15 classes of planted hard cases and a hidden ground-truth key
-- ⚠️ **MCP test-mode support is undocumented** — validate on day one; fall back to the local Docker MCP or direct REST if the hosted server rejects test keys
-
-### The metrics line
-
-```
-Records: 240 | Auto-matched: 229 (95.4%) | Precision on auto-matches: 100% (0 false matches)
-Exceptions: 11 (4.6%), fully itemized with cause | Value recovered: ₹X fee overcharge + ₹Y unclaimed ITC
-Runtime: Ns | Deterministic: identical output across 3 runs
-```
-
-Report **precision alongside recall** — a matcher that matches everything scores 100% recall and is worthless. Showing you know that *is* the bar. Claim ~95% with an honest exception list; a claimed 100% reads as a bug or a lie.
+- an objective may only *rank* an already-complete candidate set, never filter
+  one before uniqueness is tested (the old engine enumerated only subsets tying
+  at its objective's optimum, so rival subsets were never constructed and no
+  truncation flag could fire — two bank credits had three closing subsets each
+  and were reported determinate);
+- "rows common to every candidate" is an ambiguity *property* that is reported
+  and never assigned (the old engine assigned from it, uncorroborated, 45 times);
+- only `Verified` consumes pool rows, so a contested line cannot starve the
+  next one (one reversal, two damaged bank lines, 50 misplaced rows).
 
 ---
 
-## 5. The council — 8 agents in `.claude/agents/`
+## What is measured
 
-| Agent | Owns |
+An accounting, not a rate. `corpus/oracle.py` scores
+`(resolver_output, ground_truth)` and shares no code with any resolver.
+
+**Gated at zero:**
+
+| gate | |
 |---|---|
-| `recon-architect` | Decisions **with rejected alternatives**; guards the cascade |
-| `synthetic-data-forge` | The dataset, 14 hard-case classes, hidden ground truth |
-| `matching-engine` | The 4-stage cascade and the ILP solver |
-| `eval-harness` | Precision *alongside* recall, held-out discipline, determinism |
-| `compliance-counsel` | Tiers every tax claim: verified / secondary / do-not-state |
-| `repo-craftsman` | README, `AGENTS.md`, tests, CI |
-| `pitch-director` | The 4:45 video, failure moment at ~3:30 |
-| `red-team-panelist` | Adversarial mock panel; would-hire / would-not-hire |
+| G1 | `Verified` assignments that are wrong |
+| G2 | `Verified` whose warrant lacks two independent parties |
+| G3 | candidate sets that do not contain the truth |
+| G4 | rows assigned through a path carrying no warrant |
+| G6 | evidence whose declared provenance the corpus contradicts |
+| **G7** | **abstention on a determined instance** (attested) |
+| **G8** | **abstention on a reconstructible instance** (unattested) |
 
-Four of eight exist purely to keep you honest. That weighting is deliberate: every track's bar asks the same thing in five dialects — **evidence that you know how to know whether your system works.**
+G1–G6 are soundness gates and **every one of them is passed by a resolver that
+answers nothing.** Worse, enumeration truncates first on the largest pools, so
+the most adversarial data would produce the cleanest report. G7 and G8 are the
+counterweight: they measure silence on instances the benchmark can *prove* have
+exactly one answer. (G5 was withdrawn — see limitations.)
 
-`repo-craftsman` is built against Razorpay's own published "Slash" engineering standard: **Context, Testing, CI/CD**, scoped auditable permissions, measured metrics. They published their own answer key.
+**Measured and reported, never gated:** the six-way outcome accounting; mean
+**and max candidate set size**, always and unprompted, because without them
+"declined fewer lines" and "enumerated more until the truth was in the set" are
+indistinguishable and only the first is skill; `Unresolved` split by reason;
+`AttestationDiscrepancy` detected against planted; and the rank-1 hit rate in
+excess of chance, which measures whether the resolver's preferences agree with
+the data generator's rule more often than luck.
+
+**Deliberately not reported: "balance-identity violations."** Every candidate
+satisfies `sum == target` by construction, so the residual is identically zero
+and the check cannot fail. It was a headline metric in two earlier reports here.
+Publishing an unfalsifiable number as evidence is the error this whole
+repository exists to stop doing.
 
 ---
 
-## 6. Anti-patterns that lose this format
+## The benchmark
 
-1. **Breadth as insurance** — four half-loops instead of one closed loop. A closed loop is checkable; breadth isn't.
-2. **Cherry-picked results** — the track bar names this explicitly.
-3. **Evaluating on data you tuned against** — trivially exposed in Q&A.
-4. **Hiding the exception list** — it's the asset. Suppressing it reads as dishonesty or blindness.
-5. **Framework-shaped answers** — "I used LangGraph" is not a reason. Have a rejected-alternatives paragraph.
-6. **Unbounded agent authority** — contradicts their own published standard.
-7. **A repo the reviewer can't run** — friction converts to rejection.
-8. **Repo/video mismatch** — the most damaging thing a panel can discover.
+`corpus/` is a family of seeded, deterministic datasets varying three axes:
+pool size (10 → 60 rows eligible per batch), attestation coverage (100% → 0% →
+absent), and the generator's own selection rule. Each ships its own isolated
+answer key, its own hashes and its own generation report.
+
+The measurement that motivates the whole design — closure uniqueness collapses
+as the pool grows, counted with **no objective**:
+
+| mean pool | bank credits with exactly one closing subset |
+|---:|---:|
+| 10 | 12/12 |
+| 19 | 11/12 |
+| 29 | 10/12 |
+| 35 | 5/12 |
+| 52 | 3/12 |
+
+Above pool ~30 most bank credits have several arithmetically valid
+explanations. Any engine that reports one answer per credit at those sizes is
+reporting its tie-breaker, not its evidence.
+
+Data quality is not asserted, it is searched for.
+`corpus/leakage_audit.py` hunts for predicates that shortcut the task and is
+validated by re-discovering four known defects in the frozen dataset unaided.
+It rejected this corpus four times across five regenerations. `corpus/
+triviality_check.py` asks the complementary question — *does a trivial
+predicate solve the task outright?* — and its answer is permanent output, not
+a footnote. See limitations, immediately below, for why that check exists.
 
 ---
 
-## 7. Switch condition
+## Limitations
 
-Revisit this decision **if NPCI publishes the UAP spec or opens a sandbox before you start building.** That converts the Track 01 mandate broker from visionary-maybe to verifiable-now, and it becomes the better project outright. Worth one check.
+Stated here rather than left for a reader to find. Every one is measured.
+
+**A fifteen-line `GROUP BY` scores 168/168 on the original 14 datasets.**
+`settlement_id` is populated on every settled row and the original corpus never
+plants a false one, so a resolver that simply trusts the PSP is perfectly
+calibrated there and the benchmark cannot distinguish it from a sound one. Axis
+A does not measure difficulty on those datasets: the difficulty binds only a
+solver that has withheld `settlement_id` from itself. This was found by
+finally running a baseline *dumber* than the one under attack — 1,346 lines of
+leak audit had never asked the question. It is the most important thing the
+benchmark discovered about itself, and it is why the PSP-absence and
+false-attestation datasets exist. On the original 14, **the naive baseline
+wins outright.**
+
+**A theorem in the contract was false, and a gate enforced it.** §6.3 asserted
+that at 0% attestation coverage no composition claim exists, so `Verified` must
+be empty, and oracle gate G5 rejected any `Verified` there. Measured on the
+data: all 12 settlement-report rows present, all 12 reported amounts matching a
+bank credit, 255 of 314 recon rows carrying `settlement_id`. The claim exists
+and `Verified` is achievable — **G5 would have rejected correct answers.** §6.3
+and G5 are withdrawn and dated, with the original text left visible. The
+document written to prevent unsupported claims made one.
+
+**The GST leg is not earned.** All axes are settlement-side. The 2B file has no
+volume of ITC decisions, no partially-filed-supplier population, no IRN timing
+distribution. The three statutory findings it produces are each a
+single-column filter. **Do not read any GST claim here as demonstrated.**
+
+**There is no wrong-*bank*-side class.** The benchmark plants attestations that
+are wrong. It never plants a case where the two sources contradict and the
+truth is on the *bank* side — a bank splitting one settlement into two credits,
+say. So "two independent parties agree" is never tested at the one point where
+the direction of the disagreement matters. This is the largest remaining gap.
+
+**Other named gaps.** The foreign-credit class is a rare-event class as built —
+amounts are drawn independently of the ledger, so a subset almost never nets to
+them, and the frozen engine adopted 1 of 112. 14 of 60 grid cells are run; B × C
+is untested. `Reconstructed`'s cross-line exclusivity is necessary, not
+sufficient: a credit that has not posted yet cannot be excluded against.
+
+**Three defects in the frozen engine are documented and unpatched**, on purpose
+— it is the baseline the benchmark has to be able to fail. See
+[`investigation/DEFECT_REPORT.md`](investigation/DEFECT_REPORT.md).
+
+---
+
+## Layout
+
+```
+resolver_contract/   the outcome vocabulary. Interface only, no algorithm.
+                     Committed before any benchmark data existed.
+resolver/            the resolver. Imports the contract and nothing else.
+corpus/              the benchmark: generator, datasets, leak audit,
+                     triviality check, oracle, baselines
+engine/              the frozen data generator and its settlement spec
+matching/            the frozen 4-stage cascade (the previous engine)
+eval/, holdout/,     the earlier evaluation of the frozen engine, including
+scale/               the held-out run that produced the 50 wrong answers
+investigation/       the defect report
+DECISIONS.md         numbered, append-only; every entry carries the
+                     alternatives it rejected and why
+CHECKPOINT.md        the current state, written against the artefacts on disk
+```
+
+The dependency direction is one-way and load-bearing: `engine/` generates the
+data and the isolated answer key, `resolver/` and `matching/` never read the
+key, and only `eval/` and `corpus/oracle.py` are permitted to. It is enforced
+by tests that scan imports and file access by AST, not by convention.
+
+---
+
+## Ordering is the evidence
+
+Each of these is one commit, and `git log` shows them in this order:
+
+```
+resolver contract      before any benchmark data existed
+benchmark seeds        before any data was generated
+datasets               at those seeds, never reselected
+baseline prediction    before the old engine was run once
+baseline results       the run
+new seeds              before the absence and false-attestation data existed
+the resolver           before the oracle scored it once
+oracle results         the run
+```
+
+A benchmark built after the contract cannot be shaped to an implementation. A
+prediction committed before a run cannot be edited to match it. A resolver
+frozen before scoring cannot be tuned to the scorer. None of that requires
+trusting anyone; it requires reading `git log`.

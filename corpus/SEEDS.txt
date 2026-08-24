@@ -30,3 +30,60 @@ and 2 are verifiable from git log -- this commit precedes every dataset.
 phi (random_valid floor fraction) is calibrated against MEASURED MEAN POOL
 SIZE only, before any resolver is run. Nothing about resolver performance is
 observable at the time it is picked.
+
+---
+
+# ADDENDUM, 2026-08-24 -- committed BEFORE any of the data below is generated.
+
+The corpus as first built is solvable by a fifteen-line `GROUP BY`
+(`corpus/baseline_naive.py`, `CORPUS_SPEC.md` 8): `settlement_id` is populated
+on every settled row of every dataset and no dataset ever plants a FALSE one.
+Two additions close that, at seeds committed here before either exists. The
+original fourteen datasets are NOT regenerated and NOT corrected -- they remain
+as they are, and remain reported.
+
+## 1. PSP ABSENCE -- the cell where there is nothing to group by
+
+The recon feed carries no settlement fields at all: no `settlement_id`, no
+`settled`, no `settled_at`, no `settlement_utr`, and no `settlement_report.csv`
+is emitted. This is not a PSP lying. It is a PSP artefact that is ABSENT --
+a second gateway, a historical period predating the recon feed, a bank feed
+held alone -- which is the realistic merchant case and the honest justification
+for reconstruction. `Reconstructed` is the only positive outcome reachable
+there.
+
+| axis point | pool | coverage | selection rule | seed |
+|---|---|---|---|---|
+| A20_Bnone_Cmax | ~20 | absent | max_under_cap | 20260907 |
+| A40_Bnone_Cmax | ~40 | absent | max_under_cap | 20260908 |
+
+## 2. datasets_v2 -- one FALSE attestation per dataset
+
+A restatement: the PSP corrected a batch and the merchant holds a stale file.
+One batch per dataset has its `settlement_id` written onto rows that are NOT
+its true composition, chosen so the arithmetic still closes -- the error is
+invisible to a sum check. Emitted as a SUPERSET GENERATION into
+`corpus/datasets_v2/` at the new seeds below, never by touching the frozen
+fourteen. Both sets are scored.
+
+| axis point | seed (v2) |
+|---|---|
+| A10_B100_Cmax | 20260910 |
+| A20_B100_Cmax | 20260911 |
+| A30_B100_Cmax | 20260912 |
+| A40_B100_Cmax | 20260913 |
+| A60_B100_Cmax | 20260914 |
+| A20_B75_Cmax | 20260915 |
+| A20_B50_Cmax | 20260916 |
+| A20_B0_Cmax | 20260917 |
+| A40_B50_Cmax | 20260918 |
+| A20_B100_Cfifo | 20260919 |
+| A20_B100_Crandom | 20260920 |
+| A40_B100_Cfifo | 20260921 |
+| A40_B100_Crandom | 20260922 |
+| A20_B100_Crandom0 | 20260923 |
+
+Same protocol as above and as `holdout/SEED.txt`: these seeds are never
+reselected, no sweep is run, and a dataset that comes out awkward is reported
+as it is or a BUG is fixed. Points 1 and 2 are verifiable from `git log` --
+this commit precedes every file it describes.
