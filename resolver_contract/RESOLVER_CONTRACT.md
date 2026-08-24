@@ -421,7 +421,53 @@ results.
 
 ---
 
-### 6.3 Theorem: at 0% attestation coverage, `Verified` is empty
+### 6.3 WITHDRAWN (2026-08-24): the theorem is false on the corpus's own data
+
+**This section stated a theorem, gated on it, and the theorem is wrong. It is
+withdrawn rather than edited, and the original claim is left visible below so
+the record shows what was asserted.**
+
+*What it claimed:* only the PSP attests to composition, so with no attestation
+there is no composition claim, and therefore `|Verified| = 0` necessarily at 0%
+coverage.
+
+*What is actually true, measured on `corpus/datasets/A20_B0_Cmax/`:*
+
+| | |
+|---|---|
+| `settlement_report.csv` rows present | **12 of 12**, each with a `settlement_id` |
+| `reported_amount` matching a bank credit verbatim | **12 of 12** |
+| recon rows carrying `settlement_id` | **255 of 314** |
+
+**Axis B varies the bank-line → batch *reference*, never the composition
+claim.** `settlement_id` is at 100% in every cell of the corpus. So a
+composition claim exists at "0% coverage", it entails a falsifiable prediction
+about the bank's amount, and that prediction can be checked — which is exactly
+§3.3's definition. `Verified` is fully achievable there.
+
+**The gate built on it was worse than the error.** `corpus/oracle.py` G5 flagged
+any `Verified` at 0% coverage as a violation, so it would have rejected correct
+answers. G5 is withdrawn with this section.
+
+**And §6.4's amendment rests on the same misdiagnosis.** `ReconstructibleInstance`
+was introduced because the B0 cell was judged "purely about reconstruction"
+with an empty `Verified` set. It is not — the attestation is present there in
+two artefacts. The amendment is *retained* because its own justification stands
+on its own (a line with unique, complete, cross-line-exclusive closure and no
+usable bank reference is reconstructible, and abstaining on it is a defect), but
+the reasoning that led to it was wrong and that is recorded here rather than
+left to look prescient.
+
+**Why this is the sharpest failure in this document.** §0 names the defect this
+contract exists to prevent: *"a claim was made that no evidence supported, and
+the type system had no way to notice."* §6.3 asserted a claim a priori,
+described it as *"stated in advance, as a prediction of the contract"*, and
+gated on it without ever measuring it. The document written to prevent that
+error committed it.
+
+---
+
+### 6.3 (original text, withdrawn) Theorem: at 0% attestation coverage, `Verified` is empty
 
 From §3.2 and §4.1: `Verified` requires evidence attesting to composition from
 a party independent of the party confirming the consequence. Only the PSP

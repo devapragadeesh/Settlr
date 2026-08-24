@@ -247,12 +247,16 @@ predicted 2 datasets. Defect D3 is not an edge case in this engine; it is its
 main assignment path once ambiguity dominates.
 
 **P6 — CONFIRMED, with certainty rather than probability.** 0
-`AttestationDiscrepancy` detected of 14 planted. The engine has no outcome type
+`AttestationDiscrepancy` detected of **13 planted** (one axis point had no
+attested batch with ≥3 credit rows to corrupt, and recorded `planted: false`
+with that reason). The engine has no outcome type
 that says *"the record is wrong"*. Not a tuning gap — a missing concept.
 
 **P7 — CONFIRMED emphatically.** 56 unrepresentable claims against 0 wrong
-answers. Broken down: **45 `certain_rows` assignments**, **9 `Determinate` on
-unattested lines**, **1 `Determinate` on a foreign line**.
+answers. Of these, **55 are categorised** — 45 `certain_rows` assignments, 9
+`Determinate` on unattested lines, 1 `Determinate` on a foreign line. The
+per-dataset `detail` list caps at 8 entries and one dataset had 9, so exactly
+one claim is uncategorised. Stated rather than rounded away.
 
 This is the finding that survives everything else. The old engine's problem is
 not mainly that its answers are wrong — on this corpus none of them provably

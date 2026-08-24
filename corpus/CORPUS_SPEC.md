@@ -27,7 +27,7 @@ Every row below is a measurement over `engine/data/`, reproducible with
 | # | defect | measurement |
 |---|---|---|
 | **D4** | the bank statement is a re-encoding of the settlement record | `settlement_utr == str(settled_at) + settlement_id[-6:]` on **11 of 11** batches; narration embeds the UTR verbatim on **9 of 12** lines; posting lag **0 days, always**; 12 distinct dates for 12 lines |
-| **D5** | calibration rows are greppable | `description == 'Settlement processing fee'` isolates minted rows at precision **1.000**; and the `amount` column alone separates them — 4 minted debits at 1,200,573–3,295,351 paise against every organic adjustment at 3,195–39,197 |
+| **D5** | calibration rows are greppable | `description == 'Settlement processing fee'` isolates the 3 minted adjustments at precision **1.000**, recall 1.000; the pair `amount ≥ 1,856,136 AND dispute_id IS NULL` does the same. See the correction below — the single-column `amount` claim made in an earlier draft of this document was wrong |
 | **D6** | orphan ERP invoices are sortable | the **6 highest invoice numbers** are exactly the 6 orphans, precision 1.000 recall 1.000, 30.7× lift |
 | **D7** | the decoy class exercises nothing | the 4 planted pairs have credit deltas **−8,711 / −3,670 / 0 / +11,732** — 1 of 4 collides, and it collides *by accident*, alongside 3 non-decoy pairs |
 | **D8** | `source_ref` is still a class marker | `'recon sample adj_EhcHONhX4ChgNC shape'` → `c09_lost_dispute_adjustment` at precision 1.000, recall 1.000 |
@@ -38,7 +38,7 @@ Plus: **max pool size 26**, while closure uniqueness only collapses above ~30;
 and **attestation coverage 100%**, so the code path that produced all 50 wrong
 answers was *unreachable*.
 
-### Three corrections to the received account of these defects
+### Four corrections to the received account of these defects
 
 Recorded because being precise about a defect is the difference between fixing
 it and fixing something adjacent to it.
@@ -54,6 +54,21 @@ rank over every field, not file position.
 `pay_VhCW46ocAQWSbM` / `pay_H9TWqp5H61RhiE` collide on credit — and three
 *non-decoy* pairs collide for the same reason, so the class's single success is
 indistinguishable from the accidents beside it.
+
+**D5 is a column PAIR, not the `amount` column alone — and an earlier draft of
+this document said otherwise.** Measured over `engine/data/`: the calibration
+planters minted **6 rows** (3 adjustments, 3 refunds), not 4. The minted
+adjustments are 1,856,136 / 2,117,064 / 3,295,351 paise. `amount ≥ 1,856,136`
+alone reaches precision **0.750**, not 1.000, because a genuine chargeback
+debit of 1,939,019 sits inside the range — and the 1,200,573 "Chargeback
+recovery - bulk" row that earlier drafts counted as minted is **organic**. The
+perfect separators are `description == 'Settlement processing fee'` and the
+pair `amount ≥ 1,856,136 AND dispute_id IS NULL`, both at precision 1.000 and
+recall 1.000 over the minted adjustments.
+
+The defect is real and the fix is unchanged. The overstatement is recorded
+because a document that catalogues other people's unverified claims has no
+standing to carry its own.
 
 **D10's mechanism is not file order.** Measured: shuffling
 `bank_statement.csv` changes the cascade's output not at all (196/12/9/3 both
@@ -363,6 +378,46 @@ leak itself would assume the answer the audit is meant to find.
 ## 8. What is NOT covered
 
 Silence reads as ignorance. Everything below was considered and decided.
+
+### The corpus's most important finding about itself
+
+**A fifteen-line resolver scores 168/168.** `corpus/baseline_naive.py` groups
+the recon rows by `settlement_id`, nets credit − debit, and matches the total to
+a bank credit. Across all 14 datasets and 280 bank lines it recovers **168 of
+168 compositions**, rejects **98 of 98** foreign lines, and abstains **zero**
+times on the 88 determined plus 31 reconstructible instances — invariant across
+pool size 10 → 60, coverage 100% → 0%, and all three selection rules.
+
+**Because `settlement_id` is populated on every settled row of every dataset,
+and the corpus never once plants a FALSE `settlement_id`.** The 13 planted
+`wrong_attestations` corrupt a scalar amount in `settlement_report.csv`; none
+assigns a row to the wrong batch.
+
+Consequences, stated rather than discovered by a reader:
+
+* **Axis A does not measure difficulty.** The closure collapse in §6.1 is real
+  arithmetic, but it binds only a solver that has withheld `settlement_id` from
+  itself. The difficulty is constructed by the engine under test.
+* **Axis B does not remove the composition claim** — only the bank-line → batch
+  reference. `settlement_id` is at 100% in every cell.
+* **The abstention result is measured against a bar a `GROUP BY` clears.**
+
+The epistemic case for distrusting an attestation stands — a claim can be
+wrong. This corpus never makes one wrong, so the case is untested here.
+
+**The fix is one planted class:** a batch whose `settlement_id` names rows that
+are not its true composition, where the arithmetic still closes. That is the
+case where the naive resolver breaks, where `AttestationDiscrepancy` becomes
+reachable for a non-trivial reason, and where withholding the attestation earns
+its keep. It is the highest-value single change to this corpus and it is not
+yet built.
+
+**How it was missed.** The only baseline run was the frozen engine, which this
+project had already published a three-defect report about — it was guaranteed to
+look bad. `leakage_audit.py` asks *"does a trivial predicate identify this
+planted class?"* across 1,346 lines and five families. It never asks *"does a
+trivial predicate solve the task?"* — the same error class it exists to find,
+one coordinate up.
 
 ### Named gaps
 

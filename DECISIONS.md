@@ -775,11 +775,23 @@ consequence of the draw. Ambiguity is `planted: false` throughout the corpus,
 by construction. Every adjustment has a real cause: clawbacks tie to a
 dispute's amount, fee reversals to a computed overcharge.
 
-**The measurement.** The frozen minted debits are 1,200,573–3,295,351 paise
-while every organic adjustment is 3,195–39,197. **Perfect separation on the
-`amount` column alone**, before any description string is read. That is the
-third leak of this shape after `source_ref` and `notes.reason`, and it
-generalises: *any row minted to make arithmetic work will leak, in some
+**The measurement, corrected.** The frozen planters minted **6 rows** — 3
+adjustments at 1,856,136 / 2,117,064 / 3,295,351 paise, and 3 refunds. Two
+perfect separators exist over the minted adjustments, both precision 1.000 and
+recall 1.000: `description == 'Settlement processing fee'`, and the pair
+`amount ≥ 1,856,136 AND dispute_id IS NULL`.
+
+An earlier draft of this entry claimed the `amount` column **alone** separated
+them, over 4 minted debits spanning 1,200,573–3,295,351. That was wrong twice:
+the 1,200,573 row is organic, and `amount ≥ 1,856,136` alone reaches precision
+**0.750**, because a genuine chargeback debit of 1,939,019 sits inside the
+range. The correction is recorded rather than quietly applied — this file
+exists to hold claims to evidence, including its own. The decision it supports
+is unchanged, and if anything better motivated: the leak needed a column PAIR
+to find, which is exactly why the audit searches pairs.
+
+That is the third leak of this shape after `source_ref` and `notes.reason`, and
+it generalises: *any row minted to make arithmetic work will leak, in some
 coordinate, whether or not anyone anticipated which one.*
 
 **Rejected: rejection-sample amounts until a tie exists.** The obvious way to
@@ -1014,7 +1026,7 @@ reconstruction extreme rather than measuring it.
 
 ---
 
-## 32. The corpus was regenerated three times, because its own audit failed it
+## 32. The corpus was regenerated five times, because its own audit failed it four
 
 **Decision.** `corpus/leakage_audit.py` gates the build. A dataset that fails
 its own audit does not ship: it is regenerated or the class is dropped. Three

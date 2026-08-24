@@ -20,7 +20,7 @@ gates come in two kinds, and both are required:
 | G2 | `Verified` whose warrant lacks two independent parties | yes |
 | G3 | `Ambiguous`/truncated candidate sets missing the truth | yes |
 | G4 | rows assigned through a path carrying no warrant | yes |
-| G5 | `Verified` at 0% attestation coverage (contract sec 6.3) | yes |
+| G5 | **WITHDRAWN** -- enforced a theorem that is false on the corpus's own data | -- |
 | G6 | evidence whose declared provenance the corpus contradicts | yes |
 | **G7** | **abstention on a DETERMINED instance** (attested) | **NO** |
 | **G8** | **abstention on a RECONSTRUCTIBLE instance** (unattested) | **NO** |
@@ -114,7 +114,7 @@ class OracleReport:
             "G2": "Verified whose warrant lacks two independent parties",
             "G3": "candidate sets that do not contain the truth",
             "G4": "rows assigned through a path with no warrant",
-            "G5": "Verified at 0% attestation coverage (contract 6.3)",
+            "G5": "WITHDRAWN -- the theorem it enforced was false (contract 6.3)",
             "G6": "evidence provenance the corpus contradicts",
             "G7": "ABSTENTION on a determined instance (attested)",
             "G8": "ABSTENTION on a reconstructible instance (unattested)",
@@ -289,13 +289,18 @@ def score(output: ResolverOutput, truth: dict) -> OracleReport:
                 "Verified warrant names "
                 f"{sorted(outcome.warrant.independence.independent_parties)}"))
 
-        # ---- G5: the contract's own theorem ------------------------------
-        if coverage in ("0", "0/1"):
-            report.violations.append(Violation(
-                "G5", outcome.bank_index,
-                "Verified at 0% attestation coverage: only the PSP attests to "
-                "composition, so no composition claim exists to corroborate "
-                "(contract 6.3 predicts |Verified| = 0)"))
+        # ---- G5: WITHDRAWN 2026-08-24 ------------------------------------
+        #
+        # G5 flagged any `Verified` at 0% attestation coverage, on contract
+        # 6.3's theorem that no composition claim exists there. The theorem is
+        # FALSE on the corpus's own data: axis B varies the bank-line -> batch
+        # REFERENCE, and `settlement_id` is populated on 255 of 314 rows of
+        # A20_B0_Cmax, with all 12 settlement_report.csv rows present. A
+        # composition claim exists, so `Verified` is achievable -- and this
+        # gate would have rejected correct answers as contract violations.
+        #
+        # Left as a comment rather than deleted so the gate numbering in every
+        # report stays stable and the withdrawal is visible in the code.
 
     # ---- G6: declared provenance vs the corpus graph ---------------------
     for outcome in output.line_outcomes:
