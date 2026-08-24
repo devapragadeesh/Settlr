@@ -1247,3 +1247,123 @@ prevent.
 **Rejected: reporting it once in `CHECKPOINT.md` and moving on.** The finding
 was available for the whole previous phase and cost ten minutes to obtain. A
 prose paragraph is not a mechanism. A script that runs on every dataset is.
+
+---
+
+## 36. The resolver is a separate package that cannot see the answer key, and the isolation test was watched to fail
+
+**Decision.** `resolver/` imports `resolver_contract/types.py` and nothing else
+from this repository. It may not import `matching/` (the frozen engine),
+`corpus.generator` (which knows how the data was made), `corpus.oracle` or any
+baseline. `resolver/loaders.py` is the only module that performs file I/O, and
+`ground_truth.json` is on a named `FORBIDDEN` list rather than merely absent
+from the code.
+
+Scoring lives in `corpus/score_resolver.py`, on the far side of the boundary.
+
+**Why a new test file rather than an entry in an existing allowlist.**
+`engine/tests/test_no_leakage.py` scans `engine/`, `matching/` and `eval/`.
+`tests/test_isolation.py` enforces the same over `matching/` by AST. **Neither
+covers `resolver/`.** A suite that does not scan a directory says nothing about
+that directory, and assuming otherwise is exactly how defect D2 shipped: an
+unguarded `elif` that could not execute on the only dataset in the repo, inside
+a 268-test suite that passed. So `resolver/tests/test_isolation.py` enforces
+the rule over this package by four independent mechanisms: source text with
+docstrings stripped, the AST, the static import list, and the live
+`sys.modules` graph after importing every module.
+
+**The test was verified to fail.** A `json.loads((… / "ground_truth.json")
+.read_text())` was added to `resolver/resolve.py` and the suite re-run: three
+tests failed and each named the file and line. A test nobody has watched fail
+is a test nobody has run. The violation was then reverted.
+
+**Rejected: adding `resolver/` to `GROUND_TRUTH_ALLOWLIST`.** The allowlist is
+for `eval/` modules that are *permitted* to read the key. A resolver is never
+permitted, so it does not belong in a list whose purpose is to grant the
+permission.
+
+**Rejected: one shared isolation test parameterised over every package.** It
+reads as broader coverage and is worth less: the rules genuinely differ
+(`eval/` may read the key, `matching/` and `resolver/` may not, and `resolver/`
+additionally may not import `matching/`), and collapsing them into one
+parameterised sweep is how a package quietly ends up on the permissive branch.
+
+---
+
+## 37. Reversals are resolved in two passes, and the scan runs first
+
+**Decision.** Pass one reads the **bank file alone** and finds every debit that
+revokes an earlier credit: equal and opposite amount, later value date, within
+seven days, each credit claimed at most once. Pass two resolves credits in
+posting order. A revoked credit is reported as
+`AttestationDiscrepancy(credit_reversed)`, which assigns nothing and consumes
+nothing; the debit line itself is `Unresolved(other)` naming the credit that
+carries the finding.
+
+**Why it cannot be a single date-ordered pass.** `DECISIONS.md` §19 measured
+this on held-out data: a reversal makes an earlier resolution wrong
+*retroactively*. A single forward pass has already consumed the rows by the
+time the reversing debit arrives, and D2 then propagates the damage — one
+reversal, two damaged bank lines, 50 misplaced rows. Running the revocation
+scan **before** any resolution means the resolver never forms the claim it
+would have to retract.
+
+**Rejected: (b) refuse to consume until the window closes.** This is the other
+option and it is defensible: hold every assignment provisional, decide at the
+end. It was rejected because non-consumption is exactly what makes the pool
+grow monotonically, and a growing pool drives closure non-uniqueness, so a
+resolver that refuses to consume converts a solvable window into an ambiguous
+one and reports abstention as caution. The PSP-absence axis points measure that
+effect directly, because there `Verified` is unreachable and consumption never
+happens — see §33.
+
+**Rejected: revisit and retract after resolving.** Equivalent in outcome and
+worse in evidence: it leaves a retracted `Verified` in the run's history, and
+the contract deliberately makes a wrong `Verified` a build failure rather than
+a state to pass through.
+
+**Rejected: treating the reversal as an ordinary unmatched debit.** It is the
+most common real recon exception (`SETTLEMENT_SPEC.md` §10) and the single
+highest-value thing a resolver can say about it is *the record is wrong*, not
+*I could not explain this line*.
+
+**Named limitation.** The seven-day window is a modelling choice. Two lines of
+equal and opposite amount far apart are two transactions, and calling them a
+reversal would invent a finding; a reversal posted later than seven days is
+missed. The corpus posts reversals one to four days after the credit, so the
+window is not tested at its boundary.
+
+---
+
+## 38. Tier B exists; residual reconstruction does not, and the reason is D2
+
+**Decision.** The resolver has three tiers. Tier A is used when the PSP's
+settlement report names this bank line by the bank's own reference. Tier B is
+used when the recon rows carry a `settlement_id` — a composition claim exists —
+but no report row names the line, so the link from batch to bank line rests on
+the amount alone; where two unconsumed settlements net to the same amount it
+returns `Ambiguous` rather than choosing.
+
+**What is NOT built: anchoring on an attested core and reconstructing a
+residual over unattested rows.** Attestation in this corpus is a property of a
+SETTLEMENT, never of a row: `corpus/generator/build.py` varies coverage by
+sampling settlements, and no dataset has a batch that is half attested. The
+residual path would therefore be a branch **no dataset can execute** — which is
+precisely what defect D2 was, and shipping a second one while citing the first
+would be indefensible.
+
+**Rejected: build it anyway and unit-test it on a synthetic fixture.** A
+fixture written by the same person, in the same hour, to exercise the branch
+they just wrote, tests that the branch runs. D2 passed 268 tests.
+
+**Rejected: adding a row-level attestation axis to the corpus so the path
+becomes reachable.** That is the next layer of apparatus, and this phase's
+standing instruction is to ship rather than build one. It is named as a gap in
+`CORPUS_SPEC.md` instead.
+
+**Consequence, stated.** Tier B is what makes withdrawn contract §6.3 concrete:
+at 0% report coverage the composition claim is still on the rows, it still
+entails a checkable prediction about the bank's amount, and `Verified` is
+reachable. The old §6.3 theorem said that cell must be empty and gate G5
+enforced it; both are withdrawn, and this tier is the code that would have
+tripped the withdrawn gate.

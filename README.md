@@ -33,7 +33,7 @@ follows from taking that seriously.
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-python3 run_all.py            # the whole comparison, ~N minutes
+python3 run_all.py            # all three systems, every dataset (30-60 min)
 ```
 
 `run_all.py` runs three systems over every dataset and writes

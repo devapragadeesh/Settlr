@@ -49,6 +49,7 @@ import json
 import shutil
 import sys
 import tempfile
+import time
 from collections import Counter
 from pathlib import Path
 
@@ -56,6 +57,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from corpus.oracle import reconstructible_instances            # noqa: E402
 from matching import run as run_cascade                        # noqa: E402
 from matching.loaders import load                              # noqa: E402
 from matching.model import Ambiguous, Determinate, Unresolved   # noqa: E402
@@ -88,8 +90,26 @@ def project(dataset: Path, into: Path) -> Path:
 
 def measure(dataset: Path) -> dict:
     truth = json.loads((dataset / "ground_truth.json").read_text())
-    with tempfile.TemporaryDirectory(prefix="baseline_") as tmp:
-        result = run_cascade(dataset=load(project(dataset, Path(tmp) / "d")))
+    began = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="baseline_") as tmp:
+            result = run_cascade(dataset=load(project(dataset, Path(tmp) / "d")))
+    except Exception as failure:                # noqa: BLE001
+        # At the PSP-absence axis points the recon feed carries no settlement
+        # columns at all. The frozen cascade's Stage 1 joins on
+        # `settlement_id` -> UTR, so it has nothing to join on. A crash here is
+        # a RESULT -- "this engine cannot run where the attestation is absent"
+        # -- and is reported as one rather than swallowed.
+        return {
+            "dataset": dataset.name,
+            "family": dataset.parent.name,
+            "ran": False,
+            "failure": f"{type(failure).__name__}: {failure}",
+            "seconds": round(time.perf_counter() - began, 2),
+            "bank_lines": len(truth["bank_lines"]),
+            "determined_instances": len(truth.get("determined_instances", [])),
+            "reconstructible_instances": len(reconstructible_instances(truth)),
+        }
 
     by_line = {b["bank_line_index"]: b for b in truth["batches"]
                if b.get("bank_line_index") is not None}
@@ -165,8 +185,32 @@ def measure(dataset: Path) -> dict:
             if index in determined:
                 determined_abstained += 1
 
+    reconstructible = {i.bank_index for i in reconstructible_instances(truth)}
+    reconstructible_abstained = sum(
+        1 for item in result.stage3.reconstructions
+        if item.bank_index in reconstructible
+        and not isinstance(item.resolution, Determinate))
+    false_ids = {item["settlement_id"] for item in
+                 truth["planted_classes"].get("d11_false_settlement_id", {})
+                 .get("detail", [])}
+
     return {
         "dataset": dataset.name,
+        "family": dataset.parent.name,
+        "ran": True,
+        "seconds": round(time.perf_counter() - began, 2),
+        # The frozen engine has no vocabulary for "the record is wrong": with
+        # one effective source there is nothing to disagree with, and its only
+        # way of saying something is off is `Unresolved`. So this is 0 by
+        # CONSTRUCTION, not by measurement, and it is reported to make that
+        # visible rather than to flatter the comparison.
+        "attestation_discrepancy_detected": 0,
+        "attestation_discrepancy_planted":
+            len(truth["attestation"]["wrong_attestations"]),
+        "false_settlement_id_planted": len(false_ids),
+        "false_settlement_id_caught": 0,
+        "reconstructible_instances": len(reconstructible),
+        "reconstructible_abstained": reconstructible_abstained,
         "axes": truth["axes"],
         "bank_lines": len(truth["bank_lines"]),
         "settlements": len(truth["batches"]),
@@ -194,7 +238,10 @@ def main() -> int:
     parser.add_argument("--out", type=Path)
     arguments = parser.parse_args()
 
-    targets = (sorted(p for p in DATASETS.iterdir() if p.is_dir())
+    targets = ([p for family in ("datasets", "datasets_v2")
+                if (ROOT / "corpus" / family).exists()
+                for p in sorted((ROOT / "corpus" / family).iterdir())
+                if p.is_dir()]
                if arguments.all else [DATASETS / arguments.name])
     results = []
     for dataset in targets:
