@@ -2,7 +2,7 @@
  {
   "dataset": "datasets/A10_B100_Cmax",
   "family": "datasets",
-  "seconds": 25.8,
+  "seconds": 25.65,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -21,7 +21,7 @@
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
-    "no_subset_closes": 4,
+    "enumeration_truncated": 4,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -70,7 +70,7 @@
  {
   "dataset": "datasets/A20_B0_Cmax",
   "family": "datasets",
-  "seconds": 59.85,
+  "seconds": 59.86,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -89,7 +89,7 @@
    },
    "unresolved_by_reason": {
     "other": 2,
-    "no_subset_closes": 2,
+    "enumeration_truncated": 2,
     "not_our_credit": 3
    },
    "reconstructed_accuracy": {
@@ -138,7 +138,7 @@
  {
   "dataset": "datasets/A20_B100_Cfifo",
   "family": "datasets",
-  "seconds": 42.16,
+  "seconds": 41.99,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -156,9 +156,8 @@
     "verified_non_decisive": 10
    },
    "unresolved_by_reason": {
-    "no_subset_closes": 1,
+    "enumeration_truncated": 4,
     "not_our_credit": 3,
-    "enumeration_truncated": 3,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -207,7 +206,7 @@
  {
   "dataset": "datasets/A20_B100_Cmax",
   "family": "datasets",
-  "seconds": 59.31,
+  "seconds": 58.91,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -225,10 +224,9 @@
     "verified_non_decisive": 9
    },
    "unresolved_by_reason": {
-    "no_subset_closes": 1,
+    "enumeration_truncated": 4,
     "other": 1,
-    "not_our_credit": 3,
-    "enumeration_truncated": 3
+    "not_our_credit": 3
    },
    "reconstructed_accuracy": {
     "correct": 0,
@@ -276,7 +274,7 @@
  {
   "dataset": "datasets/A20_B100_Crandom",
   "family": "datasets",
-  "seconds": 70.21,
+  "seconds": 69.48,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -295,8 +293,7 @@
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
-    "no_subset_closes": 2,
-    "enumeration_truncated": 2,
+    "enumeration_truncated": 4,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -345,7 +342,7 @@
  {
   "dataset": "datasets/A20_B100_Crandom0",
   "family": "datasets",
-  "seconds": 61.0,
+  "seconds": 60.67,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -364,8 +361,7 @@
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
-    "no_subset_closes": 1,
-    "enumeration_truncated": 2,
+    "enumeration_truncated": 3,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -414,7 +410,7 @@
  {
   "dataset": "datasets/A20_B50_Cmax",
   "family": "datasets",
-  "seconds": 38.58,
+  "seconds": 38.37,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -433,8 +429,7 @@
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
-    "no_subset_closes": 1,
-    "enumeration_truncated": 2,
+    "enumeration_truncated": 3,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -483,7 +478,7 @@
  {
   "dataset": "datasets/A20_B75_Cmax",
   "family": "datasets",
-  "seconds": 71.37,
+  "seconds": 70.42,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -551,7 +546,7 @@
  {
   "dataset": "datasets/A20_Bnone_Cmax",
   "family": "datasets",
-  "seconds": 90.37,
+  "seconds": 86.69,
   "passed": false,
   "violations_by_gate": {
    "G3": 9,
@@ -560,7 +555,7 @@
   "violations": [
    "G3   bank[5]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[7]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
-   "G3   bank[9]    the truth is absent from a candidate set of 14 (enumeration incomplete)",
+   "G3   bank[9]    the truth is absent from a candidate set of 13 (enumeration incomplete)",
    "G3   bank[10]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[12]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[14]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
@@ -638,7 +633,7 @@
  {
   "dataset": "datasets/A30_B100_Cmax",
   "family": "datasets",
-  "seconds": 44.78,
+  "seconds": 44.39,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -706,7 +701,7 @@
  {
   "dataset": "datasets/A40_B100_Cfifo",
   "family": "datasets",
-  "seconds": 42.66,
+  "seconds": 42.35,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -774,7 +769,7 @@
  {
   "dataset": "datasets/A40_B100_Cmax",
   "family": "datasets",
-  "seconds": 79.72,
+  "seconds": 79.37,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -793,9 +788,8 @@
    },
    "unresolved_by_reason": {
     "other": 1,
-    "no_subset_closes": 1,
-    "not_our_credit": 3,
-    "enumeration_truncated": 3
+    "enumeration_truncated": 4,
+    "not_our_credit": 3
    },
    "reconstructed_accuracy": {
     "correct": 0,
@@ -843,7 +837,7 @@
  {
   "dataset": "datasets/A40_B100_Crandom",
   "family": "datasets",
-  "seconds": 42.02,
+  "seconds": 42.03,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -911,7 +905,7 @@
  {
   "dataset": "datasets/A40_B50_Cmax",
   "family": "datasets",
-  "seconds": 35.6,
+  "seconds": 35.44,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -979,7 +973,7 @@
  {
   "dataset": "datasets/A40_Bnone_Cmax",
   "family": "datasets",
-  "seconds": 62.24,
+  "seconds": 77.33,
   "passed": false,
   "violations_by_gate": {
    "G3": 11,
@@ -989,14 +983,14 @@
    "G3   bank[2]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[4]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[5]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
-   "G3   bank[7]    the truth is absent from a COMPLETE candidate set of 194 -- the resolver's enumeration is wrong, not merely undecided",
+   "G3   bank[7]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[9]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[11]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
-   "G3   bank[12]   the truth is absent from a COMPLETE candidate set of 2 -- the resolver's enumeration is wrong, not merely undecided",
-   "G3   bank[14]   the truth is absent from a COMPLETE candidate set of 80 -- the resolver's enumeration is wrong, not merely undecided",
+   "G3   bank[12]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[14]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[15]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
-   "G3   bank[17]   the truth is absent from a COMPLETE candidate set of 81 -- the resolver's enumeration is wrong, not merely undecided",
-   "G3   bank[19]   the truth is absent from a COMPLETE candidate set of 138 -- the resolver's enumeration is wrong, not merely undecided",
+   "G3   bank[17]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[19]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G8   bank[2]    Unresolved(enumeration_truncated) on a determined instance -- unattested, but exactly one subset closes and it closes nothing else in the window"
   ],
   "measured": {
@@ -1004,17 +998,17 @@
     "verified": 0,
     "attestation_discrepancy": 1,
     "reconstructed": 0,
-    "ambiguous": 8,
-    "unresolved": 11,
+    "ambiguous": 0,
+    "unresolved": 19,
     "correctly_unmatched": 599,
-    "mean_candidate_set_size": 96.375,
-    "max_candidate_set_size": 199,
+    "mean_candidate_set_size": 0.0,
+    "max_candidate_set_size": 0,
     "incomplete_enumerations": 0,
     "verified_non_decisive": 0
    },
    "unresolved_by_reason": {
     "other": 1,
-    "enumeration_truncated": 7,
+    "enumeration_truncated": 15,
     "not_our_credit": 3
    },
    "reconstructed_accuracy": {
@@ -1063,7 +1057,7 @@
  {
   "dataset": "datasets/A60_B100_Cmax",
   "family": "datasets",
-  "seconds": 52.27,
+  "seconds": 54.7,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1131,7 +1125,7 @@
  {
   "dataset": "datasets_v2/A10_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 30.01,
+  "seconds": 29.99,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1150,9 +1144,8 @@
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
-    "no_subset_closes": 2,
-    "other": 1,
-    "enumeration_truncated": 2
+    "enumeration_truncated": 4,
+    "other": 1
    },
    "reconstructed_accuracy": {
     "correct": 0,
@@ -1200,7 +1193,7 @@
  {
   "dataset": "datasets_v2/A20_B0_Cmax",
   "family": "datasets_v2",
-  "seconds": 37.19,
+  "seconds": 37.51,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1218,10 +1211,9 @@
     "verified_non_decisive": 9
    },
    "unresolved_by_reason": {
-    "no_subset_closes": 2,
+    "enumeration_truncated": 4,
     "not_our_credit": 3,
-    "other": 1,
-    "enumeration_truncated": 2
+    "other": 1
    },
    "reconstructed_accuracy": {
     "correct": 0,
@@ -1269,7 +1261,7 @@
  {
   "dataset": "datasets_v2/A20_B100_Cfifo",
   "family": "datasets_v2",
-  "seconds": 16.58,
+  "seconds": 16.6,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1287,10 +1279,9 @@
     "verified_non_decisive": 6
    },
    "unresolved_by_reason": {
-    "no_subset_closes": 3,
+    "enumeration_truncated": 4,
     "not_our_credit": 3,
-    "other": 1,
-    "enumeration_truncated": 1
+    "other": 1
    },
    "reconstructed_accuracy": {
     "correct": 0,
@@ -1338,7 +1329,7 @@
  {
   "dataset": "datasets_v2/A20_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 31.93,
+  "seconds": 31.47,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1356,9 +1347,8 @@
     "verified_non_decisive": 6
    },
    "unresolved_by_reason": {
-    "no_subset_closes": 1,
+    "enumeration_truncated": 3,
     "not_our_credit": 3,
-    "enumeration_truncated": 2,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -1425,10 +1415,9 @@
     "verified_non_decisive": 9
    },
    "unresolved_by_reason": {
-    "no_subset_closes": 1,
+    "enumeration_truncated": 4,
     "not_our_credit": 3,
-    "other": 1,
-    "enumeration_truncated": 3
+    "other": 1
    },
    "reconstructed_accuracy": {
     "correct": 0,
@@ -1476,7 +1465,7 @@
  {
   "dataset": "datasets_v2/A20_B100_Crandom0",
   "family": "datasets_v2",
-  "seconds": 60.1,
+  "seconds": 60.27,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1494,9 +1483,8 @@
     "verified_non_decisive": 8
    },
    "unresolved_by_reason": {
-    "no_subset_closes": 1,
+    "enumeration_truncated": 4,
     "not_our_credit": 3,
-    "enumeration_truncated": 3,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -1545,7 +1533,7 @@
  {
   "dataset": "datasets_v2/A20_B50_Cmax",
   "family": "datasets_v2",
-  "seconds": 19.75,
+  "seconds": 19.85,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1563,9 +1551,8 @@
     "verified_non_decisive": 7
    },
    "unresolved_by_reason": {
-    "no_subset_closes": 2,
+    "enumeration_truncated": 4,
     "not_our_credit": 3,
-    "enumeration_truncated": 2,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -1614,7 +1601,7 @@
  {
   "dataset": "datasets_v2/A20_B75_Cmax",
   "family": "datasets_v2",
-  "seconds": 34.53,
+  "seconds": 34.52,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1632,10 +1619,9 @@
     "verified_non_decisive": 8
    },
    "unresolved_by_reason": {
-    "no_subset_closes": 2,
+    "enumeration_truncated": 4,
     "other": 1,
-    "not_our_credit": 3,
-    "enumeration_truncated": 2
+    "not_our_credit": 3
    },
    "reconstructed_accuracy": {
     "correct": 0,
@@ -1683,7 +1669,7 @@
  {
   "dataset": "datasets_v2/A30_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 45.3,
+  "seconds": 44.95,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1751,7 +1737,7 @@
  {
   "dataset": "datasets_v2/A40_B100_Cfifo",
   "family": "datasets_v2",
-  "seconds": 43.37,
+  "seconds": 43.24,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1771,8 +1757,7 @@
    "unresolved_by_reason": {
     "not_our_credit": 3,
     "other": 1,
-    "no_subset_closes": 2,
-    "enumeration_truncated": 1
+    "enumeration_truncated": 3
    },
    "reconstructed_accuracy": {
     "correct": 0,
@@ -1820,7 +1805,7 @@
  {
   "dataset": "datasets_v2/A40_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 52.44,
+  "seconds": 50.19,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1888,7 +1873,7 @@
  {
   "dataset": "datasets_v2/A40_B100_Crandom",
   "family": "datasets_v2",
-  "seconds": 82.83,
+  "seconds": 80.03,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1956,7 +1941,7 @@
  {
   "dataset": "datasets_v2/A40_B50_Cmax",
   "family": "datasets_v2",
-  "seconds": 47.11,
+  "seconds": 46.62,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1974,10 +1959,9 @@
     "verified_non_decisive": 8
    },
    "unresolved_by_reason": {
-    "no_subset_closes": 1,
+    "enumeration_truncated": 4,
     "not_our_credit": 3,
-    "other": 1,
-    "enumeration_truncated": 3
+    "other": 1
    },
    "reconstructed_accuracy": {
     "correct": 0,
@@ -2025,7 +2009,7 @@
  {
   "dataset": "datasets_v2/A60_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 45.68,
+  "seconds": 44.71,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2043,9 +2027,8 @@
     "verified_non_decisive": 10
    },
    "unresolved_by_reason": {
-    "no_subset_closes": 1,
+    "enumeration_truncated": 4,
     "not_our_credit": 3,
-    "enumeration_truncated": 3,
     "other": 1
    },
    "reconstructed_accuracy": {

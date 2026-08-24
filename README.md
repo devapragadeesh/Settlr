@@ -61,7 +61,15 @@ python3 corpus/leakage_audit.py --all                      # is the data leaking
 
 The full per-dataset table, generated: **[`corpus/THREE_SYSTEMS.md`](corpus/THREE_SYSTEMS.md)**.
 
-<!-- THREE-SYSTEM-SUMMARY -->
+<!-- THREE-SYSTEM-SUMMARY:START -->
+| dataset family | naive `GROUP BY` | frozen cascade | new resolver |
+|---|---|---|---|
+| **original 14** | 168/168 right, **0 wrong**<br>abstained 0/88 det, 0/31 rec<br>discrepancies 0/13 | 55/56 right, **1 wrong**<br>abstained 50/88 det, 16/31 rec<br>discrepancies 0/13 | 143/144 right, **1 wrong**<br>abstained 0/88 det, 0/31 rec<br>discrepancies 13/13 |
+| **PSP absent (2)** | **cannot run** | **cannot run** | 1/1 right, **0 wrong**<br>abstained 0/0 det, 15/18 rec<br>discrepancies 0/0 |
+| **false attestation (14)** | 154/167 right, **13 wrong**<br>abstained 0/76 det, 0/43 rec<br>discrepancies 0/26 | 48/50 right, **2 wrong**<br>abstained 42/76 det, 29/43 rec<br>discrepancies 0/26 | 132/132 right, **0 wrong**<br>abstained 0/76 det, 0/43 rec<br>discrepancies 24/26 |
+
+*right/attempted* is compositions exactly correct. *abstained* is silence on instances the benchmark proves have exactly one answer — oracle gates G7 and G8. *discrepancies* is planted record errors found. Full table, including mean candidate set size and runtime: [`corpus/THREE_SYSTEMS.md`](corpus/THREE_SYSTEMS.md).
+<!-- THREE-SYSTEM-SUMMARY:END -->
 
 ---
 
@@ -189,6 +197,26 @@ leak audit had never asked the question. It is the most important thing the
 benchmark discovered about itself, and it is why the PSP-absence and
 false-attestation datasets exist. On the original 14, **the naive baseline
 wins outright.**
+
+**The resolver fails the oracle on the two PSP-absence datasets**, on gates G8
+(it stays silent on 15 of 18 bank lines the benchmark proves have exactly one
+explanation) and G3 (the truth is not inside the candidate sets it managed to
+build). The cause is structural and was written down before the run: only
+`Verified` may consume rows, `Verified` needs an attestation, and there is no
+attestation there — so the eligible pool grows monotonically across the window,
+from 8 rows at the first credit to 265 at the last, and closure stops being
+unique. It is the only system that runs on those datasets at all, and it
+declines most of the work. Both facts are the result.
+
+**87% of `Verified` are non-decisive** — 238 of 275. The composition claim was
+corroborated by a consequence a rival composition would also have satisfied.
+The contract requires that number to be reported precisely so the `Verified`
+count cannot be quoted without it.
+
+**The resolver's one wrong answer** is a `Reconstructed` on a bank line that is
+not a settlement of ours, at `datasets/A20_B50_Cmax`. Reconstruction errors are
+measured rather than gated because the claim is weaker than `Verified`. It is
+still a wrong answer.
 
 **A theorem in the contract was false, and a gate enforced it.** §6.3 asserted
 that at 0% attestation coverage no composition claim exists, so `Verified` must

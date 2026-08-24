@@ -57,7 +57,7 @@ datasets/A40_B100_Cfifo             10   9   2   0    0    8     1.00      1  5/
 datasets/A40_B100_Cmax              10  10   2   0    0    8     1.00      1  4/5   0/0 
 datasets/A40_B100_Crandom           11  10   1   0    0    8     1.00      1  7/7   0/1 
 datasets/A40_B50_Cmax               10   9   2   0    0    8     1.00      1  0/0   0/2 
-datasets/A40_Bnone_Cmax              0   0   1   0    8   11    96.38    199  0/0   0/7 
+datasets/A40_Bnone_Cmax              0   0   1   0    0   19     0.00      0  0/0   0/7 
 datasets/A60_B100_Cmax              10   9   2   0    0    8     1.00      1  3/3   0/0 
 datasets_v2/A10_B100_Cmax            9   7   3   0    0    8     1.00      1  9/10  0/2 
 datasets_v2/A20_B0_Cmax             11   9   1   0    0    8     1.00      1  0/0   0/11

@@ -329,6 +329,25 @@ categorised" rather than presented as exact.
 and then documented four rounds of findings across five generations. Corrected
 to "regenerated five times, because its own audit failed it four".
 
+### 6.6 A sixth: the resolver called an enumeration COMPLETE when it was not
+
+**Found by the oracle, in the resolver written to prevent this defect class.**
+`resolver/enumerate_closures.py` computed `complete` from an externally
+measured clock rather than from CP-SAT's own status, so a search that stopped
+on the solver's internal limit at 9.98 s of a 10 s budget was recorded as
+exhaustive. Measured at `corpus/datasets/A40_Bnone_Cmax` bank[7] under CPU
+load: **194 subsets returned `complete=True` with the truth not among them**;
+run alone the same line correctly reports 200 / `cap_reached`. Fixed to
+`complete = (status == OPTIMAL)`, one line. Both oracle runs are published
+(`corpus/ORACLE_RESULTS_RUN1.md` and the appendix to
+`corpus/THREE_SYSTEMS.md`): 5 falsely-exhaustive enumerations went to 0, no
+`Verified` and no `Reconstructed` changed, and 8 `Ambiguous` became
+`Unresolved(enumeration_truncated)` — the weaker and true statement.
+`DECISIONS.md` §39 names what else it could have affected silently. It is the
+same shape as `Determinate` meaning "unique among maximising subsets" and as
+withdrawn §6.3 asserting an unmeasured theorem, and it was written by someone
+who had just catalogued both.
+
 ### 6.5 What re-derivation confirmed unchanged
 
 An independent recomputation of every cell of `BASELINE_OLD_ENGINE.md` Part 2
@@ -583,3 +602,111 @@ further leak-audit refinement.
   31 reconstructible instances; that run was not repeated
 - two implementations of one spec exist (`corpus/generator/sim.py` vs the frozen
   simulator), held together by a differential test rather than by construction
+
+---
+
+## 12. The resolver phase — what shipped, and what it measures
+
+**Written 2026-08-25.** §§0–11 above describe the corpus phase and stand
+unchanged except for §6.6. This section is what happened after it, and it
+closes §0.1.
+
+### 12.1 What was built
+
+| artefact | what it is |
+|---|---|
+| `corpus/datasets/A20_Bnone_Cmax`, `A40_Bnone_Cmax` | the PSP artefact is **absent** — no settlement columns at all, no settlement report. Seeds committed before the data existed. |
+| `corpus/datasets_v2/` (14) | the same axis points at new seeds, each with **one false `settlement_id`**: a restatement whose arithmetic still closes. The original fourteen were not regenerated. |
+| `corpus/triviality_check.py` | *does a trivial predicate SOLVE the task?* — the question the leak audit never asked, now permanent output on every dataset |
+| `resolver/` | the resolver. Three tiers, hard isolation from the answer key, rank-1 exposed on every candidate set. |
+| `corpus/score_resolver.py`, `corpus/three_systems.py`, `run_all.py` | the oracle run and the comparison, one command |
+
+**Ordering, all in `git log`:** contract → corpus seeds → corpus → baseline
+prediction → baseline → **new seeds → absence + v2 data → resolver → oracle**.
+The resolver was committed before the oracle scored it once.
+
+### 12.2 §0.1 is closed, and the answer is not flattering
+
+`corpus/triviality_check.py` over all 30 datasets: **15 `TRIVIAL`, 13
+`PARTIAL`, 2 `N/A`.** The original fourteen are all `TRIVIAL` and stay that
+way — that is now their labelled role as the easy regression baseline rather
+than an unexamined assumption.
+
+**On the original fourteen the naive `GROUP BY` still wins outright** — 168/168
+compositions, 0 wrong, 0 abstentions — and `corpus/THREE_SYSTEMS.md` states
+that before it states anything else. What changed is that there are now two
+families where it does not:
+
+| | naive `GROUP BY` | frozen cascade | new resolver |
+|---|---|---|---|
+| original 14 | **168/168, 0 wrong** | 55/56, 1 wrong, abstained 50/88 | 143/144, 1 wrong, abstained 0/88 |
+| PSP absent (2) | **cannot run** | **cannot run** (`KeyError: 'settlement_id'`) | 1/1, 0 wrong, abstained 15/18 reconstructible |
+| false attestation (14) | 154/167, **13 wrong** | 48/50, 2 wrong, abstained 42/76 | **132/132, 0 wrong**, 24/26 discrepancies found |
+
+### 12.3 The oracle, over 30 datasets
+
+**Zero on G1, G2, G4, G6 and G7.** No wrong `Verified`, no `Verified` without
+two independent parties, no assignment without a warrant, no provenance the
+corpus contradicts, and — the one that matters against the old engine — **no
+abstention on any of the 164 determined instances**, against the frozen
+cascade's 92 of 164.
+
+**28 of 30 datasets PASS. The two failures are both PSP-absence points**, on
+G8 (15 of 18 reconstructible lines declined) and G3 (the truth is not inside
+the candidate sets it built).
+
+### 12.4 The finding, and it is a real tension in the contract
+
+The absence failure is structural, and it was written down in
+`DECISIONS.md` §33 and `CORPUS_SPEC.md` §6.5 **before the run**:
+
+> Contract §2.4 permits only `Verified` to consume rows. `Verified` needs an
+> attestation. Where the attestation is absent, nothing ever consumes, so the
+> eligible pool grows monotonically — measured on `A20_Bnone_Cmax`, from **8
+> rows at the first credit to 265 at the last** — and closure stops being
+> unique long before the window ends.
+
+So the rule that prevents defect D2 (a contested line spending the pool and
+starving the next one) is the same rule that makes reconstruction infeasible
+in the one cell where reconstruction is all there is. **Both directions are
+correct in isolation and they conflict.** The resolution is a joint formulation
+over the whole window rather than a line-at-a-time pass with a consumption
+rule — which `DECISIONS.md` §2 already measured as returning UNKNOWN at 60 s on
+1,347 booleans.
+
+This is named here and **not fixed**, because the standing instruction for this
+phase was that discovering a foundational problem is answered by documenting it
+and shipping, not by building the next layer of apparatus. It is the single
+most interesting open problem the repository now contains.
+
+### 12.5 Standing gaps, updated
+
+Superseded from §11: *"the corpus is solvable by a `GROUP BY`"* — now measured
+per dataset and labelled, with two families that resist it. *"No resolver
+exists"* — one does, and it is scored.
+
+Still standing, unchanged: contract §6.3 and gate G5 withdrawn; the
+foreign-credit class fires 1 in 240; D9, so **any GST claim remains
+unearned**; no wrong-*bank*-side class; 14 of 60 grid cells and B × C untested;
+`Reconstructed`'s cross-line exclusivity necessary but not sufficient; two
+implementations of one spec held together by a differential test.
+
+New, from this phase:
+
+- **the consumption/reconstruction conflict** above;
+- **the premise-sharing statistic still cannot be computed** — exactly **1**
+  qualifying instance across 30 datasets. The frozen cascade could not supply
+  one because it filters before enumerating; this resolver ranks everything it
+  enumerates but rarely needs to enumerate, because the attestation resolves
+  the line first. Same unmeasurable, a different reason;
+- **`AttestationDiscrepancy` and `Reconstructed` are mutually exclusive per
+  line**, so on a falsely attested line the resolver reports the finding and
+  forgoes a reachable answer. The vocabulary cannot say *"the record is wrong
+  AND here is what actually happened"*;
+- **the undetectable false attestation is named, not planted** — see
+  `DECISIONS.md` §34 for why, including the reading it invites;
+- **238 of 275 `Verified` are non-decisive**, and the oracle's
+  `AttestationDiscrepancy` precision metric counts a true reversal finding as a
+  false one because its numerator is *planted wrong attestations*. Both are
+  reported in `corpus/THREE_SYSTEMS.md` under *"What the new resolver gets
+  wrong"*.
