@@ -1,0 +1,111 @@
+{
+ "entity": "collection",
+ "count": 15,
+ "items": [
+  {
+   "id": "disp_OYg75HZCsxpse3",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1799430079,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_tlCnOj32S7VfMK",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1805542541,
+   "amount_deducted": 630000
+  },
+  {
+   "id": "disp_Ivz8rz7pOKIuWK",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1800343678,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_D4J0FrukxYFiE4",
+   "phase": "fraud",
+   "status": "won",
+   "opened_at": 1804627533,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_ALmKvX5sJvLa2W",
+   "phase": "retrieval",
+   "status": "won",
+   "opened_at": 1802715757,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_hUQ60DX926ipAq",
+   "phase": "retrieval",
+   "status": "won",
+   "opened_at": 1806139908,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_HW3tdgi8F8VH49",
+   "phase": "fraud",
+   "status": "won",
+   "opened_at": 1800089771,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_ZHBB72YJ2EewBC",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1808321837,
+   "amount_deducted": 1079900
+  },
+  {
+   "id": "disp_UFxrBaoKa0xhej",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1803845249,
+   "amount_deducted": 1720000
+  },
+  {
+   "id": "disp_XeVKVoihUeojz9",
+   "phase": "retrieval",
+   "status": "won",
+   "opened_at": 1802366328,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_jIbgouM8OyQKzW",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1800066705,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_0M0I8GkIy1FByh",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1805726835,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_4cxOoxPrUUeydI",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1804326679,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_FHbiDvMTK5Bt6c",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1805428233,
+   "amount_deducted": 1099900
+  },
+  {
+   "id": "disp_aquqXkHwNqMVkm",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1803727544,
+   "amount_deducted": 504900
+  }
+ ]
+}

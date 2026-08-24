@@ -272,6 +272,77 @@ Present on every dataset, not a separate axis point:
 | ERP gaps both directions, orphans interleaved | D6's fix |
 | dispute holds, clawbacks, roll-forward, netting, cross-month, schema variance, corrupt narration, the three ITC grounds | carried over from the frozen set |
 
+### 6.5 Axis B, extended (2026-08-24): the PSP artefact is ABSENT
+
+**Seeds committed before this data existed** — `corpus/SEEDS.txt` addendum 1,
+verifiable in `git log`.
+
+`A20_Bnone_Cmax` and `A40_Bnone_Cmax` carry **no settlement fields at all**:
+no `settlement_id`, no `settled`, no `settled_at`, no `settlement_utr`, and no
+`settlement_report.csv`. All four columns go together because they are one
+assertion written four ways — dropping only `settlement_id` would leave
+`settled_at` as a perfect group key, which is the same triviality one column
+over and exactly the error §8 records.
+
+**Absence, not deceit, is the justification, and this matters.** PSPs do not
+systematically misreport composition, and a benchmark whose architecture rests
+on assuming they do would be argued down in one sentence by anyone who has run
+a recon feed. What genuinely happens is that the artefact is **not there**: a
+second gateway with no recon API, a historical period predating the feed, an
+acquirer statement held alone, a merchant reconciling a bank account rather
+than a PSP dashboard. In that regime the merchant has money in a bank account
+and a ledger, and nothing that says which ledger rows became which credit.
+
+This is the only cell where reconstruction is *necessary* rather than
+self-imposed. `DeterminedInstance` is empty by construction (it requires an
+attestation) and `ReconstructibleInstance` is the whole scoreable population,
+so gate **G8** — which had never been run — carries the cell alone.
+
+**What it costs, stated up front.** Without an attestation there is nothing to
+consume on: contract §2.4 permits only `Verified` to remove rows from later
+pools, and `Verified` is unreachable here. So the pool grows monotonically
+across the window and closure becomes massively non-unique after the first few
+credits. A sound resolver will decline most of these lines. **That is the
+finding, not a failure of the cell**: it measures how much of reconciliation
+the attestation is actually doing, which is the question §8 says the corpus
+could not previously ask.
+
+### 6.6 `corpus/datasets_v2/` — one FALSE `settlement_id` per dataset
+
+**Seeds committed before this data existed** — `corpus/SEEDS.txt` addendum 2.
+A **superset generation, not a correction**: the original fourteen datasets are
+not regenerated, not fixed, and remain reported. Both families are scored, and
+both are audited (30/30 pass).
+
+Each v2 dataset is its axis point at a new seed, plus one batch whose
+`settlement_id` is written onto rows that are **not** its true composition.
+The shape is a **restatement** — the PSP corrected a batch and the merchant is
+holding the stale file — which is a thing that happens, rather than a PSP
+inventing memberships, which is not.
+
+Two properties, both required, both tested
+(`corpus/tests/test_triviality_and_absence.py`):
+
+1. **The arithmetic still closes.** A subset of the true composition is swapped
+   for unclaimed rows of identical net, found by CP-SAT over exact integer
+   paise. `Σcredit − Σdebit` over the attested rows equals the bank credit
+   exactly, so **no sum check can see it** — including the naive baseline's,
+   which is the point.
+2. **It is discoverable by reconciliation, not by grepping.** Every donated row
+   was created strictly *after* the bank's value date for that line. A row that
+   did not exist when the money left cannot have been in the money that left —
+   a contradiction between the PSP's `created_at` and the **bank's**
+   `value_date`, two parties. Finding it is precisely the independent check
+   §3.3's `Verified` rests on; missing it is precisely the failure it exists to
+   catch.
+
+**No row is minted** (D5). The swap uses rows that already exist and that no
+batch claims, so the plant damages exactly one bank line. Where CP-SAT finds no
+exact-net swap the class is recorded `planted: false` with the reason and the
+dataset ships without it — which happened once, at `datasets_v2/A20_B0_Cmax`,
+where no batch is attested at all and there is therefore no correct attestation
+to restate.
+
 ---
 
 ## 7. The leak search, and why it is a search
@@ -405,14 +476,33 @@ Consequences, stated rather than discovered by a reader:
 The epistemic case for distrusting an attestation stands — a claim can be
 wrong. This corpus never makes one wrong, so the case is untested here.
 
-**The fix is one planted class:** a batch whose `settlement_id` names rows that
-are not its true composition, where the arithmetic still closes. That is the
-case where the naive resolver breaks, where `AttestationDiscrepancy` becomes
-reachable for a non-trivial reason, and where withholding the attestation earns
-its keep. It is the highest-value single change to this corpus and it is not
-yet built.
+**The fix, built 2026-08-24 at seeds committed beforehand.** Two additions,
+§6.5 and §6.6: the cell where the PSP artefact is **absent**, so the trivial
+predicate is not expressible at all, and `corpus/datasets_v2/`, where one
+`settlement_id` per dataset names rows that are not the batch's composition
+while the arithmetic still closes, so the trivial predicate is expressible and
+**wrong**.
 
-**How it was missed.** The only baseline run was the frozen engine, which this
+Measured by `corpus/triviality_check.py` across all 30 datasets:
+
+| verdict | datasets |
+|---|---:|
+| `TRIVIAL` — a `GROUP BY` gets every composition and rejects every foreign line | **15** |
+| `PARTIAL` — the `GROUP BY` misses the planted false attestation | **13** |
+| `N/A` — no `settlement_id` column exists, so the predicate is inexpressible | **2** |
+
+The original fourteen are all `TRIVIAL` and stay that way. They are the easy
+regression baseline — the case where the answer is over-determined and any
+sound resolver must score near-perfectly — and that is now their **labelled**
+role rather than an unexamined assumption.
+
+**The check itself is the durable part.** `corpus/triviality_check.py` asks the
+question `leakage_audit.py` never asked — *does a trivial predicate SOLVE the
+task?* — over every dataset old and new, and its verdict is permanent output
+rather than a footnote. It cannot be omitted again.
+
+**How it was missed, kept here rather than tidied away.** The only baseline run
+was the frozen engine, which this
 project had already published a three-defect report about — it was guaranteed to
 look bad. `leakage_audit.py` asks *"does a trivial predicate identify this
 planted class?"* across 1,346 lines and five families. It never asks *"does a

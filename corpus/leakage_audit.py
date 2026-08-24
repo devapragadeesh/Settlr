@@ -834,6 +834,14 @@ class BankIndependenceReport:
     bank_lines: int
     #: reference ordering vs settlement chronology
     reference_is_dense_sequence: bool
+    #: Whether the posting-lag test could be evaluated at all. At the
+    #: PSP-absence axis points the recon feed carries no `settled_at`, so there
+    #: is no settlement date to measure a lag AGAINST. The distribution then
+    #: comes out constant for the same reason a coin never flipped comes out
+    #: constant, and reading that as "the bank has no clock of its own" would
+    #: be this audit publishing a verdict on an unmeasured quantity -- the
+    #: exact error class it exists to find.
+    posting_lag_measurable: bool = True
 
     @property
     def independent(self) -> bool:
@@ -847,14 +855,20 @@ class BankIndependenceReport:
         """
         return (not self.recoverable_fields
                 and not self.reference_derivable
-                and len(self.posting_lag_days) > 1
+                and (len(self.posting_lag_days) > 1
+                     or not self.posting_lag_measurable)
                 and not self.reference_is_dense_sequence)
 
     def lines(self) -> list[str]:
         out = [f"bank lines: {self.bank_lines}",
-               f"posting lag (days) distribution: {self.posting_lag_days}"
-               + ("   <-- CONSTANT: the bank has no clock of its own"
-                  if len(self.posting_lag_days) <= 1 else ""),
+               (f"posting lag (days): NOT MEASURABLE -- this feed carries no "
+                f"settled_at, so there is no settlement date to measure a lag "
+                f"against. Excluded from the verdict rather than counted as "
+                f"constant."
+                if not self.posting_lag_measurable else
+                f"posting lag (days) distribution: {self.posting_lag_days}"
+                + ("   <-- CONSTANT: the bank has no clock of its own"
+                   if len(self.posting_lag_days) <= 1 else "")),
                f"narrations embedding their own reference verbatim: "
                f"{self.narration_embeds_reference}/{self.bank_lines}"
                "   (not a leak by itself -- see `reference_derivable`)"]
@@ -949,8 +963,14 @@ def audit_bank_independence(data_dir: Path) -> BankIndependenceReport:
         else:
             nearer = [(posted - when).days for when in unique_settled
                       if 0 < (posted - when).days <= 7]
-            lags[min(nearer)] += 1 if nearer else 0
-            if not nearer:
+            # `min([])` raises, and it did: at the PSP-absence axis points the
+            # recon feed carries no `settled_at` at all, so `unique_settled` is
+            # empty and EVERY line takes this branch. A latent bug in a guard
+            # that had never been reached, found by a dataset shape that had
+            # never existed -- which is the argument for adding the shape.
+            if nearer:
+                lags[min(nearer)] += 1
+            else:
                 lags[-1] += 1          # unrelated to any settlement date
 
     derivable: list[str] = []
@@ -984,7 +1004,8 @@ def audit_bank_independence(data_dir: Path) -> BankIndependenceReport:
         reference_derivable=sorted(set(derivable))[:6],
         narration_embeds_reference=embeds,
         bank_lines=len(bank),
-        reference_is_dense_sequence=dense)
+        reference_is_dense_sequence=dense,
+        posting_lag_measurable=bool(unique_settled))
 
 
 # --------------------------------------------------------------------------
@@ -1306,8 +1327,12 @@ def main() -> int:
         return 0 if ok else 1
 
     if arguments.all:
-        datasets = sorted(p for p in (ROOT / "corpus" / "datasets").iterdir()
-                          if (p / "ground_truth.json").exists())
+        # Both families. `datasets_v2` is a SUPERSET generation at new seeds,
+        # not a correction of `datasets`, and both are audited and both ship.
+        datasets = [p for family in ("datasets", "datasets_v2")
+                    if (ROOT / "corpus" / family).exists()
+                    for p in sorted((ROOT / "corpus" / family).iterdir())
+                    if (p / "ground_truth.json").exists()]
         failed: list[str] = []
         sections: list[str] = []
         for dataset in datasets:
@@ -1315,7 +1340,7 @@ def main() -> int:
             report = audit(dataset, classes_from_ground_truth(truth))
             sections.append(report.render())
             status = "PASS" if report.passed else "FAIL"
-            print(f"{dataset.name:<22} {status}"
+            print(f"{dataset.parent.name}/{dataset.name:<22} {status}"
                   + ("" if report.passed else
                      "  " + ", ".join(c.name for c in report.failed_classes)
                      + ("" if report.bank.independent else " [bank]")))

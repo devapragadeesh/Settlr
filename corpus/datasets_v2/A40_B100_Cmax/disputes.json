@@ -1,0 +1,216 @@
+{
+ "entity": "collection",
+ "count": 30,
+ "items": [
+  {
+   "id": "disp_ni88BT5SRRW4CK",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1808474154,
+   "amount_deducted": 1140000
+  },
+  {
+   "id": "disp_waIOjjYh2ehoRl",
+   "phase": "fraud",
+   "status": "won",
+   "opened_at": 1802812486,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_GKH91CG42S5uKo",
+   "phase": "retrieval",
+   "status": "won",
+   "opened_at": 1805854200,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_67eTPKdn9EWjVi",
+   "phase": "fraud",
+   "status": "under_review",
+   "opened_at": 1799531218,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_7bEvxQBPz3t2On",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1809582542,
+   "amount_deducted": 945000
+  },
+  {
+   "id": "disp_7naUl5URzBd0es",
+   "phase": "fraud",
+   "status": "won",
+   "opened_at": 1806434291,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_8AMdHF9uwlBJBm",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1803730695,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_lwMsoXydc3fs9p",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1804028328,
+   "amount_deducted": 1954900
+  },
+  {
+   "id": "disp_p13OcPe9rEvcum",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1801076131,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_iZem0uutQkbqrx",
+   "phase": "fraud",
+   "status": "won",
+   "opened_at": 1806129188,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_YPAUi9GAXa6V3b",
+   "phase": "retrieval",
+   "status": "won",
+   "opened_at": 1804655661,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_Ga6F51Jq1JNgjo",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1807301913,
+   "amount_deducted": 814500
+  },
+  {
+   "id": "disp_LEw7JSL73RVc8Y",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1800750420,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_ZxNMozQNbdrzs8",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1807816392,
+   "amount_deducted": 764600
+  },
+  {
+   "id": "disp_dlLtpWaV2z42uC",
+   "phase": "retrieval",
+   "status": "won",
+   "opened_at": 1805846549,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_3YwwuznbWdEltp",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1805686059,
+   "amount_deducted": 124900
+  },
+  {
+   "id": "disp_qZrB38GfkNS5Aw",
+   "phase": "fraud",
+   "status": "won",
+   "opened_at": 1800651774,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_i1gUpUhwJGSGmC",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1806035939,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_35wYXL3EuleHNd",
+   "phase": "fraud",
+   "status": "under_review",
+   "opened_at": 1802602418,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_8SJs9OoMp3CCdB",
+   "phase": "fraud",
+   "status": "won",
+   "opened_at": 1800172493,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_W4JiZurlxHLMcH",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1803494513,
+   "amount_deducted": 730000
+  },
+  {
+   "id": "disp_83xJj4iQAWZnAA",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1805526056,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_8u4URSfzWZK3iP",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1806944512,
+   "amount_deducted": 1524900
+  },
+  {
+   "id": "disp_8WZFdmpNLM6rkz",
+   "phase": "retrieval",
+   "status": "won",
+   "opened_at": 1805040512,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_2LbOW2iEvnudcy",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1806064029,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_AaMtOfVa2NiKBQ",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1802494063,
+   "amount_deducted": 1494900
+  },
+  {
+   "id": "disp_xJDeHacbDe6TEg",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1801186083,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_djRQHc1ZCWoYtP",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1800222292,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_nj7UGEAMCNvcS9",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1807971090,
+   "amount_deducted": 44900
+  },
+  {
+   "id": "disp_pRGBjK51an0CQW",
+   "phase": "fraud",
+   "status": "won",
+   "opened_at": 1803234932,
+   "amount_deducted": 0
+  }
+ ]
+}

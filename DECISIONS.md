@@ -1094,3 +1094,156 @@ purpose: the thresholds exist to be met, not to be met halfway.
 Finding four previously unknown problems in the corpus it was built to protect
 — two real leaks and two flaws in its own statistics — is the better evidence,
 because nobody knew those were there.
+
+---
+
+## 33. The primary answer to the `GROUP BY` finding is PSP ABSENCE, not PSP deceit
+
+**Decision.** The cell that makes reconstruction necessary is one where the PSP
+artefact is **not there** — `A20_Bnone_Cmax` and `A40_Bnone_Cmax` carry no
+`settlement_id`, no `settled`, no `settled_at`, no `settlement_utr` and no
+`settlement_report.csv`. Absence is stated in `CORPUS_SPEC.md` §6.5 as the
+*primary* justification for the whole reconstruction architecture; the false
+attestation (§34) is secondary.
+
+**Why.** `CHECKPOINT.md` §0.1 measured that a fifteen-line `GROUP BY` scores
+168/168 on the first fourteen datasets, because `settlement_id` is populated on
+every settled row and no dataset ever plants a false one. The obvious repair is
+to make the PSP lie more often. That repair is wrong on the merits: **PSPs do
+not systematically misreport composition**, a Razorpay engineer will say so in
+the first minute of the panel round, and a benchmark whose difficulty rests on
+an untrue premise about the counterparty is a benchmark about nothing.
+
+What is true and common is that the artefact is missing: a second gateway with
+no recon API, a historical period predating the feed, an acquirer statement
+held alone, a merchant reconciling a bank account rather than a dashboard. In
+that regime there is money in a bank account, a ledger, and nothing joining
+them. Reconstruction is the only path and `Reconstructed` is the only positive
+outcome reachable.
+
+**All four settlement columns are dropped together**, because they are one
+assertion written four ways. Dropping only `settlement_id` would leave
+`settled_at` as a perfect group key — the same triviality one column over, and
+the same error §0.1 records.
+
+**Rejected: make the PSP lie on a large fraction of batches.** Unrealistic, and
+it converts the benchmark's central difficulty into a premise the reader does
+not accept. One planted restatement per dataset (§34) is the realistic dose.
+
+**Rejected: blank `settlement_id` while keeping `settled` and `settled_at`.**
+Grouping on `settled_at` recovers the batch exactly. This is the cheap version
+of the fix and it fixes nothing.
+
+**Rejected: emit an empty `settlement_report.csv` with only a header.** An
+empty file still asserts "the PSP made no claims about this period", which is
+itself a claim, and a resolver could legitimately act on it. Absence has to be
+absence.
+
+**Rejected: regenerating the original fourteen without `settlement_id`.** The
+seeds and the data are frozen and the ordering is the integrity argument. New
+shapes are new files at new seeds. The fourteen remain as they are and remain
+reported, `TRIVIAL` label included.
+
+**The cost, accepted and recorded.** Contract §2.4 permits only `Verified` to
+consume, and `Verified` is unreachable without an attestation, so the pool
+grows monotonically across the window and closure becomes non-unique after the
+first few credits. A sound resolver will decline most of these lines. That is
+the measurement — *how much of reconciliation the attestation is actually
+doing* — and not a defect of the cell.
+
+---
+
+## 34. The false attestation is a RESTATEMENT, swapped at exactly equal net
+
+**Decision.** `corpus/datasets_v2/` is the fourteen axis points regenerated at
+**new seeds committed beforehand**, each carrying one batch whose
+`settlement_id` is written onto rows that are not its true composition. The
+original fourteen are untouched. Both families ship and both are scored.
+
+The plant is built by CP-SAT: a subset `S` of the true composition is swapped
+for a set `T` of rows that no batch claims, subject to `net(S) == net(T)` in
+exact integer paise, minimising `|S| + |T|`.
+
+**Two properties, both load-bearing.**
+
+*The arithmetic still closes.* If it did not, the naive baseline's one existing
+check would catch the plant and the class would test nothing. As built, the
+attested rows sum to the bank credit exactly and **no sum check can see it**.
+
+*It is discoverable by reconciliation rather than by grepping.* Every donated
+row was created strictly after the **bank's** value date for that line. A row
+that did not exist when the money left cannot have been in the money that left.
+That is a contradiction between the PSP's `created_at` and the bank's
+`value_date` — two parties — so the plant is found by exactly the independent
+check `Verified` is defined to rest on, and missed by exactly the resolver the
+contract exists to catch.
+
+**Rejected: swap for rows drawn from the batch's own eligible pool.** This is
+the tempting version, because the closure register already enumerates rival
+closing subsets and one is free to take. It produces a false attestation that
+is **undetectable in principle**: same net, all rows eligible, nothing claimed
+twice, no temporal contradiction. Any resolver that trusts a composition claim
+— including one that obeys this contract to the letter — returns a wrong
+`Verified`, which oracle gate G1 calls a build failure. That would be a
+genuinely interesting result about the contract's `Verified` being unsound, and
+it is **named as a gap rather than planted**, because manufacturing a
+guaranteed G1 failure teaches less than measuring whether a discoverable one
+gets discovered. Recorded here so the easier reading — "they picked the version
+their resolver can pass" — has the actual reason next to it.
+
+**Rejected: steal the donated rows from a later batch.** Then the later batch's
+attestation stops closing and the discrepancy surfaces at a *different* bank
+line, damaging two lines with one plant and confounding which line the class is
+about.
+
+**Rejected: minting rows to make the net work.** Defect D5, and the reason the
+frozen calibration rows are greppable. Where CP-SAT finds no exact swap the
+class is recorded `planted: false` with the reason and the dataset ships
+without it. That happened once, at `datasets_v2/A20_B0_Cmax`, where no batch is
+attested and there is no correct attestation to restate.
+
+**Rejected: corrupting `settlement_report.csv` instead.** That is the class the
+corpus already had, and §0.1 measured what it is worth: it corrupts a scalar
+amount, never a row's membership, so the trivial predicate is unaffected by it.
+
+**Known consequence, not a defect.** On a falsely attested line the contract
+forces a choice: `AttestationDiscrepancy` says *the record is wrong* and
+carries no composition, while `Reconstructed` could still name the true rows
+from unfiltered closure. **The vocabulary cannot say both.** A resolver
+reporting the discrepancy forgoes a reachable answer. This is a real limitation
+of the outcome set, it is named here rather than fixed by amending the contract
+during a phase whose whole point is not to build another layer of apparatus.
+
+---
+
+## 35. The triviality check is a permanent output, not a one-off audit
+
+**Decision.** `corpus/triviality_check.py` runs the naive `GROUP BY` baseline
+against **every** dataset, old and new, and reports `TRIVIAL` / `PARTIAL` /
+`NOT TRIVIAL` / `N/A` per dataset as standard output. `--gate` fails only when
+*every* dataset is `TRIVIAL`.
+
+**Why a new file rather than a sixth family in `leakage_audit.py`.** The audit's
+five families all ask *"does a trivial predicate identify this planted class?"*
+over a per-class contingency table. The question that was missed is one
+coordinate up — *"does a trivial predicate solve the task?"* — and it is scored
+against the *answer key's compositions*, not against a class. Bolting it into
+the class-audit machinery would have meant expressing the whole task as a
+planted class, which it is not.
+
+**Why individual `TRIVIAL` datasets are not a build failure.** The original
+fourteen are all `TRIVIAL` and should be: the easy regression baseline is worth
+having, and any sound resolver must score near-perfectly on it. What was wrong
+was not that they are easy — it was that nobody had **measured** that they are
+easy, and conclusions were drawn as though they were hard. The label is the
+fix. The gate fires only if the whole benchmark is easy, which would mean it is
+measuring a handicap the engine under test imposed on itself.
+
+**Rejected: gating every trivial dataset out of the corpus.** That deletes the
+regression baseline and, worse, would have deleted fourteen datasets to make a
+number look better — the exact move the seed-commitment protocol exists to
+prevent.
+
+**Rejected: reporting it once in `CHECKPOINT.md` and moving on.** The finding
+was available for the whole previous phase and cost ten minutes to obtain. A
+prose paragraph is not a mechanism. A script that runs on every dataset is.

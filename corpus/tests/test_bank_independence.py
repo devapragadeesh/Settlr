@@ -72,10 +72,14 @@ IDENTIFIER_FIELDS = ("settlement_id", "entity_id", "order_id",
 
 
 def corpus_datasets() -> list[Path]:
-    if not DATASETS.exists():
-        return []
-    return sorted(p for p in DATASETS.iterdir()
-                  if (p / "bank_statement.csv").exists())
+    """Both families. `datasets_v2` is a superset generation at new seeds, not
+    a correction of `datasets`, and every guarantee here binds on both."""
+    out: list[Path] = []
+    for family in (DATASETS, DATASETS.parent / "datasets_v2"):
+        if family.exists():
+            out += sorted(p for p in family.iterdir()
+                          if (p / "bank_statement.csv").exists())
+    return out
 
 
 def _bank(directory: Path) -> tuple[list[dict], str, str]:
@@ -209,10 +213,14 @@ def test_the_arithmetic_check_FAILS_on_the_frozen_bank_file():
 # --------------------------------------------------------------------------
 
 
+def _settlement_dates(directory: Path) -> list:
+    return sorted({datetime.fromtimestamp(row["settled_at"], IST).date()
+                   for row in _rows(directory) if row.get("settled_at")})
+
+
 def posting_lags(directory: Path) -> dict[int, int]:
     bank, _reference, when = _bank(directory)
-    settled = sorted({datetime.fromtimestamp(row["settled_at"], IST).date()
-                      for row in _rows(directory) if row.get("settled_at")})
+    settled = _settlement_dates(directory)
     lags: dict[int, int] = {}
     for index, row in enumerate(bank):
         if index >= len(settled):
@@ -229,7 +237,18 @@ def posting_lags(directory: Path) -> dict[int, int]:
 @pytest.mark.parametrize("dataset", corpus_datasets(), ids=lambda p: p.name)
 def test_the_posting_lag_is_not_constant(dataset):
     """A constant lag means the bank has no clock -- the value date IS
-    `settled_at`, and a withheld column is handed straight back."""
+    `settled_at`, and a withheld column is handed straight back.
+
+    NOT MEASURABLE at the PSP-absence axis points: the recon feed carries no
+    `settled_at`, so there is no settlement date to measure a lag against. The
+    distribution is empty for the same reason a coin never flipped has no
+    distribution, and asserting on it would be this suite gating an unmeasured
+    quantity -- the error class the whole corpus exists to find. Skipped with
+    the reason rather than passed silently.
+    """
+    if not _settlement_dates(dataset):
+        pytest.skip("no settled_at in this feed: posting lag is not measurable, "
+                    "not constant (PSP-absence axis point)")
     assert len(posting_lags(dataset)) > 1
 
 

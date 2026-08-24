@@ -1,0 +1,111 @@
+{
+ "entity": "collection",
+ "count": 15,
+ "items": [
+  {
+   "id": "disp_OptG5LD8RXS0ZC",
+   "phase": "retrieval",
+   "status": "won",
+   "opened_at": 1801504237,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_a3fkvdz4wGOyqq",
+   "phase": "fraud",
+   "status": "under_review",
+   "opened_at": 1804093208,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_yYhII04gzSefpZ",
+   "phase": "fraud",
+   "status": "under_review",
+   "opened_at": 1805694697,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_cc7M5YA89Mtnuv",
+   "phase": "retrieval",
+   "status": "won",
+   "opened_at": 1804870581,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_MEyD9kA3TZplPn",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1801872551,
+   "amount_deducted": 1020000
+  },
+  {
+   "id": "disp_V7OA2HXmOLdcYB",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1808453013,
+   "amount_deducted": 154600
+  },
+  {
+   "id": "disp_fhL702RTrPoHic",
+   "phase": "fraud",
+   "status": "under_review",
+   "opened_at": 1801518688,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_vGfwk93rFlxcAI",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1799737299,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_WDi9K3MDhpMwJY",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1803889641,
+   "amount_deducted": 7059900
+  },
+  {
+   "id": "disp_Hxs1FloaA3OskG",
+   "phase": "retrieval",
+   "status": "under_review",
+   "opened_at": 1799209714,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_kwTf2WysRKYPp7",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1807499370,
+   "amount_deducted": 4700000
+  },
+  {
+   "id": "disp_qYX8pKZjp5Rykc",
+   "phase": "fraud",
+   "status": "won",
+   "opened_at": 1800762792,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_qvUbkkJ4R6RA5q",
+   "phase": "fraud",
+   "status": "won",
+   "opened_at": 1799194504,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_QDlm0e0YrEPlYx",
+   "phase": "retrieval",
+   "status": "won",
+   "opened_at": 1801954060,
+   "amount_deducted": 0
+  },
+  {
+   "id": "disp_pVaLCAhXEvvyo0",
+   "phase": "chargeback",
+   "status": "lost",
+   "opened_at": 1803392008,
+   "amount_deducted": 159900
+  }
+ ]
+}

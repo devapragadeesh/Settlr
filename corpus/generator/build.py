@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import dataclasses
 import hashlib
 import json
 import random
@@ -97,6 +98,18 @@ class AxisPoint:
     foreign_debits: int = 3
     reversals: int = 1
     wrong_attestations: int = 1
+    #: The PSP artefact is ABSENT -- no settlement_report.csv, and the recon
+    #: feed carries no settlement fields at all. Not a PSP lying: a second
+    #: gateway, a historical period predating the recon feed, a bank feed held
+    #: alone. See SEEDS.txt addendum 1 and CORPUS_SPEC 6.5.
+    psp_attestation_absent: bool = False
+    #: Batches whose `settlement_id` is written onto rows that are NOT their
+    #: true composition, chosen so the arithmetic still closes. See
+    #: `plant_false_composition`.
+    false_compositions: int = 0
+    #: Which directory family this point belongs to: `datasets` or
+    #: `datasets_v2`. The original fourteen are never regenerated.
+    family: str = "datasets"
     note: str = ""
 
     @property
@@ -158,7 +171,55 @@ AXIS_POINTS: list[AxisPoint] = [
                 "subsets. The premise-free extreme."),
 ]
 
-AXIS_BY_NAME = {point.name: point for point in AXIS_POINTS}
+#: --- PSP ABSENCE. Seeds committed 2026-08-24, before this data existed. ---
+#:
+#: The corpus as first built is solvable by a fifteen-line GROUP BY, because
+#: `settlement_id` is populated on every settled row of every dataset
+#: (`corpus/baseline_naive.py`). These two points are the cell where there is
+#: nothing to group by: reconstruction is genuinely necessary and
+#: `Reconstructed` is the only positive outcome reachable.
+ABSENCE_POINTS: list[AxisPoint] = [
+    _point("A20_Bnone_Cmax", 20, 0, "max_under_cap", 20260907,
+           psp_attestation_absent=True, wrong_attestations=0,
+           note="the PSP artefact is ABSENT, not wrong. No settlement fields "
+                "on the recon rows and no settlement report at all. The naive "
+                "GROUP BY cannot run here; reconstruction is the only path."),
+    _point("A40_Bnone_Cmax", 40, 0, "max_under_cap", 20260908,
+           psp_attestation_absent=True, wrong_attestations=0,
+           note="absence at a pool size where closure is measurably "
+                "non-unique. Expect Ambiguous, and that is the honest answer."),
+]
+
+#: --- datasets_v2: one FALSE settlement_id per dataset. --------------------
+#:
+#: A SUPERSET GENERATION, not a correction. The original fourteen are not
+#: regenerated, not corrected and remain reported; these are new files in a
+#: new directory at new seeds, committed before they existed. The plant is a
+#: RESTATEMENT: the PSP corrected a batch and the merchant holds a stale file,
+#: so one batch's `settlement_id` names rows that are not its composition and
+#: the arithmetic still closes.
+V2_SEEDS = {
+    "A10_B100_Cmax": 20260910, "A20_B100_Cmax": 20260911,
+    "A30_B100_Cmax": 20260912, "A40_B100_Cmax": 20260913,
+    "A60_B100_Cmax": 20260914, "A20_B75_Cmax": 20260915,
+    "A20_B50_Cmax": 20260916, "A20_B0_Cmax": 20260917,
+    "A40_B50_Cmax": 20260918, "A20_B100_Cfifo": 20260919,
+    "A20_B100_Crandom": 20260920, "A40_B100_Cfifo": 20260921,
+    "A40_B100_Crandom": 20260922, "A20_B100_Crandom0": 20260923,
+}
+
+V2_POINTS: list[AxisPoint] = [
+    dataclasses.replace(point, seed=V2_SEEDS[point.name],
+                        false_compositions=1, family="datasets_v2",
+                        note=(point.note + " ").strip() + " v2: one batch's "
+                             "settlement_id names rows that are not its true "
+                             "composition, and the arithmetic still closes.")
+    for point in AXIS_POINTS
+]
+
+ALL_POINTS = AXIS_POINTS + ABSENCE_POINTS + V2_POINTS
+AXIS_BY_NAME = {point.name: point for point in AXIS_POINTS + ABSENCE_POINTS}
+V2_BY_NAME = {point.name: point for point in V2_POINTS}
 
 
 # --------------------------------------------------------------------------
@@ -192,7 +253,16 @@ def make_gstin(rng: random.Random, state: str = "29") -> str:
 # --------------------------------------------------------------------------
 
 
-def emit_rows(ledger, result, batch_by_id, reported_reference: dict[str, str]):
+#: The settlement fields. They are ONE assertion written in four columns, so
+#: when the PSP artefact is absent all four are absent together. Dropping only
+#: `settlement_id` would leave `settled_at` as a perfect group key -- the same
+#: triviality one column over, which is exactly the error CHECKPOINT 0.1
+#: records.
+SETTLEMENT_FIELDS = ("settlement_id", "settled", "settled_at", "settlement_utr")
+
+
+def emit_rows(ledger, result, batch_by_id, reported_reference: dict[str, str],
+              *, omit_settlement_fields: bool = False):
     """Rows in Razorpay's `recon/combined` shape, quirks preserved.
 
     `reported_reference` maps settlement_id -> the reference the PSP REPORTS,
@@ -261,8 +331,149 @@ def emit_rows(ledger, result, batch_by_id, reported_reference: dict[str, str]):
             card_issuer=None, card_type=None, dispute_id=adjustment.dispute_id,
             source_tier=adjustment.source_tier, source_ref=adjustment.source_ref))
 
+    if omit_settlement_fields:
+        # The keys are DELETED, not nulled -- the same precedent the frozen
+        # schema sets for `credit_type` on adjustment rows. A null column says
+        # "this feed has settlement data and it is empty here"; an absent
+        # column says "this feed does not carry settlement data", which is the
+        # artefact being modelled.
+        for row in rows:
+            for field_name in SETTLEMENT_FIELDS:
+                row.pop(field_name, None)
+
     rows.sort(key=lambda row: (row["created_at"], row["entity_id"]))
     return rows
+
+
+# --------------------------------------------------------------------------
+# The false attestation: a RESTATEMENT
+# --------------------------------------------------------------------------
+
+
+def plant_false_composition(batch, rows_by_id, claimed: set[str],
+                            bank_value_date: date, reported_reference: dict):
+    """Write this batch's `settlement_id` onto rows that are NOT its composition.
+
+    ## Why this class had to exist
+
+    `corpus/baseline_naive.py` scores 168/168 on the first fourteen datasets by
+    grouping on `settlement_id` and netting. It does that because
+    `settlement_id` is populated on every settled row and **the corpus never
+    once plants a false one** -- so a resolver that simply trusts the PSP is
+    perfectly calibrated, and the benchmark cannot tell it apart from a sound
+    one. The epistemic argument for checking an attestation was sound and
+    completely untested. This is the class that tests it.
+
+    ## The shape: a restatement, not a lie
+
+    PSPs do not systematically misreport composition, and claiming they do
+    would be the wrong justification. What happens is a **restatement**: the
+    PSP corrects a batch and the merchant is holding the stale file. So one
+    batch's attested membership is a set of rows that is not what actually
+    settled.
+
+    ## The two properties, both required
+
+    1. **The arithmetic still closes.** A subset `S` of the true composition is
+       swapped for a set `T` of unclaimed rows with an identical net, found by
+       CP-SAT over exact integer paise. `Sigma credit - Sigma debit` over the
+       attested rows equals the bank credit exactly, so **a sum check cannot
+       see this**, and neither can the naive baseline.
+    2. **It is discoverable by reconciliation, not by grepping.** Every row in
+       `T` was created strictly AFTER the bank's value date for this line. A
+       row that did not exist when the money left cannot have been in the
+       money that left. That is a contradiction between the PSP's
+       `created_at` and the BANK's `value_date` -- two parties -- so finding
+       it is exactly the independent check the contract's `Verified` is
+       supposed to rest on, and missing it is exactly the failure it is
+       supposed to catch.
+
+    NO ROW IS MINTED (defect D5). `S` comes from the batch, `T` from rows that
+    already exist and that no batch claims. If CP-SAT finds no exact swap the
+    class is recorded `planted: false` with the reason, and the dataset ships
+    without it.
+
+    Returns the ground-truth record, or `None` if no exact swap exists.
+    """
+    from ortools.sat.python import cp_model
+
+    composition = sorted(batch.credit_ids + batch.debit_ids)
+    if len(composition) < 2:
+        return None
+
+    def net(row_id: str) -> int:
+        row = rows_by_id[row_id]
+        return row["credit"] - row["debit"]
+
+    cutoff = int(datetime.combine(bank_value_date, datetime.min.time(),
+                                  tzinfo=IST).timestamp()) + 86400
+    donors = sorted(
+        row_id for row_id, row in rows_by_id.items()
+        if row_id not in claimed and row["created_at"] >= cutoff
+        and (row["credit"] - row["debit"]) != 0)
+    if not donors:
+        return None
+
+    model = cp_model.CpModel()
+    keep_out = [model.NewBoolVar(f"s_{r}") for r in composition]
+    bring_in = [model.NewBoolVar(f"t_{r}") for r in donors]
+    model.Add(sum(net(r) * v for r, v in zip(composition, keep_out))
+              == sum(net(r) * v for r, v in zip(donors, bring_in)))
+    model.Add(sum(keep_out) >= 1)
+    model.Add(sum(keep_out) <= len(composition) - 1)
+    model.Add(sum(bring_in) >= 1)
+    # smallest swap that works: a restatement touches a few rows, not half the
+    # batch. No objective is applied to anything a resolver will ever see --
+    # this one only picks among plants at generation time.
+    model.Minimize(sum(keep_out) + sum(bring_in))
+
+    solver = cp_model.CpSolver()
+    solver.parameters.num_workers = 1
+    solver.parameters.random_seed = 0
+    solver.parameters.max_time_in_seconds = 20.0
+    if solver.Solve(model) not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return None
+
+    removed = [r for r, v in zip(composition, keep_out) if solver.Value(v)]
+    added = [r for r, v in zip(donors, bring_in) if solver.Value(v)]
+    assert sum(net(r) for r in removed) == sum(net(r) for r in added)
+
+    for row_id in removed:
+        row = rows_by_id[row_id]
+        row["settlement_id"] = None
+        row["settled"] = False
+        row["settled_at"] = None
+        row["settlement_utr"] = None
+    for row_id in added:
+        row = rows_by_id[row_id]
+        row["settlement_id"] = batch.settlement_id
+        row["settled"] = True
+        row["settled_at"] = batch.formed_at
+        # adjustment rows carry a null UTR even with a real settlement id --
+        # a frozen-schema quirk, preserved here so the corrupted rows do not
+        # become identifiable by having one.
+        if row["type"] != "adjustment":
+            row["settlement_utr"] = reported_reference.get(
+                batch.settlement_id) or None
+
+    attested = sorted(set(composition) - set(removed) | set(added))
+    return {
+        "settlement_id": batch.settlement_id,
+        "kind": "attested_composition_names_wrong_rows",
+        "true_composition": composition,
+        "attested_composition": attested,
+        "rows_removed": removed,
+        "rows_added": added,
+        "swapped_net_paise": sum(net(r) for r in removed),
+        "true_payout_paise": batch.payout,
+        "reported_payout_paise": batch.payout,
+        "arithmetic_still_closes": True,
+        "bank_value_date": bank_value_date.isoformat(),
+        "detectable_by": "temporal contradiction between the PSP's created_at "
+                         "and the BANK's value_date: every added row was "
+                         "created after the money left. Invisible to any sum "
+                         "check, including the naive baseline's.",
+    }
 
 
 # --------------------------------------------------------------------------
@@ -281,7 +492,8 @@ def _offline_reference(rng: random.Random) -> str:
     return "".join(rng.choice(alphabet) for _ in range(14))
 
 
-def build_erp_and_gst(rng: random.Random, ledger, result, rows, spec_window):
+def build_erp_and_gst(rng: random.Random, ledger, result, rows, spec_window,
+                      settled_at_of: dict[str, int] | None = None):
     """The merchant's sales ledger and the tax authority's 2B.
 
     D6: the invoice sequence is allocated for EVERY line up front and the
@@ -347,9 +559,15 @@ def build_erp_and_gst(rng: random.Random, ledger, result, rows, spec_window):
     # Razorpay invoices MONTHLY, not per settlement, so one 2B line ties back
     # to N settlements' fee columns.
     per_month: dict[str, list[int]] = {}
+    # Taken from the TRUE settlement mapping rather than from the emitted
+    # column, because the column is absent at the PSP-absence axis points and
+    # is deliberately corrupted at one batch in `datasets_v2`. The tax
+    # authority's file is a different party's and it is correct.
+    settled_at_of = settled_at_of or {}
     for row in rows:
-        if row["type"] == "payment" and row["fee"] and row["settlement_id"]:
-            month = datetime.fromtimestamp(row["settled_at"], IST).strftime("%Y-%m")
+        settled_at = settled_at_of.get(row["entity_id"])
+        if row["type"] == "payment" and row["fee"] and settled_at is not None:
+            month = datetime.fromtimestamp(settled_at, IST).strftime("%Y-%m")
             per_month.setdefault(month, []).append(row["fee"] - (row["tax"] or 0))
 
     gst_rows: list[OrderedDict] = []
@@ -466,7 +684,7 @@ FROZEN_FILES = ["recon_combined.json", "disputes.json", "bank_statement.csv",
 
 
 def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
-    out = out_dir or (DATASETS / point.slug)
+    out = out_dir or (ROOT / "corpus" / point.family / point.slug)
     rng = random.Random(point.seed)
     mk = make_id_factory(rng)
 
@@ -507,7 +725,8 @@ def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
             settlement_reference[batches[line.payout_index].settlement_id] = \
                 bank_file.rows[line.line_index]["bank_reference"]
 
-    attested_count = int(len(batches) * point.attestation_coverage)
+    attested_count = (0 if point.psp_attestation_absent
+                      else int(len(batches) * point.attestation_coverage))
     # which settlements keep attestation is a SEEDED UNIFORM SAMPLE -- not the
     # largest, not the ambiguous ones. Coverage correlated with difficulty
     # would confound the axis with the thing it is measuring.
@@ -575,13 +794,58 @@ def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
             status="processed")
         for batch in batches]
 
-    rows = emit_rows(ledger, result, batch_by_id, reported)
+    rows = emit_rows(ledger, result, batch_by_id, reported,
+                     omit_settlement_fields=point.psp_attestation_absent)
     (erp, gst_rows, merchant_gstin, gateway_gstin, missing_erp, orphans,
      itc_at_risk, residuals, gateway_invoices) = build_erp_and_gst(
-        rng, ledger, result, rows, (window[0].date(), window[1].date()))
+        rng, ledger, result, rows, (window[0].date(), window[1].date()),
+        settled_at_of={row_id: batch_by_id[settlement].formed_at
+                       for row_id, settlement in result.settled_in.items()
+                       if settlement in batch_by_id})
+
+    # ---- the FALSE attestation, planted after ERP/GST ---------------------
+    #
+    # Ordering matters. `build_erp_and_gst` aggregates the fee column by
+    # settlement month, and the tax authority is an independent party whose
+    # file is CORRECT. Corrupting the PSP's settlement column afterwards leaves
+    # GSTR-2B reflecting what really happened, which is the point of it being
+    # a different party's artefact.
+    rows_by_id = {row["entity_id"]: row for row in rows}
+    false_compositions: list[dict] = []
+    false_reason = ""
+    if point.false_compositions:
+        claimed = {row_id for b in batches
+                   for row_id in (b.credit_ids + b.debit_ids)}
+        value_date = {}
+        for line in bank_file.truth:
+            if line.kind == "settlement" and line.payout_index is not None:
+                value_date[batches[line.payout_index].settlement_id] = date.fromisoformat(
+                    bank_file.rows[line.line_index]["value_date"])
+        eligible = [b for b in batches
+                    if b.settlement_id in attested
+                    and b.settlement_id not in wrong_by_id
+                    and b.settlement_id in value_date]
+        for batch in rng.sample(eligible, min(point.false_compositions,
+                                              len(eligible))):
+            record = plant_false_composition(
+                batch, rows_by_id, claimed,
+                value_date[batch.settlement_id], reported)
+            if record is not None:
+                false_compositions.append(record)
+        if not eligible:
+            false_reason = (
+                "no batch is both attested and uncorrupted at this axis point, "
+                "so there is no correct attestation to restate")
+        elif not false_compositions:
+            false_reason = (
+                "no exact-net swap exists at this seed: CP-SAT found no subset "
+                "of rows created after the bank's value date whose net equals "
+                "the net of any subset of the sampled batch. NO ROW IS MINTED "
+                "to force one (defect D5)")
+    wrong_attestation += false_compositions
+    wrong_by_id = {item["settlement_id"]: item for item in wrong_attestation}
 
     # ---- the closure register: no objective, cap far above any solver ----
-    rows_by_id = {row["entity_id"]: row for row in rows}
     batch_truth: list[dict] = []
     determined: list[int] = []
     line_of_batch = {line.payout_index: line.line_index
@@ -657,7 +921,23 @@ def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
             "members": [item["settlement_id"] for item in wrong_attestation],
             "detail": wrong_attestation,
             "reason": "" if wrong_attestation else
-                      "no attested batch had >=3 credit rows to corrupt"},
+                      ("the PSP artefact is absent at this axis point, so "
+                       "there is no attestation to corrupt"
+                       if point.psp_attestation_absent
+                       else "no attested batch had >=3 credit rows to corrupt")},
+        # The class CHECKPOINT 0.1 says the corpus was missing: a settlement_id
+        # written onto rows that are not the batch's composition, where the
+        # arithmetic still closes. Settlement-level, like d03 and d04: the unit
+        # of analysis has to match the unit the fact is about.
+        "d11_false_settlement_id": {
+            "planted": bool(false_compositions), "table": "recon",
+            "members": [item["settlement_id"] for item in false_compositions],
+            "detail": false_compositions,
+            "reason": "" if false_compositions else
+                      (false_reason or
+                       "not planted at this axis point -- the original "
+                       "fourteen datasets are not regenerated, and this class "
+                       "ships only in corpus/datasets_v2/")},
         # Expressed at the SETTLEMENT level, like d03 and for the same reason.
         # Attestation is a property of a settlement, not of a row, and the rows
         # of one batch are not exchangeable observations -- they are one
@@ -697,7 +977,9 @@ def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
             "A_pool_sizes": [b.pool_size for b in batches],
             "A_pool_mean": round(sum(b.pool_size for b in batches)
                                  / max(len(batches), 1), 2),
-            "B_attestation_coverage_target": str(point.attestation_coverage),
+            "B_attestation_coverage_target":
+                "absent" if point.psp_attestation_absent
+                else str(point.attestation_coverage),
             "B_attestation_coverage_achieved":
                 f"{attested_count}/{len(batches)}",
             "C_selection_rule": point.selection_rule,
@@ -744,7 +1026,12 @@ def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
                 OrderedDict(entity="collection", count=len(ledger.disputes),
                             items=ledger.disputes))
     _write_csv(out / "bank_statement.csv", bank_file.rows)
-    _write_csv(out / "settlement_report.csv", settlement_report)
+    if point.psp_attestation_absent:
+        # The artefact is ABSENT. Not an empty file with a header -- an empty
+        # file would still assert "the PSP made no claims", which is a claim.
+        (out / "settlement_report.csv").unlink(missing_ok=True)
+    else:
+        _write_csv(out / "settlement_report.csv", settlement_report)
     _write_csv(out / "erp_orders.csv", erp)
     _write_csv(out / "gstr2b.csv", gst_rows)
     _write_json(out / "ground_truth.json", truth)
@@ -941,18 +1228,39 @@ def _report(point, truth, bank_file, rows, erp, gst_rows) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("name", nargs="?", help="axis point to build")
-    parser.add_argument("--all", action="store_true")
+    parser.add_argument("--all", action="store_true",
+                        help="the original fourteen. Regenerating them is a "
+                             "freeze violation unless nothing changed.")
+    parser.add_argument("--absence", action="store_true",
+                        help="the two PSP-absence points")
+    parser.add_argument("--v2", action="store_true",
+                        help="corpus/datasets_v2/: the same axis points at new "
+                             "seeds, each with one FALSE settlement_id")
     parser.add_argument("--list", action="store_true")
     arguments = parser.parse_args()
 
     if arguments.list:
-        for point in AXIS_POINTS:
-            print(f"{point.name:<22} pool~{point.pool_target:<3} "
-                  f"cov={str(point.attestation_coverage):<4} "
-                  f"{point.selection_rule:<15} seed={point.seed}")
+        for point in ALL_POINTS:
+            coverage = ("absent" if point.psp_attestation_absent
+                        else str(point.attestation_coverage))
+            print(f"{point.family:<13} {point.name:<22} "
+                  f"pool~{point.pool_target:<3} cov={coverage:<7}"
+                  f"{point.selection_rule:<15} seed={point.seed}"
+                  f"{'  +false_settlement_id' if point.false_compositions else ''}")
         return 0
 
-    targets = AXIS_POINTS if arguments.all else [AXIS_BY_NAME[arguments.name]]
+    targets: list[AxisPoint] = []
+    if arguments.all:
+        targets += AXIS_POINTS
+    if arguments.absence:
+        targets += ABSENCE_POINTS
+    if arguments.v2:
+        targets += V2_POINTS
+    if arguments.name:
+        targets += [V2_BY_NAME[arguments.name] if arguments.v2
+                    else AXIS_BY_NAME[arguments.name]]
+    if not targets:
+        parser.error("name one axis point, or pass --all / --absence / --v2")
     for point in targets:
         summary = build(point)
         print(json.dumps(summary))
