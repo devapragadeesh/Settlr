@@ -53,7 +53,13 @@ __all__ = ["ClosureRegister", "enumerate_closing_subsets"]
 #: register that stopped anywhere near that could not tell a resolver's
 #: truncation from the truth.
 DEFAULT_CAP = 500
-DEFAULT_TIME_BUDGET = 30.0
+#: Per-batch wall-clock ceiling. At pool 60 the register is `cap_reached`
+#: regardless -- non-uniqueness is already PROVEN at count >= 2 -- and capped
+#: instances are excluded from the premise-sharing statistic and reported as
+#: excluded, so a tighter budget costs nothing analytically and keeps
+#: generation terminating. Exceeding it is recorded as `time_budget_exceeded`,
+#: never as a complete enumeration.
+DEFAULT_TIME_BUDGET = 15.0
 
 
 @dataclass(frozen=True, slots=True)

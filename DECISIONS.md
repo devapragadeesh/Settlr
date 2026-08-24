@@ -960,3 +960,125 @@ wrong-bank-side class**: the corpus plants an attestation that is wrong but
 never a case where the two sources contradict and truth is on the *bank* side,
 so "two independent sources agree" is not tested at the one point where the
 direction of the disagreement matters. That is the most significant single gap.
+
+---
+
+## 31. The contract was amended once after generation began, and it is dated
+
+**Decision.** `ReconstructibleInstance` and oracle gate **G8** were added on
+2026-08-24, *after* the corpus had been generated. The amendment is dated in
+`RESOLVER_CONTRACT.md` §6.4 and in `types.py` rather than folded into the
+original text, because this contract's whole claim on being trustworthy is
+that it was written before the data.
+
+**Why it was necessary.** Measured on the built corpus:
+
+| axis point | `DeterminedInstance` | lines with unique complete closure |
+|---|---:|---:|
+| `A20_B100_Cmax` | 10 | 11 (all attested) |
+| `A20_B75_Cmax` | 8 | 12 (3 unattested) |
+| `A20_B50_Cmax` | 5 | 11 (5 unattested) |
+| `A20_B0_Cmax` | **0** | 11 (**11 unattested**) |
+
+At 0% attestation coverage **every gate was vacuous.** §6.3's theorem forces
+`|Verified| = 0`, so the wrong-`Verified` and independence gates had nothing to
+range over; and `DeterminedInstance` requires the attestation, so §6.1's
+abstention gate had an **empty subpopulation**. A resolver returning
+`Unresolved` to everything scored perfectly on the one axis point that is
+purely about reconstruction — and that is the cell where the branch which
+produced all 50 wrong answers actually lives.
+
+**The theorem is what disguised it.** §6.3 predicted the cell would contain no
+`Verified`; the prediction came true, and nothing was learned. Stating a
+theorem and then not checking what it leaves *unmeasured* is its own failure
+mode, and it is worth naming because it is subtle: the cell looked correct
+precisely because it behaved as predicted.
+
+**What the amendment does not touch.** No outcome semantics, no existing gate,
+no generated dataset. It is derived from closure registers already present in
+every ground-truth key, so nothing was regenerated to make it true. That is
+what keeps it an addition rather than a re-cut of the benchmark after seeing
+results — and the distinction is the whole point, so it is stated rather than
+assumed.
+
+**Rejected: leave the cell ungated and name it as a gap.** Defensible, and it
+preserves the contract-before-corpus ordering perfectly. Rejected because the
+0% cell is the one the brief singles out as pure reconstruction, and shipping
+the most-cited cell with no falsifiable gate would be shipping the abstention
+loophole in the one place it matters most.
+
+**Rejected: drop the B0 axis point.** If a cell cannot be gated it arguably
+should not ship. Rejected because the cell is gateable — it just needed the
+right subpopulation — and dropping it would have removed the pure-
+reconstruction extreme rather than measuring it.
+
+---
+
+## 32. The corpus was regenerated three times, because its own audit failed it
+
+**Decision.** `corpus/leakage_audit.py` gates the build. A dataset that fails
+its own audit does not ship: it is regenerated or the class is dropped. Three
+rounds of findings, all on the corpus rather than on the frozen set, all fixed
+at the **same committed seeds** — fixing a bug is not reselecting a seed.
+
+**Round 1 — a real leak, cleaner than the defect it was written to prevent.**
+Orphan ERP invoices were emitted with a blank `order_id`, so
+`order_id IS NULL/blank` isolated the class at precision 1.000, recall 1.000.
+D6 in a new coordinate, and worse: D6 needs a rank check to find, this needed
+one column. An orphan now carries an order reference in the merchant's own
+format, drawn from the same alphabet and length as a gateway order id. What
+makes it an orphan is that **no payment references it** — which is the
+reconciliation work rather than a shortcut to the label.
+
+**Round 2 — a second real leak: `narration CONTAINS 'clo'`.** Every foreign
+bank credit named a different remitter, so *"is this credit even ours?"* was
+answerable by reading the counterparty instead of by reconciling. Half the
+foreign credits now come from Razorpay too — a fee refund, a reversal
+re-credit, an advance. A merchant genuinely **can** rule out a credit from an
+unrelated payer; what the corpus must not do is make that the only case.
+
+**Round 3 — two flaws in the audit itself, not the data.**
+
+*Unit of analysis.* `d04_unattested_settlements` was expressed as the *rows of*
+unattested batches, and a time-window predicate reached 94% precision on 69% of
+them with a p-value that treated ~69 clustered rows as independent
+observations. They are not independent — they are one observation repeated.
+Attestation is a property of a **settlement**, so the class is now expressed at
+settlement level, as `d03_wrong_attestation` already was.
+
+*Base rate.* At 0% coverage every settled row is unattested, so
+`settled == True` reached precision 1.000, recall 1.000 — at lift **1.2×**.
+That is not a leak, it is the definition of the axis point. The audit now
+requires `MIN_LIFT = 2.0` and reports any class covering more than half its
+table as **DEGENERATE** rather than as either clean or leaking.
+
+**Round 4 — a third real leak, and the subtlest.** Settlements that lost their
+attestation were reported under a `RZPX…` reference while attested ones carried
+the bank's `RATN…`. Sorting `reported_reference` separated the two at precision
+1.000. The prefix existed only because the generator needed a value meaning
+"not the bank's reference" — **a field whose SHAPE announces what the generator
+was doing**, which is the D5 lesson in a new column. The PSP-internal reference
+now takes the same shape as a real bank reference and differs only in being a
+value the bank never issued, so discovering that a settlement is unattested
+requires failing to find a matching bank line. That is the reconciliation work
+rather than a read of the prefix.
+
+It is worth naming why this one was easy to defend and still wrong. A real
+PSP's internal reference genuinely does look different from a bank UTR, so the
+separator was *realistic*. But realism is not the test. The test is whether the
+field reveals the generator's intent, and a prefix that exists to mean "this
+one is in the withheld group" does.
+
+**Rejected: exempt the classes that failed.** The fastest route and the exact
+habit that produced four leaks in the frozen set — each closed by adding one
+token to a deny-list. An exemption is a deny-list entry wearing a different
+hat.
+
+**Rejected: lower the thresholds until the corpus passes.** This is the
+seed-sweeping failure in another coordinate, and it would invert the audit's
+purpose: the thresholds exist to be met, not to be met halfway.
+
+**The point worth keeping.** Rediscovering D4–D7 shows the audit is *sensitive*.
+Finding four previously unknown problems in the corpus it was built to protect
+— two real leaks and two flaws in its own statistics — is the better evidence,
+because nobody knew those were there.

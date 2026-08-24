@@ -289,6 +289,65 @@ costs the submission — so the gate is **precision and recall**, with the
 p-value reported beside it as `certified` and underpowered classes named as
 underpowered rather than reported clean.
 
+### The audit found five problems in THIS corpus, which is the better evidence
+
+Rediscovering known defects shows the audit is sensitive. Finding *unknown*
+ones is what it is for, and across four regeneration rounds it found five —
+three real leaks in the data and two flaws in its own statistics:
+
+1. **A real leak.** Orphan ERP invoices were emitted with a blank `order_id`,
+   so `order_id IS NULL/blank` isolated the class at precision 1.000, recall
+   1.000 — a cleaner separator than the D6 defect it was written to prevent.
+   Fixed: an orphan now carries an order reference in the merchant's own
+   format, drawn from the same alphabet and length as a gateway order id. What
+   makes it an orphan is that **no payment references it**, which is the
+   reconciliation work rather than a shortcut to the label.
+2. **A badly expressed class.** `d03_wrong_attestation` was expressed as the
+   *rows of* the mis-attested batch, and every batch is trivially identified by
+   `settled_at`. The separator was real and said nothing about the attestation
+   being wrong. Now expressed at the settlement level, where the class is
+   smaller than `MIN_CLASS_SIZE` and is reported **UNTESTABLE** — the honest
+   answer rather than a flattering one.
+3. **A class too small to be distinguishable from coincidence.** With three
+   duplicate-payment pairs, one pair is 33% of the class and two are 67%, so a
+   predicate keying on a single shared `(amount, issuer)` value cleared the 50%
+   recall bar by luck. A duplicate is *defined* by sharing values with its
+   twin, so the class is inherently somewhat self-identifying; the fix is to
+   make it large enough that no single value predicate covers half of it.
+4. **A second real leak: `narration CONTAINS 'clo'`.** Every foreign bank
+   credit named a different remitter, so *"is this credit even ours?"* was
+   answerable by reading the counterparty rather than by reconciling. Half the
+   foreign credits now come from Razorpay too — a fee refund, a reversal
+   re-credit, an advance. A merchant genuinely **can** rule out a credit from
+   an unrelated payer; what the corpus must not do is make that the only case.
+
+5. **A third real leak, and the subtlest.** Unattested settlements were
+   reported under a `RZPX…` reference while attested ones carried the bank's
+   `RATN…`, so sorting `reported_reference` separated them at precision 1.000.
+   A real PSP's internal reference genuinely *does* look different from a bank
+   UTR, so the separator was realistic — and realism is not the test. The test
+   is whether a field reveals the generator's intent, and a prefix that exists
+   to mean *"this one is in the withheld group"* does. The internal reference
+   now takes a real bank reference's shape and differs only in being a value
+   the bank never issued.
+
+And two flaws in the audit's own statistics, found the same way:
+
+* **Unit of analysis.** `d04_unattested_settlements` was scored over the *rows
+  of* unattested batches, so a time-window predicate reached 94% precision on
+  69% of them with a p-value treating ~69 clustered rows as independent. They
+  are one observation repeated. Attestation is a property of a **settlement**,
+  and the class is now expressed there.
+* **Base rate.** At 0% coverage every settled row is unattested, so
+  `settled == True` reached precision 1.000 / recall 1.000 at lift **1.2×** —
+  not a leak, the definition of the axis point. The audit now requires
+  `MIN_LIFT = 2.0` and reports a class covering more than half its table as
+  **DEGENERATE** rather than as clean or as leaking.
+
+**A dataset that fails its own audit does not ship.** All three were fixed and
+the corpus regenerated at the same committed seeds — fixing a bug is not
+reselecting a seed.
+
 ### The audit is validated against the frozen set
 
 `python3 corpus/leakage_audit.py --validate-frozen` must rediscover **D4, D5,
@@ -335,6 +394,22 @@ DP is exactly uniform over the band at these pool sizes. Above them a
 CP-SAT-based sampler would inherit its search order, and the corpus records the
 sampler per batch rather than asserting a distribution property the
 implementation lacks.
+
+**The foreign-credit class is a rare-event class as built.** Measured on the
+baseline run: the frozen engine adopted **1 of 112** foreign bank lines. The
+amounts are drawn independently of the ledger, and a subset of a 20–50 row pool
+almost never nets to a target no process generated — so the class tests that
+the *guard* is missing without ever exercising it. A corpus wanting to
+**measure** foreign-line handling would need foreign amounts chosen to be
+reachable from the pool, not merely unrelated to it. Found by running the
+baseline, recorded rather than left for a reader to notice.
+
+**The premise-sharing statistic cannot be computed against the engine it most
+needs to measure.** Contract §6.2 needs the resolver's rank-1 candidate. The
+frozen cascade filters candidates *before* enumerating — which is the defect —
+so it never exposes one, and axis C falls back to an outcome-level proxy that
+is degenerate when the wrong-answer rate is zero. The statistic is sound for a
+resolver that obeys the contract and blind to one that does not.
 
 **No resolver exists.** Deliberately. Building the corpus and the resolver
 together is how the resolver ends up shaped to the corpus. The contract was

@@ -23,7 +23,8 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from corpus.oracle import determined_instances, score          # noqa: E402
+from corpus.oracle import (determined_instances, reconstructible_instances,   # noqa: E402
+                           score)
 from resolver_contract.types import (                           # noqa: E402
     Ambiguous, CandidateSet, Composition, Evidence, EvidenceKind, Reconstructed,
     ResolverOutput, SourceSystem, Unresolved, UnresolvedReason, Verified,
@@ -77,7 +78,27 @@ def _good_warrant() -> Warrant:
                  "falsifiable consequence of it")
 
 
+def _reconstruction_warrant() -> Warrant:
+    """Unfiltered uniqueness plus cross-line exclusivity, and ONE party.
+
+    Deliberately not corroborated: with no attestation there is no composition
+    claim to corroborate, so this can never become `Verified` -- which the
+    contract enforces at construction.
+    """
+    return Warrant.over([
+        Evidence(EvidenceKind.UNIQUE_CLOSURE_UNFILTERED,
+                 frozenset({SourceSystem.PSP_LEDGER}),
+                 "exactly one closing subset, no objective applied"),
+        Evidence(EvidenceKind.CROSS_LINE_EXCLUSIVITY,
+                 frozenset({SourceSystem.PSP_LEDGER}),
+                 "closes no other unexplained credit in the window"),
+    ], rationale="arithmetically unique and exclusive; one party, so this is "
+                 "strictly weaker than Verified")
+
+
 def _perfect(truth: dict) -> ResolverOutput:
+    """Resolves BOTH gated subpopulations: Verified where attested,
+    Reconstructed where not."""
     dataset = a_dataset()
     rows = _rows(dataset)
     outcomes = []
@@ -89,9 +110,32 @@ def _perfect(truth: dict) -> ResolverOutput:
             composition=_composition(truth, batch["composition"], rows),
             warrant=_good_warrant(),
             rival_closure_count=batch["closure"]["count"]))
-    return ResolverOutput(resolver="perfect-on-determined",
+    for instance in reconstructible_instances(truth):
+        batch = next(b for b in truth["batches"]
+                     if b["bank_line_index"] == instance.bank_index)
+        outcomes.append(Reconstructed(
+            bank_index=instance.bank_index,
+            composition=_composition(truth, batch["composition"], rows),
+            warrant=_reconstruction_warrant()))
+    return ResolverOutput(resolver="perfect-on-both-subpopulations",
                           dataset=dataset.name,
                           line_outcomes=tuple(outcomes))
+
+
+def _silent(truth: dict) -> tuple[ResolverOutput, int]:
+    dataset = a_dataset()
+    instances = (list(determined_instances(truth))
+                 + list(reconstructible_instances(truth)))
+    warrant = Warrant.over([Evidence(
+        EvidenceKind.BANK_REFERENCE, frozenset({SourceSystem.BANK}),
+        "a credit posted")], rationale="bank only")
+    return ResolverOutput(
+        resolver="silent", dataset=dataset.name,
+        line_outcomes=tuple(
+            Unresolved(bank_index=instance.bank_index,
+                       reason=UnresolvedReason.ENUMERATION_TRUNCATED,
+                       pool_size=60, warrant=warrant)
+            for instance in instances)), len(instances)
 
 
 # --------------------------------------------------------------------------
@@ -144,56 +188,55 @@ def test_G3_fires_when_a_complete_candidate_set_omits_the_truth(truth):
     assert "G3" in report.by_gate(), report.render()
 
 
-def test_G7_fires_on_a_resolver_that_answers_nothing(truth):
-    """THE gate silence cannot pass.
+def test_the_abstention_gates_fire_on_a_resolver_that_answers_nothing(truth):
+    """THE gates silence cannot pass.
 
     Every other gate goes to zero for a resolver that returns `Unresolved` to
-    everything. If this one did too, the oracle would be a certificate of
+    everything. If these did too, the oracle would be a certificate of
     abstention rather than an oracle.
     """
-    dataset = a_dataset()
-    instances = determined_instances(truth)
-    if not instances:
-        pytest.skip("this dataset has no determined instance")
-    warrant = Warrant.over([Evidence(
-        EvidenceKind.BANK_REFERENCE, frozenset({SourceSystem.BANK}),
-        "a credit posted")], rationale="bank only")
-    output = ResolverOutput(
-        resolver="silent", dataset=dataset.name,
-        line_outcomes=tuple(
-            Unresolved(bank_index=instance.bank_index,
-                       reason=UnresolvedReason.ENUMERATION_TRUNCATED,
-                       pool_size=60, warrant=warrant)
-            for instance in instances))
+    output, count = _silent(truth)
+    if not count:
+        pytest.skip("this dataset has no gated instance")
     report = score(output, truth)
     gates = report.by_gate()
-    assert gates.get("G7") == len(instances), report.render()
-    assert set(gates) == {"G7"}, (
-        "a silent resolver must trip ONLY the abstention gate -- if it trips "
+    assert gates.get("G7", 0) + gates.get("G8", 0) == count, report.render()
+    assert set(gates) <= {"G7", "G8"}, (
+        "a silent resolver must trip ONLY the abstention gates -- if it trips "
         "others the soundness gates are not measuring soundness")
 
 
 def test_the_silent_resolver_would_pass_a_soundness_only_oracle(truth):
     """The claim from contract 6.1, asserted rather than argued."""
-    dataset = a_dataset()
-    instances = determined_instances(truth)
-    if not instances:
-        pytest.skip("this dataset has no determined instance")
-    warrant = Warrant.over([Evidence(
-        EvidenceKind.BANK_REFERENCE, frozenset({SourceSystem.BANK}),
-        "a credit posted")], rationale="bank only")
-    output = ResolverOutput(
-        resolver="silent", dataset=dataset.name,
-        line_outcomes=tuple(
-            Unresolved(bank_index=instance.bank_index,
-                       reason=UnresolvedReason.ENUMERATION_TRUNCATED,
-                       pool_size=60, warrant=warrant)
-            for instance in instances))
+    output, count = _silent(truth)
+    if not count:
+        pytest.skip("this dataset has no gated instance")
     report = score(output, truth)
-    soundness_only = [v for v in report.violations if v.gate != "G7"]
+    soundness_only = [v for v in report.violations
+                      if v.gate not in ("G7", "G8")]
     assert soundness_only == [], (
         "answering nothing satisfies every soundness gate -- which is exactly "
-        "why G7 exists")
+        "why G7 and G8 exist")
+
+
+@pytest.mark.parametrize("name", ["A20_B0_Cmax", "A20_B50_Cmax"])
+def test_G8_gates_the_cell_that_G7_cannot_reach(name):
+    """The measurement that forced the amendment.
+
+    At 0% coverage `determined_instances` is EMPTY, so before G8 existed a
+    silent resolver passed every gate on the one axis point that is purely
+    about reconstruction.
+    """
+    dataset = DATASETS / name
+    if not (dataset / "ground_truth.json").exists():
+        pytest.skip(f"{name} not built")
+    truth = json.loads((dataset / "ground_truth.json").read_text())
+    reconstructible = reconstructible_instances(truth)
+    assert reconstructible, (
+        f"{name} has no reconstructible instance, so G8 cannot bite there")
+    if name == "A20_B0_Cmax":
+        assert not determined_instances(truth), (
+            "at 0% coverage nothing can be determined -- that is the gap")
 
 
 def test_mean_candidate_set_size_is_always_reported(truth):

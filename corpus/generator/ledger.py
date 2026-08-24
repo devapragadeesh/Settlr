@@ -248,7 +248,13 @@ class LedgerSpec:
     fee_reversals: float = 0.02
     decoy_pairs: int = 6
     near_collision_pairs: int = 3
-    duplicate_rows: int = 3
+    #: Raised from 3 after the leak audit: with only 3 pairs, ONE pair is 33%
+    #: of the class and TWO are 67%, so a predicate keying on a single shared
+    #: (amount, issuer) value cleared the 50% recall bar by coincidence. A
+    #: duplicate is DEFINED by sharing values with its twin, so the class is
+    #: inherently somewhat self-identifying; the fix is to make the class large
+    #: enough that no single value predicate covers half of it.
+    duplicate_rows: int = 10
 
 
 @dataclass

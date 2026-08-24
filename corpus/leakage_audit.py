@@ -99,6 +99,15 @@ KS_THRESHOLD = 0.60
 #: Predicates kept per column when building pairs; keeps the pair search
 #: quadratic in a small number rather than in the full predicate space.
 PAIR_TOP_K = 6
+#: Minimum lift over the base rate. Precision alone is meaningless when the
+#: class is most of the file: at 0% attestation coverage EVERY settled row is
+#: unattested, so `settled == True` reaches precision 1.000 / recall 1.000 at
+#: lift 1.2. That is not a leak, it is the definition of the axis point.
+MIN_LIFT = 2.0
+#: A class covering more than this share of its table cannot be meaningfully
+#: separated FROM the table -- it IS the table. Reported as degenerate, never
+#: as clean and never as a leak.
+MAX_BASE_RATE = 0.5
 
 
 # --------------------------------------------------------------------------
@@ -197,6 +206,7 @@ def load_tables(data_dir: Path) -> dict[str, Table]:
                 unit["_index"] = unit["_file_position"]
         tables[name] = Table(name, key, units)
 
+    csv_table("settlement_report", "settlement_report.csv", "settlement_id")
     csv_table("erp", "erp_orders.csv", "invoice_no")
     csv_table("gstr2b", "gstr2b.csv", "invoice_no")
     csv_table("bank", "bank_statement.csv", "_file_position")
@@ -348,6 +358,8 @@ class Finding:
     #: alpha the class is UNDERPOWERED and the audit cannot certify it clean --
     #: which is different from finding it clean, and is reported as such.
     min_attainable_p: float = 1.0
+    #: the corrected alpha this finding was scored against
+    alpha: float = ALPHA
     detail: str = ""
 
     @property
@@ -382,7 +394,7 @@ class ClassAudit:
     note: str = ""
 
     @property
-    def strongest(self) -> Finding | None:
+    def strongest(self) -> "Finding | None":
         significant = [f for f in self.findings if f.significant]
         pool = significant or self.findings
         if not pool:
@@ -391,8 +403,34 @@ class ClassAudit:
                                         -f.p_value))
 
     @property
+    def underpowered(self) -> bool:
+        """No finding on this class could EVER be certified.
+
+        `min_attainable_p` is the p-value of a perfect separator at this class
+        size and population. When even that cannot clear the corrected alpha,
+        the class is structurally uncertifiable and its findings cannot be
+        trusted in either direction -- so it is reported UNDERPOWERED rather
+        than gated.
+
+        This is the rule that distinguishes two cases that look alike:
+
+          frozen D5   6 minted rows in 240   min attainable p = 4e-12  POWERED
+                      -> a precision-1.000 separator is a real leak, gated.
+          A20_B75 d04 3 settlements in 12    min attainable p = 4.5e-3 UNDER-
+                      -> a threshold catching 2 of 3 on a continuous amount is
+                         a rule fitted to noise. Amounts are drawn
+                         independently of attestation; there is no mechanism.
+
+        Without it the audit would either miss D5 or block the build on
+        coincidences, and there is no single threshold that does both.
+        """
+        return all(f.min_attainable_p > f.alpha for f in self.findings) \
+            if self.findings else False
+
+    @property
     def failed(self) -> bool:
-        return any(f.significant for f in self.findings)
+        return (not self.underpowered
+                and any(f.significant for f in self.findings))
 
 
 # --------------------------------------------------------------------------
@@ -415,6 +453,9 @@ def _score(family: str, table: Table, description: str, support: set[str],
     # EFFECT SIZE gates the build; significance is reported beside it.
     significant = (precision >= PRECISION_THRESHOLD
                    and recall >= RECALL_THRESHOLD)
+    base_rate = len(positives) / population if population else 0.0
+    if base_rate > MAX_BASE_RATE or (precision / base_rate if base_rate else 0) < MIN_LIFT:
+        significant = False
     floor = 1.0 / math.comb(population, len(positives)) \
         if population >= len(positives) else 1.0
     return Finding(family=family, table=table.name, description=description,
@@ -422,7 +463,7 @@ def _score(family: str, table: Table, description: str, support: set[str],
                    class_size=len(positives), population=population,
                    p_value=p_value, significant=significant,
                    certified=p_value <= alpha, min_attainable_p=floor,
-                   detail=detail)
+                   alpha=alpha, detail=detail)
 
 
 def audit_single_and_pairs(table: Table, positives: set[str]) -> list[Finding]:
@@ -796,9 +837,16 @@ class BankIndependenceReport:
 
     @property
     def independent(self) -> bool:
+        """The bank is independent when nothing on its lines is COMPUTED from
+        ledger state.
+
+        `narration_embeds_reference` is deliberately NOT a condition: a bank
+        putting its OWN reference in its OWN narration is a bank statement. It
+        is only a leak when that reference is itself derivable, which
+        `reference_derivable` covers.
+        """
         return (not self.recoverable_fields
                 and not self.reference_derivable
-                and self.narration_embeds_reference == 0
                 and len(self.posting_lag_days) > 1
                 and not self.reference_is_dense_sequence)
 
@@ -808,7 +856,8 @@ class BankIndependenceReport:
                + ("   <-- CONSTANT: the bank has no clock of its own"
                   if len(self.posting_lag_days) <= 1 else ""),
                f"narrations embedding their own reference verbatim: "
-               f"{self.narration_embeds_reference}/{self.bank_lines}"]
+               f"{self.narration_embeds_reference}/{self.bank_lines}"
+               "   (not a leak by itself -- see `reference_derivable`)"]
         if self.recoverable_fields:
             out.append("LEDGER FIELDS RECOVERABLE FROM THE BANK FILE: "
                        + ", ".join(self.recoverable_fields))
@@ -820,6 +869,22 @@ class BankIndependenceReport:
                        "bank counter serves other customers and has gaps")
         out.append(f"VERDICT: bank is {'INDEPENDENT' if self.independent else 'NOT INDEPENDENT'}")
         return out
+
+
+#: Ledger columns whose appearance in the bank file is NOT a leak.
+#:
+#: `credit`/`debit`/`amount` -- the credit is the credit. This MUST leak; it is
+#: the join evidence and the reason reconciliation is possible at all.
+#:
+#: `settlement_utr` -- the PSP genuinely knows the bank's reference, because it
+#: initiated the transfer. The row carrying it is the PSP REPORTING the bank's
+#: value, which is the legitimate attestation channel and the link the whole
+#: corpus depends on. The DIRECTION is what matters: bank -> PSP is a report,
+#: PSP -> bank is a fabrication. So the question is never "does the reference
+#: appear in both files" (it must) but "is the reference RECONSTRUCTIBLE from
+#: ledger fields alone" -- which is `reference_derivable`, and which is exactly
+#: what D4 is.
+PERMITTED_SHARED_COLUMNS = {"credit", "debit", "amount", "settlement_utr"}
 
 
 def audit_bank_independence(data_dir: Path) -> BankIndependenceReport:
@@ -840,8 +905,8 @@ def audit_bank_independence(data_dir: Path) -> BankIndependenceReport:
     ledger_values: dict[str, set[str]] = defaultdict(set)
     for row in rows:
         for column, value in row.items():
-            if column in ("credit", "debit", "amount"):
-                continue        # the amount is legitimate shared signal
+            if column in PERMITTED_SHARED_COLUMNS:
+                continue
             if isinstance(value, (str, int)) and not isinstance(value, bool) \
                     and len(str(value)) >= 6:
                 ledger_values[column].add(str(value))
@@ -864,14 +929,29 @@ def audit_bank_independence(data_dir: Path) -> BankIndependenceReport:
                 _datetime.fromtimestamp(row["settled_at"], ist).date())
     unique_settled = sorted(settled_dates.values())
 
+    # Lag is measured SET-WISE, not positionally. A positional pairing assumes
+    # bank line i is settlement i, which is exactly the bijection the corpus
+    # breaks with foreign lines -- so pairing that way would report nonsense
+    # (negative lags) on a correct file.
+    #
+    # The solver-visible question is: does every bank line land exactly on a
+    # settlement date? If so the bank has no clock of its own and the value
+    # date IS `settled_at`, handing back a withheld column.
     lags: Counter[int] = Counter()
-    for position, line in enumerate(bank):
+    settled_set = set(unique_settled)
+    for line in bank:
         try:
             posted = _date.fromisoformat(line[date_column])
         except (KeyError, ValueError):
             continue
-        if position < len(unique_settled):
-            lags[(posted - unique_settled[position]).days] += 1
+        if posted in settled_set:
+            lags[0] += 1
+        else:
+            nearer = [(posted - when).days for when in unique_settled
+                      if 0 < (posted - when).days <= 7]
+            lags[min(nearer)] += 1 if nearer else 0
+            if not nearer:
+                lags[-1] += 1          # unrelated to any settlement date
 
     derivable: list[str] = []
     references = [line.get(reference_column, "") for line in bank]
@@ -950,6 +1030,15 @@ class AuditReport:
                            f"{audit.note}")
                 continue
             strongest = audit.strongest
+            if audit.underpowered and strongest is not None:
+                out.append(f"  {audit.name:<44} UNDERPOWERED  "
+                           f"{strongest.line()}")
+                out.append(f"  {'':<44}      (class size {audit.class_size} of "
+                           f"{audit.population}: even a PERFECT separator "
+                           f"could only reach p={strongest.min_attainable_p:.1e}, "
+                           f"above alpha={strongest.alpha:.1e}. Not certifiable "
+                           "clean OR leaking -- reported, not gated)")
+                continue
             if strongest is None:
                 out.append(f"  {audit.name:<44} clean  "
                            f"(n={audit.class_size}/{audit.population}, "
@@ -1000,6 +1089,14 @@ def audit(data_dir: Path, classes: dict[str, dict]) -> AuditReport:
                                      class_size=len(positives),
                                      population=len(table.units), testable=False,
                                      note=spec.get("note", "")))
+            continue
+        if len(positives) > MAX_BASE_RATE * len(table.units):
+            audits.append(ClassAudit(
+                name=name, table=table.name, class_size=len(positives),
+                population=len(table.units), testable=False,
+                note=f"DEGENERATE: the class is {len(positives)}/"
+                     f"{len(table.units)} of the table, so it cannot be "
+                     "separated FROM it -- it IS it"))
             continue
         findings = (audit_single_and_pairs(table, positives)
                     + audit_ordering(table, positives)
@@ -1192,6 +1289,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("data_dir", nargs="?", type=Path,
                         help="a corpus dataset directory (with ground_truth.json)")
+    parser.add_argument("--all", action="store_true",
+                        help="audit every corpus dataset; a dataset that fails "
+                             "its own audit does not ship")
     parser.add_argument("--validate-frozen", action="store_true",
                         help="run against engine/data and assert D4-D7 are rediscovered")
     parser.add_argument("--out", type=Path, help="write the report here")
@@ -1205,8 +1305,30 @@ def main() -> int:
             arguments.out.write_text(text + "\n")
         return 0 if ok else 1
 
+    if arguments.all:
+        datasets = sorted(p for p in (ROOT / "corpus" / "datasets").iterdir()
+                          if (p / "ground_truth.json").exists())
+        failed: list[str] = []
+        sections: list[str] = []
+        for dataset in datasets:
+            truth = json.loads((dataset / "ground_truth.json").read_text())
+            report = audit(dataset, classes_from_ground_truth(truth))
+            sections.append(report.render())
+            status = "PASS" if report.passed else "FAIL"
+            print(f"{dataset.name:<22} {status}"
+                  + ("" if report.passed else
+                     "  " + ", ".join(c.name for c in report.failed_classes)
+                     + ("" if report.bank.independent else " [bank]")))
+            if not report.passed:
+                failed.append(dataset.name)
+        if arguments.out:
+            arguments.out.write_text("\n\n".join(sections) + "\n")
+        print(f"\n{len(datasets) - len(failed)}/{len(datasets)} datasets pass "
+              "their own leak audit")
+        return 1 if failed else 0
+
     if not arguments.data_dir:
-        parser.error("give a dataset directory or --validate-frozen")
+        parser.error("give a dataset directory, --all, or --validate-frozen")
     truth = json.loads((arguments.data_dir / "ground_truth.json").read_text())
     report = audit(arguments.data_dir, classes_from_ground_truth(truth))
     text = report.render()

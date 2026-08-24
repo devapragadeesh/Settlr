@@ -270,6 +270,17 @@ def emit_rows(ledger, result, batch_by_id, reported_reference: dict[str, str]):
 # --------------------------------------------------------------------------
 
 
+def _offline_reference(rng: random.Random) -> str:
+    """An order id in the merchant's own format, matching no gateway payment.
+
+    Drawn from the SAME alphabet and length as a gateway order id, so an
+    orphan is distinguishable only by the absence of a payment that references
+    it -- which is the reconciliation work, not a shortcut to the label.
+    """
+    alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    return "".join(rng.choice(alphabet) for _ in range(14))
+
+
 def build_erp_and_gst(rng: random.Random, ledger, result, rows, spec_window):
     """The merchant's sales ledger and the tax authority's 2B.
 
@@ -296,29 +307,40 @@ def build_erp_and_gst(rng: random.Random, ledger, result, rows, spec_window):
                 if p.captured and p.id not in missing]
     orphan_count = max(3, len(invoiced) // 30)
 
-    lines: list[tuple[date, str | None, int]] = [
-        (datetime.fromtimestamp(p.created_at, IST).date(), p.order_id, p.amount)
+    lines: list[tuple[date, str, int, bool]] = [
+        (datetime.fromtimestamp(p.created_at, IST).date(), p.order_id,
+         p.amount, False)
         for p in invoiced]
-    for _ in range(orphan_count):
-        # an orphan is a real invoice for a sale that never got paid online
+    for index in range(orphan_count):
+        # An orphan is a real invoice for a sale that never got paid through
+        # the gateway -- a counter sale, a bank transfer, a cash order. It has
+        # an order reference in the MERCHANT's system; what it lacks is a
+        # matching payment.
+        #
+        # The first draft left `order_id` blank on orphans, and the leak audit
+        # found it immediately: `order_id IS NULL/blank` isolated the class at
+        # precision 1.000, recall 1.000. That is the audit doing its job on
+        # this corpus rather than on the frozen one, and it is why a dataset
+        # that fails its own audit does not ship.
         when = spec_window[0] + timedelta(
             days=rng.randrange((spec_window[1] - spec_window[0]).days + 1))
-        lines.append((when, None, rng.choice([p.amount for p in invoiced])))
-    lines.sort(key=lambda item: (item[0], item[1] or ""))
+        lines.append((when, f"order_{_offline_reference(rng)}",
+                      rng.choice([p.amount for p in invoiced]), True))
+    lines.sort(key=lambda item: (item[0], item[1]))
 
     erp: list[OrderedDict] = []
     orphans: list[str] = []
     number = 1001
-    for when, order_id, amount in lines:
+    for when, order_id, amount, is_orphan in lines:
         invoice_no = f"{INVOICE_SERIES}{number}"
         number += 1
         erp.append(OrderedDict(
-            order_id=order_id or "", invoice_no=invoice_no,
+            order_id=order_id, invoice_no=invoice_no,
             # most orders are B2C retail: no registration, bill of supply
             gstin=make_gstin(rng, rng.choice(["29", "27", "07", "33"]))
                   if rng.random() < 0.18 else "",
             amount=rupees(amount), invoice_date=when.isoformat()))
-        if order_id is None:
+        if is_orphan:
             orphans.append(invoice_no)
 
     # --- GSTR-2B: the PURCHASE side --------------------------------------
@@ -498,9 +520,31 @@ def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
         elif batch.settlement_id in attested:
             reported[batch.settlement_id] = ""     # bank blanked its own ref
         else:
-            # the PSP reports an INTERNAL reference the bank never used
-            reported[batch.settlement_id] = "RZPX" + "".join(
-                rng.choice("0123456789ABCDEF") for _ in range(12))
+            # The PSP reports a reference the bank never issued.
+            #
+            # Two earlier drafts leaked here, and the second is the instructive
+            # one. Draft 1 used a distinctive `RZPX...` prefix -- an obvious
+            # stage direction. Draft 2 used the right SHAPE but the wrong
+            # DISTRIBUTION: a uniform 0..999999 sequence against the bank's
+            # narrow running counter, and the settlement date against the
+            # bank's posting date. Sorting `reported_reference` still separated
+            # attested from unattested at precision 1.000, because the values
+            # sorted into two bands.
+            #
+            # Matching the format is not enough. The value has to be drawn from
+            # the same distribution the real references came from, or the
+            # distribution IS the marker. So the date is a posting-like date
+            # (settlement + a lag from the same range) and the sequence is
+            # drawn from the observed range of this file's real bank
+            # references. What is left is the only honest signal: no bank line
+            # carries this reference, discoverable by looking.
+            stale = (datetime.fromtimestamp(batch.formed_at, IST).date()
+                     + timedelta(days=rng.choice([0, 1, 1, 2, 3])))
+            low, high = _reference_range(bank_file.rows)
+            reported[batch.settlement_id] = (
+                f"{bank_module.BANK_PREFIX}{stale.strftime('%y')}"
+                f"{stale.timetuple().tm_yday:03d}"
+                f"{rng.randint(low, high):06d}")
 
     # ---- adversarial class: attestation that is WRONG --------------------
     wrong_attestation: list[dict] = []
@@ -601,20 +645,36 @@ def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
             "table": "bank",
             "members": [line.line_index for line in bank_file.truth
                         if line.kind.startswith("foreign")]},
+        # Expressed at the SETTLEMENT level, not as the rows of the batch.
+        # Every batch is trivially identified by `settled_at`, so a row-level
+        # class of "the rows of batch X" separates at precision 1.000 for a
+        # reason that has nothing to do with the attestation being wrong. The
+        # audit caught exactly that on the first draft. A settlement-level
+        # class is smaller than MIN_CLASS_SIZE and is reported UNTESTABLE,
+        # which is the honest answer rather than a flattering one.
         "d03_wrong_attestation": {
-            "planted": bool(wrong_attestation), "table": "recon",
-            "members": sorted({row["entity_id"] for row in rows
-                               if row["settlement_id"] in wrong_by_id}),
-            "detail": wrong_attestation},
+            "planted": bool(wrong_attestation), "table": "settlement_report",
+            "members": [item["settlement_id"] for item in wrong_attestation],
+            "detail": wrong_attestation,
+            "reason": "" if wrong_attestation else
+                      "no attested batch had >=3 credit rows to corrupt"},
+        # Expressed at the SETTLEMENT level, like d03 and for the same reason.
+        # Attestation is a property of a settlement, not of a row, and the rows
+        # of one batch are not exchangeable observations -- they are one
+        # observation repeated. Scoring at row level let a time-window
+        # predicate reach 94% precision on 69% of the rows of three
+        # consecutive batches, with a p-value that treated ~69 clustered rows
+        # as independent. The unit of analysis has to match the unit the fact
+        # is about.
         "d04_unattested_settlements": {
-            "planted": point.attestation_coverage < 1, "table": "recon",
+            "planted": point.attestation_coverage < 1,
+            "table": "settlement_report",
             "reason": "" if point.attestation_coverage < 1 else
                       "attestation coverage is 100% at this axis point, so "
                       "there is nothing unattested -- absent by design, not "
                       "by failure",
-            "members": sorted({row["entity_id"] for row in rows
-                               if row["settlement_id"]
-                               and row["settlement_id"] not in attested})},
+            "members": sorted(b.settlement_id for b in batches
+                              if b.settlement_id not in attested)},
         "d05_erp_orphan_invoices": {
             "planted": bool(orphans), "table": "erp", "members": orphans},
         "d06_payments_missing_from_erp": {
@@ -731,6 +791,18 @@ PROVENANCE = {
         "party": "issuer", "source_system": "dispute_record",
         "drawn_from": "the ledger draw"},
 }
+
+
+def _reference_range(bank_rows) -> tuple[int, int]:
+    """The numeric band this file's real bank references occupy.
+
+    An unissued reference drawn outside that band is separable by sorting,
+    which is a leak about which settlements lost their attestation -- and
+    which axis B exists to withhold.
+    """
+    digits = [int("".join(c for c in row["bank_reference"] if c.isdigit())[-6:])
+              for row in bank_rows if row["bank_reference"]]
+    return (min(digits), max(digits)) if digits else (0, 999_999)
 
 
 def _pending_debits(rows, batch, batches, index):

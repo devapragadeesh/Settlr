@@ -381,6 +381,46 @@ Two conditions, both binding on the corpus rather than the resolver:
 this. Reading `rank_one` is not reading an answer — it is reading a
 preference, which is exactly the thing under test.
 
+### 6.4 Amendment (2026-08-24): the same hole, one axis over
+
+**This section was added after corpus generation began, and it is dated rather
+than folded in**, because this document's entire claim on being trustworthy is
+that it was written before the data.
+
+Measured on the generated corpus:
+
+| axis point | `DeterminedInstance` | lines with unique complete closure |
+|---|---:|---:|
+| `A20_B100_Cmax` | 10 | 11 (all attested) |
+| `A20_B75_Cmax` | 8 | 12 (3 unattested) |
+| `A20_B50_Cmax` | 5 | 11 (5 unattested) |
+| `A20_B0_Cmax` | **0** | 11 (**11 unattested**) |
+
+At 0% coverage **every gate was vacuous.** §6.3's theorem forces
+`|Verified| = 0`, so the wrong-`Verified` and independence gates had nothing to
+check; and `DeterminedInstance` requires the attestation, so §6.1's gate had an
+**empty subpopulation**. A resolver returning `Unresolved` to everything scored
+perfectly on the one axis point that is purely about reconstruction — and it is
+the cell where the branch that produced all 50 wrong answers actually lives.
+
+That is §6.1's hole reopened one axis over, and §6.3 predicting the cell would
+be empty is what disguised it: the prediction came true and nothing was
+learned.
+
+So `ReconstructibleInstance` is defined: a bank line that is **unattested** and
+still has exactly one closing subset under a complete objective-free
+enumeration, **and** whose subset closes no other unexplained credit in the
+window. `Reconstructed` is achievable there, so `Unresolved` and `Ambiguous`
+are failures, gated at zero.
+
+**What the amendment does not change.** No outcome semantics, no existing gate,
+no generated dataset. It is derived from closure registers already present in
+every ground-truth key, so nothing was regenerated to make it true — which is
+what keeps it an addition rather than a re-cut of the benchmark after seeing
+results.
+
+---
+
 ### 6.3 Theorem: at 0% attestation coverage, `Verified` is empty
 
 From §3.2 and §4.1: `Verified` requires evidence attesting to composition from

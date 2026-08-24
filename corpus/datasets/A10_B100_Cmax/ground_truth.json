@@ -1,0 +1,1541 @@
+{
+ "axis_point": "A10_B100_Cmax",
+ "seed": 20260825,
+ "generated_by": "corpus/generator/build.py",
+ "contract": "resolver_contract/RESOLVER_CONTRACT.md",
+ "spec": "corpus/CORPUS_SPEC.md",
+ "warning": "ISOLATED ANSWER KEY. No resolver may read this file.",
+ "axes": {
+  "A_pool_target": 10,
+  "A_pool_sizes": [
+   2,
+   13,
+   6,
+   10,
+   14,
+   9,
+   11,
+   9,
+   14,
+   12,
+   8,
+   14
+  ],
+  "A_pool_mean": 10.17,
+  "B_attestation_coverage_target": "1",
+  "B_attestation_coverage_achieved": "12/12",
+  "C_selection_rule": "max_under_cap",
+  "C_floor_fraction": "9/10"
+ },
+ "merchant_gstin": "29QEDXL1254E1ZV",
+ "gateway_gstin": "29MTBXT7741M1Z5",
+ "gateway_fee_invoices": [
+  "INV/26-27/7000",
+  "INV/26-27/7001",
+  "INV/26-27/7002"
+ ],
+ "batches": [
+  {
+   "settlement_id": "setl_3XDSdIhVtpYs2i",
+   "bank_line_index": 0,
+   "formed_at": 1799235000,
+   "payout_paise": 761299,
+   "pool_size": 2,
+   "selection_degraded": false,
+   "selection_fallback": null,
+   "sampler": "exact",
+   "composition": [
+    "pay_LP8P7EnsoBgB5L",
+    "pay_y59fltTEWxLd75"
+   ],
+   "closure": {
+    "count": 1,
+    "cap": 500,
+    "complete": true,
+    "lower_bound": 1,
+    "recoverable": "unique",
+    "status": "optimal",
+    "sampling": "cpsat_enumeration_order (NOT uniform)",
+    "wall_seconds": 0.003,
+    "subsets": [
+     [
+      "pay_LP8P7EnsoBgB5L",
+      "pay_y59fltTEWxLd75"
+     ]
+    ],
+    "subsets_are_a_sample": false
+   },
+   "truth_in_closure": true,
+   "composition_closes": true
+  },
+  {
+   "settlement_id": "setl_y9wISvejM0nJCd",
+   "bank_line_index": 2,
+   "formed_at": 1799839800,
+   "payout_paise": 9939250,
+   "pool_size": 13,
+   "selection_degraded": false,
+   "selection_fallback": null,
+   "sampler": "exact",
+   "composition": [
+    "adj_Umukjoskwbqudg",
+    "pay_0DXB8TUOKFm9s5",
+    "pay_48crRNOuMjOMtI",
+    "pay_FERz47Dtxdyvw4",
+    "pay_FNN3VSRE4UYBEE",
+    "pay_PApmiM9jyYVxU6",
+    "pay_QEbWbKXzJeuN3B",
+    "pay_V97BroYVvsf2p7",
+    "pay_YYCKxb07PJJ6Io",
+    "pay_cwwtgCP54kMrsm",
+    "pay_hAPkQgcRMyTU0X",
+    "pay_oAAEzcCWkgxuoM",
+    "pay_uk7Nri1U89KQuc",
+    "pay_w4a2JiP7uR9Ma0",
+    "rfnd_ctWnOPJEF2rWl1"
+   ],
+   "closure": {
+    "count": 1,
+    "cap": 500,
+    "complete": true,
+    "lower_bound": 1,
+    "recoverable": "unique",
+    "status": "optimal",
+    "sampling": "cpsat_enumeration_order (NOT uniform)",
+    "wall_seconds": 0.001,
+    "subsets": [
+     [
+      "adj_Umukjoskwbqudg",
+      "pay_0DXB8TUOKFm9s5",
+      "pay_48crRNOuMjOMtI",
+      "pay_FERz47Dtxdyvw4",
+      "pay_FNN3VSRE4UYBEE",
+      "pay_PApmiM9jyYVxU6",
+      "pay_QEbWbKXzJeuN3B",
+      "pay_V97BroYVvsf2p7",
+      "pay_YYCKxb07PJJ6Io",
+      "pay_cwwtgCP54kMrsm",
+      "pay_hAPkQgcRMyTU0X",
+      "pay_oAAEzcCWkgxuoM",
+      "pay_uk7Nri1U89KQuc",
+      "pay_w4a2JiP7uR9Ma0",
+      "rfnd_ctWnOPJEF2rWl1"
+     ]
+    ],
+    "subsets_are_a_sample": false
+   },
+   "truth_in_closure": true,
+   "composition_closes": true
+  },
+  {
+   "settlement_id": "setl_lgpYzvgf7SkWg1",
+   "bank_line_index": 3,
+   "formed_at": 1800444600,
+   "payout_paise": 3505282,
+   "pool_size": 6,
+   "selection_degraded": false,
+   "selection_fallback": null,
+   "sampler": "exact",
+   "composition": [
+    "pay_0wBGEJ6m1nmhn5",
+    "pay_5bTbvUNTOZ6vZO",
+    "pay_ZsToD1FE0JjnI1",
+    "pay_afylwcLdAI1y6n",
+    "pay_bYNOakg8KehMNc",
+    "pay_mBdBnYv8rTHbCF"
+   ],
+   "closure": {
+    "count": 1,
+    "cap": 500,
+    "complete": true,
+    "lower_bound": 1,
+    "recoverable": "unique",
+    "status": "optimal",
+    "sampling": "cpsat_enumeration_order (NOT uniform)",
+    "wall_seconds": 0.0,
+    "subsets": [
+     [
+      "pay_0wBGEJ6m1nmhn5",
+      "pay_5bTbvUNTOZ6vZO",
+      "pay_ZsToD1FE0JjnI1",
+      "pay_afylwcLdAI1y6n",
+      "pay_bYNOakg8KehMNc",
+      "pay_mBdBnYv8rTHbCF"
+     ]
+    ],
+    "subsets_are_a_sample": false
+   },
+   "truth_in_closure": true,
+   "composition_closes": true
+  },
+  {
+   "settlement_id": "setl_8uibWtoHF6g8jM",
+   "bank_line_index": 4,
+   "formed_at": 1801049400,
+   "payout_paise": 9277528,
+   "pool_size": 10,
+   "selection_degraded": false,
+   "selection_fallback": null,
+   "sampler": "exact",
+   "composition": [
+    "pay_5dDG79uWI8l1Zl",
+    "pay_8xnKNmsDa371bG",
+    "pay_AnRRTRnpmb1KiG",
+    "pay_KsRgVNRo34uUBN",
+    "pay_LdWlByMMUOV2O5",
+    "pay_SQCtOEzbyNNAl7",
+    "pay_VM2iwTTLCUo0Ud",
+    "pay_XJRhzOWddI9k5U",
+    "pay_pUt4jxmHfdNJXl",
+    "pay_yVyTZl8mjZOEdm",
+    "rfnd_BKjABEUC1ERCcO",
+    "rfnd_QuCC307UOY4dzd"
+   ],
+   "closure": {
+    "count": 1,
+    "cap": 500,
+    "complete": true,
+    "lower_bound": 1,
+    "recoverable": "unique",
+    "status": "optimal",
+    "sampling": "cpsat_enumeration_order (NOT uniform)",
+    "wall_seconds": 0.001,
+    "subsets": [
+     [
+      "pay_5dDG79uWI8l1Zl",
+      "pay_8xnKNmsDa371bG",
+      "pay_AnRRTRnpmb1KiG",
+      "pay_KsRgVNRo34uUBN",
+      "pay_LdWlByMMUOV2O5",
+      "pay_SQCtOEzbyNNAl7",
+      "pay_VM2iwTTLCUo0Ud",
+      "pay_XJRhzOWddI9k5U",
+      "pay_pUt4jxmHfdNJXl",
+      "pay_yVyTZl8mjZOEdm",
+      "rfnd_BKjABEUC1ERCcO",
+      "rfnd_QuCC307UOY4dzd"
+     ]
+    ],
+    "subsets_are_a_sample": false
+   },
+   "truth_in_closure": true,
+   "composition_closes": true
+  },
+  {
+   "settlement_id": "setl_haknQiWidJU5ws",
+   "bank_line_index": 8,
+   "formed_at": 1801654200,
+   "payout_paise": 9288115,
+   "pool_size": 14,
+   "selection_degraded": false,
+   "selection_fallback": null,
+   "sampler": "exact",
+   "composition": [
+    "adj_uwxCCdieZzeW73",
+    "pay_1qaqZ0WOR3IopX",
+    "pay_7760dCQr86YKhW",
+    "pay_7zMqiC7l8xYVdp",
+    "pay_CyER3ZFvz2vUWP",
+    "pay_G4MDbUdIwPvBwC",
+    "pay_L0FTZrbPqWxEZp",
+    "pay_OGfrogUbHcV0si",
+    "pay_Q71KNCTNiOFd6m",
+    "pay_TQiNx3V3YfU58G",
+    "pay_VDHKdh0Nw26KG1",
+    "pay_byBen8zPmbPS4I",
+    "pay_cBxDjnGw7Rx2jY",
+    "pay_oMUkbYELyJd8uW",
+    "pay_pbWznuTBvFSFg7",
+    "rfnd_wONQjHXofKmYpF"
+   ],
+   "closure": {
+    "count": 1,
+    "cap": 500,
+    "complete": true,
+    "lower_bound": 1,
+    "recoverable": "unique",
+    "status": "optimal",
+    "sampling": "cpsat_enumeration_order (NOT uniform)",
+    "wall_seconds": 0.0,
+    "subsets": [
+     [
+      "adj_uwxCCdieZzeW73",
+      "pay_1qaqZ0WOR3IopX",
+      "pay_7760dCQr86YKhW",
+      "pay_7zMqiC7l8xYVdp",
+      "pay_CyER3ZFvz2vUWP",
+      "pay_G4MDbUdIwPvBwC",
+      "pay_L0FTZrbPqWxEZp",
+      "pay_OGfrogUbHcV0si",
+      "pay_Q71KNCTNiOFd6m",
+      "pay_TQiNx3V3YfU58G",
+      "pay_VDHKdh0Nw26KG1",
+      "pay_byBen8zPmbPS4I",
+      "pay_cBxDjnGw7Rx2jY",
+      "pay_oMUkbYELyJd8uW",
+      "pay_pbWznuTBvFSFg7",
+      "rfnd_wONQjHXofKmYpF"
+     ]
+    ],
+    "subsets_are_a_sample": false
+   },
+   "truth_in_closure": true,
+   "composition_closes": true
+  },
+  {
+   "settlement_id": "setl_Sir2a0JLqsBAuH",
+   "bank_line_index": 9,
+   "formed_at": 1802259000,
+   "payout_paise": 11964389,
+   "pool_size": 9,
+   "selection_degraded": false,
+   "selection_fallback": null,
+   "sampler": "exact",
+   "composition": [
+    "pay_AMeLQ05SuUx599",
+    "pay_SQkTiOcFCr5TlC",
+    "pay_e7UO9USgBwWQQv",
+    "pay_fL4eA9pdsg9qHj",
+    "pay_rBSTzV3gviM3NM",
+    "pay_vXvNFsFITPZW0T",
+    "pay_wWS5ybwUTbSwUV",
+    "pay_wrd92jjt03lA4G",
+    "pay_yvN8acQlmUD0pU"
+   ],
+   "closure": {
+    "count": 1,
+    "cap": 500,
+    "complete": true,
+    "lower_bound": 1,
+    "recoverable": "unique",
+    "status": "optimal",
+    "sampling": "cpsat_enumeration_order (NOT uniform)",
+    "wall_seconds": 0.0,
+    "subsets": [
+     [
+      "pay_AMeLQ05SuUx599",
+      "pay_SQkTiOcFCr5TlC",
+      "pay_e7UO9USgBwWQQv",
+      "pay_fL4eA9pdsg9qHj",
+      "pay_rBSTzV3gviM3NM",
+      "pay_vXvNFsFITPZW0T",
+      "pay_wWS5ybwUTbSwUV",
+      "pay_wrd92jjt03lA4G",
+      "pay_yvN8acQlmUD0pU"
+     ]
+    ],
+    "subsets_are_a_sample": false
+   },
+   "truth_in_closure": true,
+   "composition_closes": true
+  },
+  {
+   "settlement_id": "setl_4nieA6eGimB7Gl",
+   "bank_line_index": 10,
+   "formed_at": 1802863800,
+   "payout_paise": 21422878,
+   "pool_size": 11,
+   "selection_degraded": false,
+   "selection_fallback": null,
+   "sampler": "exact",
+   "composition": [
+    "pay_028vpzeTU74YAe",
+    "pay_XwEC9W29BtSxmK",
+    "pay_c2BJP0YVwAN8YL",
+    "pay_hpQYbQErhLcZR1",
+    "pay_jDmgvlxnIaq0Q3",
+    "pay_mo1JuOvV6AZrCf",
+    "pay_rvxKawND7YjUZ7",
+    "pay_tBi0E3Dpj5dRUi",
+    "pay_waTxUe3nozfbEx",
+    "rfnd_URa6kbMfNLRX0A",
+    "rfnd_UVjyFbTVZuj6Dd",
+    "rfnd_aj99UMIeVJGnCW"
+   ],
+   "closure": {
+    "count": 1,
+    "cap": 500,
+    "complete": true,
+    "lower_bound": 1,
+    "recoverable": "unique",
+    "status": "optimal",
+    "sampling": "cpsat_enumeration_order (NOT uniform)",
+    "wall_seconds": 0.0,
+    "subsets": [
+     [
+      "pay_028vpzeTU74YAe",
+      "pay_XwEC9W29BtSxmK",
+      "pay_c2BJP0YVwAN8YL",
+      "pay_hpQYbQErhLcZR1",
+      "pay_jDmgvlxnIaq0Q3",
+      "pay_mo1JuOvV6AZrCf",
+      "pay_rvxKawND7YjUZ7",
+      "pay_tBi0E3Dpj5dRUi",
+      "pay_waTxUe3nozfbEx",
+      "rfnd_URa6kbMfNLRX0A",
+      "rfnd_UVjyFbTVZuj6Dd",
+      "rfnd_aj99UMIeVJGnCW"
+     ]
+    ],
+    "subsets_are_a_sample": false
+   },
+   "truth_in_closure": true,
+   "composition_closes": true
+  },
+  {
+   "settlement_id": "setl_TRibfu7gOaes49",
+   "bank_line_index": 12,
+   "formed_at": 1803468600,
+   "payout_paise": 5459507,
+   "pool_size": 9,
+   "selection_degraded": false,
+   "selection_fallback": null,
+   "sampler": "exact",
+   "composition": [
+    "adj_2KuxAgnIujsQKU",
+    "pay_Bu2zyzspOBeJjw",
+    "pay_GOUfZVmV9ICM1d",
+    "pay_KrzMPkXJugahGj",
+    "pay_TovGCf7LfJbCWv",
+    "pay_ZUH4JsUlF7jnGc",
+    "pay_bUBq52Y8PR9FPF",
+    "pay_iPRrUOE2s0QcYW",
+    "pay_j4CKmqRIWYR9AB",
+    "pay_y0izeEYZUx7eVB"
+   ],
+   "closure": {
+    "count": 1,
+    "cap": 500,
+    "complete": true,
+    "lower_bound": 1,
+    "recoverable": "unique",
+    "status": "optimal",
+    "sampling": "cpsat_enumeration_order (NOT uniform)",
+    "wall_seconds": 0.0,
+    "subsets": [
+     [
+      "adj_2KuxAgnIujsQKU",
+      "pay_Bu2zyzspOBeJjw",
+      "pay_GOUfZVmV9ICM1d",
+      "pay_KrzMPkXJugahGj",
+      "pay_TovGCf7LfJbCWv",
+      "pay_ZUH4JsUlF7jnGc",
+      "pay_bUBq52Y8PR9FPF",
+      "pay_iPRrUOE2s0QcYW",
+      "pay_j4CKmqRIWYR9AB",
+      "pay_y0izeEYZUx7eVB"
+     ]
+    ],
+    "subsets_are_a_sample": false
+   },
+   "truth_in_closure": true,
+   "composition_closes": true
+  },
+  {
+   "settlement_id": "setl_orw24kcUo40TY3",
+   "bank_line_index": 14,
+   "formed_at": 1804073400,
+   "payout_paise": 32399031,
+   "pool_size": 14,
+   "selection_degraded": false,
+   "selection_fallback": null,
+   "sampler": "exact",
+   "composition": [
+    "pay_0pctiztSJ4AFJj",
+    "pay_1b0RBYtmhhGj2G",
+    "pay_5f23t7CebOOK8z",
+    "pay_5gGeC4UiV20Sam",
+    "pay_7cYYDcIvQqOI5e",
+    "pay_BJqRrKeVgiw4IO",
+    "pay_BaYCOMSRrGd0JH",
+    "pay_JcquboYBU9i8Cx",
+    "pay_aaYENkaCT3783Q",
+    "pay_asTmYhmGBYQnTo",
+    "pay_gCfiFGWsg9dyVR",
+    "pay_wCf1Ojk48EsPvZ",
+    "pay_wXsRyVfAUYA4hE",
+    "pay_yx0t1AQ5M6sahv",
+    "rfnd_8A9p9QYe0HJP6U"
+   ],
+   "closure": {
+    "count": 1,
+    "cap": 500,
+    "complete": true,
+    "lower_bound": 1,
+    "recoverable": "unique",
+    "status": "optimal",
+    "sampling": "cpsat_enumeration_order (NOT uniform)",
+    "wall_seconds": 0.001,
+    "subsets": [
+     [
+      "pay_0pctiztSJ4AFJj",
+      "pay_1b0RBYtmhhGj2G",
+      "pay_5f23t7CebOOK8z",
+      "pay_5gGeC4UiV20Sam",
+      "pay_7cYYDcIvQqOI5e",
+      "pay_BJqRrKeVgiw4IO",
+      "pay_BaYCOMSRrGd0JH",
+      "pay_JcquboYBU9i8Cx",
+      "pay_aaYENkaCT3783Q",
+      "pay_asTmYhmGBYQnTo",
+      "pay_gCfiFGWsg9dyVR",
+      "pay_wCf1Ojk48EsPvZ",
+      "pay_wXsRyVfAUYA4hE",
+      "pay_yx0t1AQ5M6sahv",
+      "rfnd_8A9p9QYe0HJP6U"
+     ]
+    ],
+    "subsets_are_a_sample": false
+   },
+   "truth_in_closure": true,
+   "composition_closes": true
+  },
+  {
+   "settlement_id": "setl_IOPCgvCLxS6y1n",
+   "bank_line_index": 17,
+   "formed_at": 1804678200,
+   "payout_paise": 20240595,
+   "pool_size": 12,
+   "selection_degraded": false,
+   "selection_fallback": null,
+   "sampler": "exact",
+   "composition": [
+    "pay_2DAYFSf3IkulUq",
+    "pay_AIokVBldVSVNqw",
+    "pay_IIvgKnl31acpXE",
+    "pay_K1XXVb1cwrsTx5",
+    "pay_LCYWd6kIyzXMfc",
+    "pay_RBGP2idgclffX4",
+    "pay_aLIdn19i3FGzWs",
+    "pay_afsEt3WxCdbUDH",
+    "pay_apMVGAR2rzd0Nx",
+    "pay_gXnyuaP1vHFgrB",
+    "pay_lzLJuk9NbQMAa0",
+    "pay_xTlfk5gGDOhaCS",
+    "rfnd_5bh5pVbTIH4DiE"
+   ],
+   "closure": {
+    "count": 1,
+    "cap": 500,
+    "complete": true,
+    "lower_bound": 1,
+    "recoverable": "unique",
+    "status": "optimal",
+    "sampling": "cpsat_enumeration_order (NOT uniform)",
+    "wall_seconds": 0.0,
+    "subsets": [
+     [
+      "pay_2DAYFSf3IkulUq",
+      "pay_AIokVBldVSVNqw",
+      "pay_IIvgKnl31acpXE",
+      "pay_K1XXVb1cwrsTx5",
+      "pay_LCYWd6kIyzXMfc",
+      "pay_RBGP2idgclffX4",
+      "pay_aLIdn19i3FGzWs",
+      "pay_afsEt3WxCdbUDH",
+      "pay_apMVGAR2rzd0Nx",
+      "pay_gXnyuaP1vHFgrB",
+      "pay_lzLJuk9NbQMAa0",
+      "pay_xTlfk5gGDOhaCS",
+      "rfnd_5bh5pVbTIH4DiE"
+     ]
+    ],
+    "subsets_are_a_sample": false
+   },
+   "truth_in_closure": true,
+   "composition_closes": true
+  },
+  {
+   "settlement_id": "setl_tcwtexNCsW5Cx4",
+   "bank_line_index": 18,
+   "formed_at": 1805283000,
+   "payout_paise": 7992937,
+   "pool_size": 8,
+   "selection_degraded": false,
+   "selection_fallback": null,
+   "sampler": "exact",
+   "composition": [
+    "adj_ASmbHAtcLzVxjv",
+    "adj_NP9tnuIIYIV8I2",
+    "pay_45mqPezMA2Pho7",
+    "pay_HQ1y1bmXpADdVF",
+    "pay_MR6secZTdIqSEP",
+    "pay_QzDMceY2kw86ga",
+    "pay_TEgwjFxeXtGe9N",
+    "pay_fnUwK2rr4klP2i",
+    "pay_tY1YSyOOsRknU4",
+    "pay_zPC7FfyUHXow5t"
+   ],
+   "closure": {
+    "count": 1,
+    "cap": 500,
+    "complete": true,
+    "lower_bound": 1,
+    "recoverable": "unique",
+    "status": "optimal",
+    "sampling": "cpsat_enumeration_order (NOT uniform)",
+    "wall_seconds": 0.0,
+    "subsets": [
+     [
+      "adj_ASmbHAtcLzVxjv",
+      "adj_NP9tnuIIYIV8I2",
+      "pay_45mqPezMA2Pho7",
+      "pay_HQ1y1bmXpADdVF",
+      "pay_MR6secZTdIqSEP",
+      "pay_QzDMceY2kw86ga",
+      "pay_TEgwjFxeXtGe9N",
+      "pay_fnUwK2rr4klP2i",
+      "pay_tY1YSyOOsRknU4",
+      "pay_zPC7FfyUHXow5t"
+     ]
+    ],
+    "subsets_are_a_sample": false
+   },
+   "truth_in_closure": true,
+   "composition_closes": true
+  },
+  {
+   "settlement_id": "setl_Iz0uA7Bn0vfCvm",
+   "bank_line_index": 19,
+   "formed_at": 1805887800,
+   "payout_paise": 11336255,
+   "pool_size": 14,
+   "selection_degraded": false,
+   "selection_fallback": null,
+   "sampler": "exact",
+   "composition": [
+    "pay_2zMHd4wghlN0RD",
+    "pay_36HAwfgVkMCk8Y",
+    "pay_6A4FPYS80KVAcE",
+    "pay_8Z7vRHyS9Omx7A",
+    "pay_Bh0keyRrILpmpH",
+    "pay_C5Z27uYzXnFXiX",
+    "pay_DM7ibGhjTbFQ8D",
+    "pay_FLrzzkesQQAZXF",
+    "pay_FfMu5x913lNhG4",
+    "pay_G2N7tNH42BjwTQ",
+    "pay_PDNZUX9erwsAAR",
+    "pay_QKzEXM93UwfZik",
+    "pay_eHhUcC4gze4UZ7",
+    "pay_qgvp4TB160JZie",
+    "rfnd_O8MZrKBrn2hM0y",
+    "rfnd_Tc1uF5qAAfKal8"
+   ],
+   "closure": {
+    "count": 1,
+    "cap": 500,
+    "complete": true,
+    "lower_bound": 1,
+    "recoverable": "unique",
+    "status": "optimal",
+    "sampling": "cpsat_enumeration_order (NOT uniform)",
+    "wall_seconds": 0.0,
+    "subsets": [
+     [
+      "pay_2zMHd4wghlN0RD",
+      "pay_36HAwfgVkMCk8Y",
+      "pay_6A4FPYS80KVAcE",
+      "pay_8Z7vRHyS9Omx7A",
+      "pay_Bh0keyRrILpmpH",
+      "pay_C5Z27uYzXnFXiX",
+      "pay_DM7ibGhjTbFQ8D",
+      "pay_FLrzzkesQQAZXF",
+      "pay_FfMu5x913lNhG4",
+      "pay_G2N7tNH42BjwTQ",
+      "pay_PDNZUX9erwsAAR",
+      "pay_QKzEXM93UwfZik",
+      "pay_eHhUcC4gze4UZ7",
+      "pay_qgvp4TB160JZie",
+      "rfnd_O8MZrKBrn2hM0y",
+      "rfnd_Tc1uF5qAAfKal8"
+     ]
+    ],
+    "subsets_are_a_sample": false
+   },
+   "truth_in_closure": true,
+   "composition_closes": true
+  }
+ ],
+ "determined_instances": [
+  0,
+  2,
+  3,
+  4,
+  8,
+  9,
+  10,
+  12,
+  14,
+  17,
+  19
+ ],
+ "bank_lines": [
+  {
+   "line_index": 0,
+   "kind": "settlement",
+   "true_settlement_id": "setl_3XDSdIhVtpYs2i",
+   "attested": true,
+   "posting_lag_days": 0,
+   "reference_visible": true
+  },
+  {
+   "line_index": 1,
+   "kind": "foreign_debit",
+   "true_settlement_id": null,
+   "attested": false,
+   "posting_lag_days": null,
+   "reference_visible": false
+  },
+  {
+   "line_index": 2,
+   "kind": "settlement",
+   "true_settlement_id": "setl_y9wISvejM0nJCd",
+   "attested": true,
+   "posting_lag_days": 0,
+   "reference_visible": true
+  },
+  {
+   "line_index": 3,
+   "kind": "settlement",
+   "true_settlement_id": "setl_lgpYzvgf7SkWg1",
+   "attested": true,
+   "posting_lag_days": 5,
+   "reference_visible": true
+  },
+  {
+   "line_index": 4,
+   "kind": "settlement",
+   "true_settlement_id": "setl_8uibWtoHF6g8jM",
+   "attested": true,
+   "posting_lag_days": 2,
+   "reference_visible": true
+  },
+  {
+   "line_index": 5,
+   "kind": "foreign_credit",
+   "true_settlement_id": null,
+   "attested": false,
+   "posting_lag_days": null,
+   "reference_visible": true
+  },
+  {
+   "line_index": 6,
+   "kind": "foreign_credit",
+   "true_settlement_id": null,
+   "attested": false,
+   "posting_lag_days": null,
+   "reference_visible": true
+  },
+  {
+   "line_index": 7,
+   "kind": "foreign_credit",
+   "true_settlement_id": null,
+   "attested": false,
+   "posting_lag_days": null,
+   "reference_visible": true
+  },
+  {
+   "line_index": 8,
+   "kind": "settlement",
+   "true_settlement_id": "setl_haknQiWidJU5ws",
+   "attested": true,
+   "posting_lag_days": 5,
+   "reference_visible": true
+  },
+  {
+   "line_index": 9,
+   "kind": "settlement",
+   "true_settlement_id": "setl_Sir2a0JLqsBAuH",
+   "attested": true,
+   "posting_lag_days": 1,
+   "reference_visible": true
+  },
+  {
+   "line_index": 10,
+   "kind": "settlement",
+   "true_settlement_id": "setl_4nieA6eGimB7Gl",
+   "attested": true,
+   "posting_lag_days": 2,
+   "reference_visible": true
+  },
+  {
+   "line_index": 11,
+   "kind": "foreign_debit",
+   "true_settlement_id": null,
+   "attested": false,
+   "posting_lag_days": null,
+   "reference_visible": true
+  },
+  {
+   "line_index": 12,
+   "kind": "settlement",
+   "true_settlement_id": "setl_TRibfu7gOaes49",
+   "attested": true,
+   "posting_lag_days": 1,
+   "reference_visible": true
+  },
+  {
+   "line_index": 13,
+   "kind": "reversal_debit",
+   "true_settlement_id": "setl_TRibfu7gOaes49",
+   "attested": true,
+   "posting_lag_days": null,
+   "reference_visible": true
+  },
+  {
+   "line_index": 14,
+   "kind": "settlement",
+   "true_settlement_id": "setl_orw24kcUo40TY3",
+   "attested": true,
+   "posting_lag_days": 1,
+   "reference_visible": true
+  },
+  {
+   "line_index": 15,
+   "kind": "foreign_debit",
+   "true_settlement_id": null,
+   "attested": false,
+   "posting_lag_days": null,
+   "reference_visible": true
+  },
+  {
+   "line_index": 16,
+   "kind": "foreign_credit",
+   "true_settlement_id": null,
+   "attested": false,
+   "posting_lag_days": null,
+   "reference_visible": true
+  },
+  {
+   "line_index": 17,
+   "kind": "settlement",
+   "true_settlement_id": "setl_IOPCgvCLxS6y1n",
+   "attested": true,
+   "posting_lag_days": 5,
+   "reference_visible": true
+  },
+  {
+   "line_index": 18,
+   "kind": "settlement",
+   "true_settlement_id": "setl_tcwtexNCsW5Cx4",
+   "attested": true,
+   "posting_lag_days": 1,
+   "reference_visible": true
+  },
+  {
+   "line_index": 19,
+   "kind": "settlement",
+   "true_settlement_id": "setl_Iz0uA7Bn0vfCvm",
+   "attested": true,
+   "posting_lag_days": 0,
+   "reference_visible": true
+  }
+ ],
+ "attestation": {
+  "attested_settlement_ids": [
+   "setl_3XDSdIhVtpYs2i",
+   "setl_4nieA6eGimB7Gl",
+   "setl_8uibWtoHF6g8jM",
+   "setl_IOPCgvCLxS6y1n",
+   "setl_Iz0uA7Bn0vfCvm",
+   "setl_Sir2a0JLqsBAuH",
+   "setl_TRibfu7gOaes49",
+   "setl_haknQiWidJU5ws",
+   "setl_lgpYzvgf7SkWg1",
+   "setl_orw24kcUo40TY3",
+   "setl_tcwtexNCsW5Cx4",
+   "setl_y9wISvejM0nJCd"
+  ],
+  "unattested_settlement_ids": [],
+  "wrong_attestations": [
+   {
+    "settlement_id": "setl_tcwtexNCsW5Cx4",
+    "true_payout_paise": 7992937,
+    "reported_payout_paise": 7915358,
+    "kind": "reported_amount_disagrees_with_bank"
+   }
+  ]
+ },
+ "settled_in": {
+  "pay_LP8P7EnsoBgB5L": "setl_3XDSdIhVtpYs2i",
+  "pay_y59fltTEWxLd75": "setl_3XDSdIhVtpYs2i",
+  "pay_0DXB8TUOKFm9s5": "setl_y9wISvejM0nJCd",
+  "pay_48crRNOuMjOMtI": "setl_y9wISvejM0nJCd",
+  "pay_FERz47Dtxdyvw4": "setl_y9wISvejM0nJCd",
+  "pay_FNN3VSRE4UYBEE": "setl_y9wISvejM0nJCd",
+  "pay_PApmiM9jyYVxU6": "setl_y9wISvejM0nJCd",
+  "pay_QEbWbKXzJeuN3B": "setl_y9wISvejM0nJCd",
+  "pay_V97BroYVvsf2p7": "setl_y9wISvejM0nJCd",
+  "pay_YYCKxb07PJJ6Io": "setl_y9wISvejM0nJCd",
+  "pay_cwwtgCP54kMrsm": "setl_y9wISvejM0nJCd",
+  "pay_hAPkQgcRMyTU0X": "setl_y9wISvejM0nJCd",
+  "pay_oAAEzcCWkgxuoM": "setl_y9wISvejM0nJCd",
+  "pay_uk7Nri1U89KQuc": "setl_y9wISvejM0nJCd",
+  "pay_w4a2JiP7uR9Ma0": "setl_y9wISvejM0nJCd",
+  "adj_Umukjoskwbqudg": "setl_y9wISvejM0nJCd",
+  "rfnd_ctWnOPJEF2rWl1": "setl_y9wISvejM0nJCd",
+  "pay_0wBGEJ6m1nmhn5": "setl_lgpYzvgf7SkWg1",
+  "pay_5bTbvUNTOZ6vZO": "setl_lgpYzvgf7SkWg1",
+  "pay_ZsToD1FE0JjnI1": "setl_lgpYzvgf7SkWg1",
+  "pay_afylwcLdAI1y6n": "setl_lgpYzvgf7SkWg1",
+  "pay_bYNOakg8KehMNc": "setl_lgpYzvgf7SkWg1",
+  "pay_mBdBnYv8rTHbCF": "setl_lgpYzvgf7SkWg1",
+  "pay_5dDG79uWI8l1Zl": "setl_8uibWtoHF6g8jM",
+  "pay_8xnKNmsDa371bG": "setl_8uibWtoHF6g8jM",
+  "pay_AnRRTRnpmb1KiG": "setl_8uibWtoHF6g8jM",
+  "pay_KsRgVNRo34uUBN": "setl_8uibWtoHF6g8jM",
+  "pay_LdWlByMMUOV2O5": "setl_8uibWtoHF6g8jM",
+  "pay_SQCtOEzbyNNAl7": "setl_8uibWtoHF6g8jM",
+  "pay_VM2iwTTLCUo0Ud": "setl_8uibWtoHF6g8jM",
+  "pay_XJRhzOWddI9k5U": "setl_8uibWtoHF6g8jM",
+  "pay_pUt4jxmHfdNJXl": "setl_8uibWtoHF6g8jM",
+  "pay_yVyTZl8mjZOEdm": "setl_8uibWtoHF6g8jM",
+  "rfnd_QuCC307UOY4dzd": "setl_8uibWtoHF6g8jM",
+  "rfnd_BKjABEUC1ERCcO": "setl_8uibWtoHF6g8jM",
+  "pay_1qaqZ0WOR3IopX": "setl_haknQiWidJU5ws",
+  "pay_7760dCQr86YKhW": "setl_haknQiWidJU5ws",
+  "pay_7zMqiC7l8xYVdp": "setl_haknQiWidJU5ws",
+  "pay_CyER3ZFvz2vUWP": "setl_haknQiWidJU5ws",
+  "pay_G4MDbUdIwPvBwC": "setl_haknQiWidJU5ws",
+  "pay_L0FTZrbPqWxEZp": "setl_haknQiWidJU5ws",
+  "pay_OGfrogUbHcV0si": "setl_haknQiWidJU5ws",
+  "pay_Q71KNCTNiOFd6m": "setl_haknQiWidJU5ws",
+  "pay_TQiNx3V3YfU58G": "setl_haknQiWidJU5ws",
+  "pay_VDHKdh0Nw26KG1": "setl_haknQiWidJU5ws",
+  "pay_byBen8zPmbPS4I": "setl_haknQiWidJU5ws",
+  "pay_cBxDjnGw7Rx2jY": "setl_haknQiWidJU5ws",
+  "pay_oMUkbYELyJd8uW": "setl_haknQiWidJU5ws",
+  "pay_pbWznuTBvFSFg7": "setl_haknQiWidJU5ws",
+  "adj_uwxCCdieZzeW73": "setl_haknQiWidJU5ws",
+  "rfnd_wONQjHXofKmYpF": "setl_haknQiWidJU5ws",
+  "pay_AMeLQ05SuUx599": "setl_Sir2a0JLqsBAuH",
+  "pay_SQkTiOcFCr5TlC": "setl_Sir2a0JLqsBAuH",
+  "pay_e7UO9USgBwWQQv": "setl_Sir2a0JLqsBAuH",
+  "pay_fL4eA9pdsg9qHj": "setl_Sir2a0JLqsBAuH",
+  "pay_rBSTzV3gviM3NM": "setl_Sir2a0JLqsBAuH",
+  "pay_vXvNFsFITPZW0T": "setl_Sir2a0JLqsBAuH",
+  "pay_wWS5ybwUTbSwUV": "setl_Sir2a0JLqsBAuH",
+  "pay_wrd92jjt03lA4G": "setl_Sir2a0JLqsBAuH",
+  "pay_yvN8acQlmUD0pU": "setl_Sir2a0JLqsBAuH",
+  "pay_028vpzeTU74YAe": "setl_4nieA6eGimB7Gl",
+  "pay_XwEC9W29BtSxmK": "setl_4nieA6eGimB7Gl",
+  "pay_c2BJP0YVwAN8YL": "setl_4nieA6eGimB7Gl",
+  "pay_hpQYbQErhLcZR1": "setl_4nieA6eGimB7Gl",
+  "pay_jDmgvlxnIaq0Q3": "setl_4nieA6eGimB7Gl",
+  "pay_mo1JuOvV6AZrCf": "setl_4nieA6eGimB7Gl",
+  "pay_rvxKawND7YjUZ7": "setl_4nieA6eGimB7Gl",
+  "pay_tBi0E3Dpj5dRUi": "setl_4nieA6eGimB7Gl",
+  "pay_waTxUe3nozfbEx": "setl_4nieA6eGimB7Gl",
+  "rfnd_aj99UMIeVJGnCW": "setl_4nieA6eGimB7Gl",
+  "rfnd_URa6kbMfNLRX0A": "setl_4nieA6eGimB7Gl",
+  "rfnd_UVjyFbTVZuj6Dd": "setl_4nieA6eGimB7Gl",
+  "pay_Bu2zyzspOBeJjw": "setl_TRibfu7gOaes49",
+  "pay_GOUfZVmV9ICM1d": "setl_TRibfu7gOaes49",
+  "pay_KrzMPkXJugahGj": "setl_TRibfu7gOaes49",
+  "pay_TovGCf7LfJbCWv": "setl_TRibfu7gOaes49",
+  "pay_ZUH4JsUlF7jnGc": "setl_TRibfu7gOaes49",
+  "pay_bUBq52Y8PR9FPF": "setl_TRibfu7gOaes49",
+  "pay_iPRrUOE2s0QcYW": "setl_TRibfu7gOaes49",
+  "pay_j4CKmqRIWYR9AB": "setl_TRibfu7gOaes49",
+  "pay_y0izeEYZUx7eVB": "setl_TRibfu7gOaes49",
+  "adj_2KuxAgnIujsQKU": "setl_TRibfu7gOaes49",
+  "pay_0pctiztSJ4AFJj": "setl_orw24kcUo40TY3",
+  "pay_1b0RBYtmhhGj2G": "setl_orw24kcUo40TY3",
+  "pay_5f23t7CebOOK8z": "setl_orw24kcUo40TY3",
+  "pay_5gGeC4UiV20Sam": "setl_orw24kcUo40TY3",
+  "pay_7cYYDcIvQqOI5e": "setl_orw24kcUo40TY3",
+  "pay_BJqRrKeVgiw4IO": "setl_orw24kcUo40TY3",
+  "pay_BaYCOMSRrGd0JH": "setl_orw24kcUo40TY3",
+  "pay_JcquboYBU9i8Cx": "setl_orw24kcUo40TY3",
+  "pay_aaYENkaCT3783Q": "setl_orw24kcUo40TY3",
+  "pay_asTmYhmGBYQnTo": "setl_orw24kcUo40TY3",
+  "pay_gCfiFGWsg9dyVR": "setl_orw24kcUo40TY3",
+  "pay_wCf1Ojk48EsPvZ": "setl_orw24kcUo40TY3",
+  "pay_wXsRyVfAUYA4hE": "setl_orw24kcUo40TY3",
+  "pay_yx0t1AQ5M6sahv": "setl_orw24kcUo40TY3",
+  "rfnd_8A9p9QYe0HJP6U": "setl_orw24kcUo40TY3",
+  "pay_2DAYFSf3IkulUq": "setl_IOPCgvCLxS6y1n",
+  "pay_AIokVBldVSVNqw": "setl_IOPCgvCLxS6y1n",
+  "pay_IIvgKnl31acpXE": "setl_IOPCgvCLxS6y1n",
+  "pay_K1XXVb1cwrsTx5": "setl_IOPCgvCLxS6y1n",
+  "pay_LCYWd6kIyzXMfc": "setl_IOPCgvCLxS6y1n",
+  "pay_RBGP2idgclffX4": "setl_IOPCgvCLxS6y1n",
+  "pay_aLIdn19i3FGzWs": "setl_IOPCgvCLxS6y1n",
+  "pay_afsEt3WxCdbUDH": "setl_IOPCgvCLxS6y1n",
+  "pay_apMVGAR2rzd0Nx": "setl_IOPCgvCLxS6y1n",
+  "pay_gXnyuaP1vHFgrB": "setl_IOPCgvCLxS6y1n",
+  "pay_lzLJuk9NbQMAa0": "setl_IOPCgvCLxS6y1n",
+  "pay_xTlfk5gGDOhaCS": "setl_IOPCgvCLxS6y1n",
+  "rfnd_5bh5pVbTIH4DiE": "setl_IOPCgvCLxS6y1n",
+  "pay_45mqPezMA2Pho7": "setl_tcwtexNCsW5Cx4",
+  "pay_HQ1y1bmXpADdVF": "setl_tcwtexNCsW5Cx4",
+  "pay_MR6secZTdIqSEP": "setl_tcwtexNCsW5Cx4",
+  "pay_QzDMceY2kw86ga": "setl_tcwtexNCsW5Cx4",
+  "pay_TEgwjFxeXtGe9N": "setl_tcwtexNCsW5Cx4",
+  "pay_fnUwK2rr4klP2i": "setl_tcwtexNCsW5Cx4",
+  "pay_tY1YSyOOsRknU4": "setl_tcwtexNCsW5Cx4",
+  "pay_zPC7FfyUHXow5t": "setl_tcwtexNCsW5Cx4",
+  "adj_ASmbHAtcLzVxjv": "setl_tcwtexNCsW5Cx4",
+  "adj_NP9tnuIIYIV8I2": "setl_tcwtexNCsW5Cx4",
+  "pay_2zMHd4wghlN0RD": "setl_Iz0uA7Bn0vfCvm",
+  "pay_36HAwfgVkMCk8Y": "setl_Iz0uA7Bn0vfCvm",
+  "pay_6A4FPYS80KVAcE": "setl_Iz0uA7Bn0vfCvm",
+  "pay_8Z7vRHyS9Omx7A": "setl_Iz0uA7Bn0vfCvm",
+  "pay_Bh0keyRrILpmpH": "setl_Iz0uA7Bn0vfCvm",
+  "pay_C5Z27uYzXnFXiX": "setl_Iz0uA7Bn0vfCvm",
+  "pay_DM7ibGhjTbFQ8D": "setl_Iz0uA7Bn0vfCvm",
+  "pay_FLrzzkesQQAZXF": "setl_Iz0uA7Bn0vfCvm",
+  "pay_FfMu5x913lNhG4": "setl_Iz0uA7Bn0vfCvm",
+  "pay_G2N7tNH42BjwTQ": "setl_Iz0uA7Bn0vfCvm",
+  "pay_PDNZUX9erwsAAR": "setl_Iz0uA7Bn0vfCvm",
+  "pay_QKzEXM93UwfZik": "setl_Iz0uA7Bn0vfCvm",
+  "pay_eHhUcC4gze4UZ7": "setl_Iz0uA7Bn0vfCvm",
+  "pay_qgvp4TB160JZie": "setl_Iz0uA7Bn0vfCvm",
+  "rfnd_Tc1uF5qAAfKal8": "setl_Iz0uA7Bn0vfCvm",
+  "rfnd_O8MZrKBrn2hM0y": "setl_Iz0uA7Bn0vfCvm"
+ },
+ "unsettled_reason": {
+  "pay_HOrPsjjsBEQ8nI": "netted_out_by_full_refund",
+  "pay_C73dGul1UfI9M6": "not_captured",
+  "pay_7iJI5T1y0OpFmY": "on_hold_dispute",
+  "pay_6BqY5lioe1sj3V": "netted_out_by_full_refund",
+  "pay_kYOKHIfeShHo8Q": "on_hold_dispute",
+  "pay_MgVxVsIMLN4rCg": "on_hold_dispute",
+  "pay_sZ8VdsDBHEtkCa": "not_captured",
+  "pay_tBBx6x6N7faN1n": "not_captured",
+  "pay_y6XYnOl7WSRn8m": "netted_out_by_full_refund",
+  "pay_St0nXuhw3jCtbg": "not_yet_eligible_at_horizon",
+  "pay_O7fbSjrfRVexo7": "not_yet_eligible_at_horizon",
+  "pay_zKbx4PllZxs2Lz": "not_yet_eligible_at_horizon",
+  "pay_WmYJZaWOZPQMrl": "not_yet_eligible_at_horizon",
+  "pay_e3DaVmI40VOcty": "not_yet_eligible_at_horizon",
+  "pay_qvsXzUGJwLjOKy": "not_yet_eligible_at_horizon",
+  "pay_W1cnLu2eXJKfou": "not_yet_eligible_at_horizon",
+  "pay_V52KueYdJbrINo": "not_yet_eligible_at_horizon",
+  "pay_As6WvARPUeNd3a": "not_yet_eligible_at_horizon",
+  "pay_rCODFSo36ttEiw": "not_yet_eligible_at_horizon",
+  "pay_1Mr17gpiJepT5w": "not_yet_eligible_at_horizon",
+  "pay_k8rDhbMtS91iYk": "not_yet_eligible_at_horizon",
+  "pay_cKR8XGV7fSpuCs": "not_yet_eligible_at_horizon",
+  "pay_CBG4QnqUU91gar": "not_yet_eligible_at_horizon",
+  "pay_tJm1723wkp48e0": "not_yet_eligible_at_horizon",
+  "pay_fBxNNFqt4V79Nh": "not_yet_eligible_at_horizon",
+  "pay_opgzGvd2rMxhmu": "not_yet_eligible_at_horizon",
+  "pay_Vu6ngNadke9kxG": "not_yet_eligible_at_horizon",
+  "pay_mVnvu9JZ0rlNCo": "not_yet_eligible_at_horizon",
+  "pay_UXdiK6y63GiH2H": "not_yet_eligible_at_horizon",
+  "rfnd_P4yUVjdFNqecac": "netted_out_by_full_refund",
+  "rfnd_D6MY6Vz0sGWajQ": "netted_out_by_full_refund",
+  "rfnd_FI2EtAxOcpWE2d": "netted_out_by_full_refund",
+  "rfnd_KAXgc3Jf1CvtXV": "debit_deferred_past_horizon",
+  "adj_XbmmacvIzWr1L1": "debit_deferred_past_horizon",
+  "adj_6jNeMF5g5BaVmQ": "debit_deferred_past_horizon",
+  "adj_0O15x3gwfguveq": "debit_deferred_past_horizon",
+  "adj_fIftn28GfSIkeM": "debit_deferred_past_horizon"
+ },
+ "netted_out": [
+  "pay_6BqY5lioe1sj3V",
+  "pay_HOrPsjjsBEQ8nI",
+  "pay_y6XYnOl7WSRn8m"
+ ],
+ "roles": {
+  "pay_qgvp4TB160JZie": "clean",
+  "pay_1qaqZ0WOR3IopX": "clean",
+  "pay_HQ1y1bmXpADdVF": "clean",
+  "pay_ZsToD1FE0JjnI1": "clean",
+  "pay_St0nXuhw3jCtbg": "clean",
+  "pay_wCf1Ojk48EsPvZ": "clean",
+  "pay_yVyTZl8mjZOEdm": "clean",
+  "pay_k8rDhbMtS91iYk": "clean",
+  "pay_V97BroYVvsf2p7": "refund_later",
+  "pay_AnRRTRnpmb1KiG": "clean",
+  "pay_CBG4QnqUU91gar": "clean",
+  "pay_KsRgVNRo34uUBN": "clean",
+  "pay_1Mr17gpiJepT5w": "clean",
+  "pay_MR6secZTdIqSEP": "partial_refund_pre",
+  "pay_e3DaVmI40VOcty": "clean",
+  "pay_bYNOakg8KehMNc": "clean",
+  "pay_0pctiztSJ4AFJj": "clean",
+  "pay_KrzMPkXJugahGj": "dispute_won",
+  "pay_GOUfZVmV9ICM1d": "clean",
+  "pay_C5Z27uYzXnFXiX": "clean",
+  "pay_opgzGvd2rMxhmu": "clean",
+  "pay_wXsRyVfAUYA4hE": "dispute_lost",
+  "pay_G2N7tNH42BjwTQ": "clean",
+  "pay_MgVxVsIMLN4rCg": "dispute_held",
+  "pay_AMeLQ05SuUx599": "clean",
+  "pay_hpQYbQErhLcZR1": "clean",
+  "pay_fL4eA9pdsg9qHj": "clean",
+  "pay_mo1JuOvV6AZrCf": "partial_refund_pre",
+  "pay_c2BJP0YVwAN8YL": "clean",
+  "pay_VM2iwTTLCUo0Ud": "clean",
+  "pay_mVnvu9JZ0rlNCo": "clean",
+  "pay_tBBx6x6N7faN1n": "failed",
+  "pay_iPRrUOE2s0QcYW": "clean",
+  "pay_IIvgKnl31acpXE": "clean",
+  "pay_TQiNx3V3YfU58G": "clean",
+  "pay_5dDG79uWI8l1Zl": "clean",
+  "pay_zPC7FfyUHXow5t": "clean",
+  "pay_Vu6ngNadke9kxG": "clean",
+  "pay_asTmYhmGBYQnTo": "clean",
+  "pay_XJRhzOWddI9k5U": "clean",
+  "pay_5bTbvUNTOZ6vZO": "clean",
+  "pay_TEgwjFxeXtGe9N": "clean",
+  "pay_QKzEXM93UwfZik": "clean",
+  "pay_WmYJZaWOZPQMrl": "clean",
+  "pay_7cYYDcIvQqOI5e": "clean",
+  "pay_oAAEzcCWkgxuoM": "clean",
+  "pay_LCYWd6kIyzXMfc": "clean",
+  "pay_cKR8XGV7fSpuCs": "clean",
+  "pay_BaYCOMSRrGd0JH": "clean",
+  "pay_rCODFSo36ttEiw": "clean",
+  "pay_tJm1723wkp48e0": "clean",
+  "pay_2zMHd4wghlN0RD": "clean",
+  "pay_Q71KNCTNiOFd6m": "clean",
+  "pay_rBSTzV3gviM3NM": "clean",
+  "pay_afylwcLdAI1y6n": "clean",
+  "pay_Bh0keyRrILpmpH": "clean",
+  "pay_sZ8VdsDBHEtkCa": "failed",
+  "pay_DM7ibGhjTbFQ8D": "clean",
+  "pay_YYCKxb07PJJ6Io": "clean",
+  "pay_hAPkQgcRMyTU0X": "clean",
+  "pay_gXnyuaP1vHFgrB": "clean",
+  "pay_rvxKawND7YjUZ7": "clean",
+  "pay_byBen8zPmbPS4I": "clean",
+  "pay_cwwtgCP54kMrsm": "clean",
+  "pay_FfMu5x913lNhG4": "clean",
+  "pay_FLrzzkesQQAZXF": "dispute_lost",
+  "pay_fnUwK2rr4klP2i": "refund_later",
+  "pay_waTxUe3nozfbEx": "clean",
+  "pay_O7fbSjrfRVexo7": "clean",
+  "pay_HOrPsjjsBEQ8nI": "full_refund_pre",
+  "pay_xTlfk5gGDOhaCS": "clean",
+  "pay_SQCtOEzbyNNAl7": "clean",
+  "pay_jDmgvlxnIaq0Q3": "clean",
+  "pay_XwEC9W29BtSxmK": "clean",
+  "pay_ZUH4JsUlF7jnGc": "clean",
+  "pay_FNN3VSRE4UYBEE": "clean",
+  "pay_fBxNNFqt4V79Nh": "clean",
+  "pay_TovGCf7LfJbCWv": "clean",
+  "pay_L0FTZrbPqWxEZp": "clean",
+  "pay_5gGeC4UiV20Sam": "clean",
+  "pay_45mqPezMA2Pho7": "clean",
+  "pay_2DAYFSf3IkulUq": "clean",
+  "pay_y59fltTEWxLd75": "clean",
+  "pay_yx0t1AQ5M6sahv": "clean",
+  "pay_OGfrogUbHcV0si": "clean",
+  "pay_y6XYnOl7WSRn8m": "full_refund_pre",
+  "pay_cBxDjnGw7Rx2jY": "clean",
+  "pay_1b0RBYtmhhGj2G": "partial_refund_pre",
+  "pay_wWS5ybwUTbSwUV": "clean",
+  "pay_PDNZUX9erwsAAR": "clean",
+  "pay_pbWznuTBvFSFg7": "clean",
+  "pay_0DXB8TUOKFm9s5": "clean",
+  "pay_aaYENkaCT3783Q": "clean",
+  "pay_W1cnLu2eXJKfou": "clean",
+  "pay_QzDMceY2kw86ga": "clean",
+  "pay_afsEt3WxCdbUDH": "clean",
+  "pay_48crRNOuMjOMtI": "clean",
+  "pay_e7UO9USgBwWQQv": "clean",
+  "pay_RBGP2idgclffX4": "dispute_won",
+  "pay_QEbWbKXzJeuN3B": "clean",
+  "pay_7iJI5T1y0OpFmY": "dispute_held",
+  "pay_UXdiK6y63GiH2H": "clean",
+  "pay_7760dCQr86YKhW": "clean",
+  "pay_LP8P7EnsoBgB5L": "clean",
+  "pay_K1XXVb1cwrsTx5": "clean",
+  "pay_CyER3ZFvz2vUWP": "clean",
+  "pay_7zMqiC7l8xYVdp": "clean",
+  "pay_C73dGul1UfI9M6": "failed",
+  "pay_zKbx4PllZxs2Lz": "clean",
+  "pay_lzLJuk9NbQMAa0": "clean",
+  "pay_oMUkbYELyJd8uW": "clean",
+  "pay_qvsXzUGJwLjOKy": "clean",
+  "pay_6A4FPYS80KVAcE": "clean",
+  "pay_mBdBnYv8rTHbCF": "refund_later",
+  "pay_JcquboYBU9i8Cx": "dispute_won",
+  "pay_SQkTiOcFCr5TlC": "clean",
+  "pay_y0izeEYZUx7eVB": "clean",
+  "pay_0wBGEJ6m1nmhn5": "clean",
+  "pay_eHhUcC4gze4UZ7": "clean",
+  "pay_6BqY5lioe1sj3V": "full_refund_pre",
+  "pay_PApmiM9jyYVxU6": "clean",
+  "pay_kYOKHIfeShHo8Q": "dispute_held",
+  "pay_FERz47Dtxdyvw4": "clean",
+  "pay_bUBq52Y8PR9FPF": "clean",
+  "pay_pUt4jxmHfdNJXl": "clean",
+  "pay_vXvNFsFITPZW0T": "clean",
+  "pay_uk7Nri1U89KQuc": "clean",
+  "pay_VDHKdh0Nw26KG1": "clean",
+  "pay_LdWlByMMUOV2O5": "clean",
+  "pay_8Z7vRHyS9Omx7A": "dispute_lost",
+  "pay_yvN8acQlmUD0pU": "clean",
+  "pay_8xnKNmsDa371bG": "clean",
+  "pay_tY1YSyOOsRknU4": "clean",
+  "pay_As6WvARPUeNd3a": "clean",
+  "pay_j4CKmqRIWYR9AB": "clean",
+  "pay_Bu2zyzspOBeJjw": "clean",
+  "pay_apMVGAR2rzd0Nx": "clean",
+  "pay_BJqRrKeVgiw4IO": "clean",
+  "pay_36HAwfgVkMCk8Y": "clean",
+  "pay_028vpzeTU74YAe": "clean",
+  "pay_w4a2JiP7uR9Ma0": "clean",
+  "pay_G4MDbUdIwPvBwC": "clean",
+  "pay_5f23t7CebOOK8z": "clean",
+  "pay_aLIdn19i3FGzWs": "clean",
+  "pay_gCfiFGWsg9dyVR": "clean",
+  "pay_tBi0E3Dpj5dRUi": "clean",
+  "pay_V52KueYdJbrINo": "clean",
+  "pay_AIokVBldVSVNqw": "clean",
+  "pay_wrd92jjt03lA4G": "clean"
+ },
+ "planted_classes": {
+  "d07_decoy_credit_collision": {
+   "planted": true,
+   "table": "recon",
+   "members": [
+    "pay_8xnKNmsDa371bG",
+    "pay_As6WvARPUeNd3a",
+    "pay_Bu2zyzspOBeJjw",
+    "pay_LdWlByMMUOV2O5",
+    "pay_QzDMceY2kw86ga",
+    "pay_W1cnLu2eXJKfou",
+    "pay_ZUH4JsUlF7jnGc",
+    "pay_iPRrUOE2s0QcYW",
+    "pay_j4CKmqRIWYR9AB",
+    "pay_tY1YSyOOsRknU4",
+    "pay_wWS5ybwUTbSwUV",
+    "pay_yvN8acQlmUD0pU"
+   ],
+   "pairs": [
+    [
+     "pay_wWS5ybwUTbSwUV",
+     "pay_yvN8acQlmUD0pU"
+    ],
+    [
+     "pay_8xnKNmsDa371bG",
+     "pay_LdWlByMMUOV2O5"
+    ],
+    [
+     "pay_QzDMceY2kw86ga",
+     "pay_tY1YSyOOsRknU4"
+    ],
+    [
+     "pay_As6WvARPUeNd3a",
+     "pay_W1cnLu2eXJKfou"
+    ],
+    [
+     "pay_iPRrUOE2s0QcYW",
+     "pay_j4CKmqRIWYR9AB"
+    ],
+    [
+     "pay_Bu2zyzspOBeJjw",
+     "pay_ZUH4JsUlF7jnGc"
+    ]
+   ],
+   "reason": ""
+  },
+  "d07_decoy_credit_near_collision": {
+   "planted": true,
+   "table": "recon",
+   "members": [
+    "pay_36HAwfgVkMCk8Y",
+    "pay_BJqRrKeVgiw4IO",
+    "pay_Bh0keyRrILpmpH",
+    "pay_apMVGAR2rzd0Nx",
+    "pay_gXnyuaP1vHFgrB",
+    "pay_yx0t1AQ5M6sahv"
+   ],
+   "pairs": [
+    {
+     "pair": [
+      "pay_apMVGAR2rzd0Nx",
+      "pay_gXnyuaP1vHFgrB"
+     ],
+     "delta": 2
+    },
+    {
+     "pair": [
+      "pay_BJqRrKeVgiw4IO",
+      "pay_yx0t1AQ5M6sahv"
+     ],
+     "delta": 2
+    },
+    {
+     "pair": [
+      "pay_36HAwfgVkMCk8Y",
+      "pay_Bh0keyRrILpmpH"
+     ],
+     "delta": 1
+    }
+   ]
+  },
+  "d08_duplicate_payment_rows": {
+   "planted": true,
+   "table": "recon",
+   "members": [
+    "pay_028vpzeTU74YAe",
+    "pay_5f23t7CebOOK8z",
+    "pay_AIokVBldVSVNqw",
+    "pay_BJqRrKeVgiw4IO",
+    "pay_G4MDbUdIwPvBwC",
+    "pay_L0FTZrbPqWxEZp",
+    "pay_PApmiM9jyYVxU6",
+    "pay_V52KueYdJbrINo",
+    "pay_W1cnLu2eXJKfou",
+    "pay_aLIdn19i3FGzWs",
+    "pay_aaYENkaCT3783Q",
+    "pay_apMVGAR2rzd0Nx",
+    "pay_c2BJP0YVwAN8YL",
+    "pay_e7UO9USgBwWQQv",
+    "pay_gCfiFGWsg9dyVR",
+    "pay_lzLJuk9NbQMAa0",
+    "pay_rvxKawND7YjUZ7",
+    "pay_tBi0E3Dpj5dRUi",
+    "pay_w4a2JiP7uR9Ma0",
+    "pay_wrd92jjt03lA4G"
+   ],
+   "pairs": [
+    [
+     "pay_028vpzeTU74YAe",
+     "pay_c2BJP0YVwAN8YL"
+    ],
+    [
+     "pay_PApmiM9jyYVxU6",
+     "pay_w4a2JiP7uR9Ma0"
+    ],
+    [
+     "pay_G4MDbUdIwPvBwC",
+     "pay_L0FTZrbPqWxEZp"
+    ],
+    [
+     "pay_5f23t7CebOOK8z",
+     "pay_aaYENkaCT3783Q"
+    ],
+    [
+     "pay_aLIdn19i3FGzWs",
+     "pay_apMVGAR2rzd0Nx"
+    ],
+    [
+     "pay_BJqRrKeVgiw4IO",
+     "pay_gCfiFGWsg9dyVR"
+    ],
+    [
+     "pay_rvxKawND7YjUZ7",
+     "pay_tBi0E3Dpj5dRUi"
+    ],
+    [
+     "pay_V52KueYdJbrINo",
+     "pay_W1cnLu2eXJKfou"
+    ],
+    [
+     "pay_AIokVBldVSVNqw",
+     "pay_lzLJuk9NbQMAa0"
+    ],
+    [
+     "pay_e7UO9USgBwWQQv",
+     "pay_wrd92jjt03lA4G"
+    ]
+   ]
+  },
+  "d01_settlement_reversal": {
+   "planted": true,
+   "table": "bank",
+   "members": [
+    13
+   ]
+  },
+  "d02_foreign_bank_lines": {
+   "planted": true,
+   "table": "bank",
+   "members": [
+    1,
+    5,
+    6,
+    7,
+    11,
+    15,
+    16
+   ]
+  },
+  "d03_wrong_attestation": {
+   "planted": true,
+   "table": "settlement_report",
+   "members": [
+    "setl_tcwtexNCsW5Cx4"
+   ],
+   "detail": [
+    {
+     "settlement_id": "setl_tcwtexNCsW5Cx4",
+     "true_payout_paise": 7992937,
+     "reported_payout_paise": 7915358,
+     "kind": "reported_amount_disagrees_with_bank"
+    }
+   ],
+   "reason": ""
+  },
+  "d04_unattested_settlements": {
+   "planted": false,
+   "table": "settlement_report",
+   "reason": "attestation coverage is 100% at this axis point, so there is nothing unattested -- absent by design, not by failure",
+   "members": []
+  },
+  "d05_erp_orphan_invoices": {
+   "planted": true,
+   "table": "erp",
+   "members": [
+    "INV/26-27/1034",
+    "INV/26-27/1037",
+    "INV/26-27/1056",
+    "INV/26-27/1100"
+   ]
+  },
+  "d06_payments_missing_from_erp": {
+   "planted": true,
+   "table": "recon",
+   "members": [
+    "pay_7760dCQr86YKhW",
+    "pay_DM7ibGhjTbFQ8D",
+    "pay_K1XXVb1cwrsTx5",
+    "pay_SQCtOEzbyNNAl7",
+    "pay_afylwcLdAI1y6n",
+    "pay_byBen8zPmbPS4I",
+    "pay_j4CKmqRIWYR9AB",
+    "pay_pbWznuTBvFSFg7",
+    "pay_rBSTzV3gviM3NM"
+   ]
+  },
+  "d09_itc_at_risk": {
+   "planted": true,
+   "table": "gstr2b",
+   "members": [
+    "INV/26-27/7000",
+    "INV/26-27/7001",
+    "INV/26-27/7002"
+   ]
+  }
+ },
+ "payments_missing_from_erp": [
+  "pay_7760dCQr86YKhW",
+  "pay_DM7ibGhjTbFQ8D",
+  "pay_K1XXVb1cwrsTx5",
+  "pay_SQCtOEzbyNNAl7",
+  "pay_afylwcLdAI1y6n",
+  "pay_byBen8zPmbPS4I",
+  "pay_j4CKmqRIWYR9AB",
+  "pay_pbWznuTBvFSFg7",
+  "pay_rBSTzV3gviM3NM"
+ ],
+ "erp_orphan_invoices": [
+  "INV/26-27/1034",
+  "INV/26-27/1037",
+  "INV/26-27/1056",
+  "INV/26-27/1100"
+ ],
+ "itc_at_risk": [
+  {
+   "invoice_no": "INV/26-27/7000",
+   "period": "2027-01",
+   "reason": "supplier_gstr3b_not_filed_rule_37a",
+   "statute": "Rule 37A CGST"
+  },
+  {
+   "invoice_no": "INV/26-27/7001",
+   "period": "2027-02",
+   "reason": "absent_from_gstr2b",
+   "statute": "Sec 16(2)(aa) CGST"
+  },
+  {
+   "invoice_no": "INV/26-27/7002",
+   "period": "2027-03",
+   "reason": "no_irn_on_notified_supplier_invoice",
+   "statute": "Rule 48(5) CGST"
+  }
+ ],
+ "gst_rounding_residuals": [
+  {
+   "period": "2027-01",
+   "aggregate_tax_paise": 81190,
+   "accrued_tax_paise": 81195,
+   "residual_paise": -5
+  },
+  {
+   "period": "2027-02",
+   "aggregate_tax_paise": 188104,
+   "accrued_tax_paise": 188119,
+   "residual_paise": -15
+  },
+  {
+   "period": "2027-03",
+   "aggregate_tax_paise": 271234,
+   "accrued_tax_paise": 271245,
+   "residual_paise": -11
+  }
+ ],
+ "bank_diagnostics": {
+  "reference_gaps": [
+   9,
+   2,
+   3,
+   15,
+   26,
+   24,
+   28,
+   39,
+   34,
+   34,
+   14,
+   14,
+   33,
+   1,
+   25,
+   27,
+   15,
+   19,
+   15,
+   21
+  ],
+  "posting_lag_histogram": {
+   "0": 3,
+   "1": 4,
+   "2": 2,
+   "5": 3
+  }
+ },
+ "provenance": {
+  "recon_combined.json": {
+   "party": "psp",
+   "source_system": "psp_ledger",
+   "drawn_from": "the ledger draw",
+   "note": "settlement_id/settled/settled_at/settlement_utr are ONE assertion in four columns"
+  },
+  "settlement_report.csv": {
+   "party": "psp",
+   "source_system": "psp_settlement_report",
+   "drawn_from": "the same simulation as recon_combined.json",
+   "note": "NOT independent of the recon feed. Same party, second artefact. reported_reference is the PSP's CLAIM about the bank's reference, not the bank's assertion of it."
+  },
+  "bank_statement.csv": {
+   "party": "bank",
+   "source_system": "bank",
+   "drawn_from": "an independent bank-side counter and lag distribution",
+   "note": "built by corpus/generator/bank.py, which is never passed a settlement identifier. Shares ONLY amount, approximate date, and the remitter's name with the ledger -- see CORPUS_SPEC 5."
+  },
+  "erp_orders.csv": {
+   "party": "merchant",
+   "source_system": "merchant_erp",
+   "drawn_from": "the ledger draw, plus an independent orphan draw",
+   "note": "carries NO settlement reference, so it attests to a row's existence and never to batch membership"
+  },
+  "gstr2b.csv": {
+   "party": "tax_authority",
+   "source_system": "tax_authority",
+   "drawn_from": "the fee columns, aggregated monthly"
+  },
+  "disputes.json": {
+   "party": "issuer",
+   "source_system": "dispute_record",
+   "drawn_from": "the ledger draw"
+  }
+ }
+}

@@ -844,6 +844,69 @@ class DeterminedInstance:
                 f"(count={self.closure_count}, complete={self.closure_complete})")
 
 
+@dataclass(frozen=True, slots=True)
+class ReconstructibleInstance:
+    """A bank line that is UNATTESTED and still has exactly one explanation.
+
+    Contract sec 6.4. **Amendment, adopted 2026-08-24, after corpus generation
+    had begun.** It is dated and justified here rather than folded in silently,
+    because the contract's whole claim on being trustworthy is that it was
+    written before the data.
+
+    ## Why it had to be added
+
+    Measured on the generated corpus:
+
+        axis point     determined   lines with unique complete closure
+        A20_B100_Cmax      10            11  (all attested)
+        A20_B75_Cmax        8            12  (3 unattested)
+        A20_B50_Cmax        5            11  (5 unattested)
+        A20_B0_Cmax         0            11  (11 unattested)
+
+    At 0% coverage **every gate was vacuous**. Section 6.3's theorem forces
+    `|Verified| = 0`, so the wrong-Verified and independence gates have nothing
+    to check; and `DeterminedInstance` requires the attestation, so the
+    abstention gate had an EMPTY subpopulation. A resolver returning
+    `Unresolved` to everything scored perfectly on the one cell that is purely
+    about reconstruction -- and it is the cell where the branch that produced
+    all 50 wrong answers actually lives.
+
+    That is the same hole sec 6.1 exists to close, reopened one axis over.
+
+    ## What it does NOT change
+
+    No outcome semantics, no existing gate, no generated dataset. It is derived
+    from closure registers already present in every ground-truth key, so
+    nothing was regenerated to make it true -- which is what keeps this an
+    addition rather than a re-cut of the benchmark after seeing results.
+
+    On these lines `Reconstructed` is achievable, so `Unresolved` and
+    `Ambiguous` are failures. `Verified` is NOT expected -- there is no
+    attestation to corroborate.
+    """
+
+    bank_index: int
+    true_composition_row_ids: tuple[str, ...]
+    closure_count: int
+    closure_complete: bool
+    #: The subset closes no OTHER unexplained credit in the window. Without
+    #: this the line is not reconstructible -- it is the 50-row failure
+    #: (sec 4.3), where per-credit closure was unique and the answer was wrong.
+    cross_line_exclusive: bool
+
+    def __post_init__(self) -> None:
+        if self.closure_count != 1 or not self.closure_complete:
+            raise ContractViolation(
+                "a ReconstructibleInstance has exactly one closing subset, "
+                "proven by a COMPLETE enumeration "
+                f"(count={self.closure_count}, complete={self.closure_complete})")
+        if not self.cross_line_exclusive:
+            raise ContractViolation(
+                "a subset that also closes another unexplained credit is not "
+                "reconstructible; uniqueness held at all three lines that "
+                "produced the 50 wrong rows (sec 4.3)")
+
+
 # --------------------------------------------------------------------------
 # Reported output shape -- an accounting, not a rate
 # --------------------------------------------------------------------------
@@ -924,12 +987,16 @@ class ResolverOutput:
         return None
 
     def abstention_failures(
-        self, determined: Sequence[DeterminedInstance]
+        self,
+        determined: Sequence[DeterminedInstance | ReconstructibleInstance],
     ) -> list[tuple[int, str]]:
-        """Determined instances the resolver failed to resolve. GATED AT ZERO.
+        """Instances the resolver failed to resolve. GATED AT ZERO.
 
-        The counterweight to the four soundness gates: it cannot be passed by
-        silence, because silence is exactly what it measures.
+        The counterweight to the soundness gates: it cannot be passed by
+        silence, because silence is exactly what it measures. Accepts both
+        subpopulations -- `DeterminedInstance` (attested, sec 6.1) and
+        `ReconstructibleInstance` (unattested, sec 6.4) -- because the hole is
+        the same one and abstaining is a defect on either.
         """
         outcomes = self.by_line()
         failures: list[tuple[int, str]] = []

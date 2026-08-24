@@ -283,7 +283,16 @@ def build_bank_statement(
         if is_credit and item.kind == "settlement":
             remitter = rng.choice(REMITTERS)
         elif is_credit:
-            remitter = rng.choice(FOREIGN_REMITTERS)
+            # HALF of the foreign credits come from Razorpay too -- a fee
+            # refund, a reversal re-credit, an advance. The leak audit found
+            # the first draft: `narration CONTAINS 'clo'` isolated foreign
+            # lines at precision 1.000 because every one of them named a
+            # different remitter, so "is this credit ours?" was answerable by
+            # reading the counterparty instead of by reconciling. A merchant
+            # genuinely CAN rule out a credit from an unrelated payer; what
+            # the corpus must not do is make that the only case.
+            remitter = rng.choice(REMITTERS if rng.random() < 0.5
+                                  else FOREIGN_REMITTERS)
         else:
             remitter = rng.choice(FOREIGN_REMITTERS + REMITTERS)
 

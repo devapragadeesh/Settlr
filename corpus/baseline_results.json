@@ -1,0 +1,870 @@
+[
+ {
+  "dataset": "A10_B100_Cmax",
+  "axes": {
+   "A_pool_target": 10,
+   "A_pool_sizes": [
+    2,
+    13,
+    6,
+    10,
+    14,
+    9,
+    11,
+    9,
+    14,
+    12,
+    8,
+    14
+   ],
+   "A_pool_mean": 10.17,
+   "B_attestation_coverage_target": "1",
+   "B_attestation_coverage_achieved": "12/12",
+   "C_selection_rule": "max_under_cap",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "outcomes": {
+   "Determinate": 12,
+   "Unresolved": 8
+  },
+  "confident_wrong_on_our_lines": 0,
+  "foreign_lines_adopted": 0,
+  "foreign_lines_in_file": 8,
+  "rows_misplaced": 0,
+  "determined_instances": 11,
+  "determined_abstained": 0,
+  "unrepresentable_claims": 0,
+  "mean_candidate_set_size": 1.0,
+  "detail": {
+   "wrong": [],
+   "foreign": [],
+   "unrepresentable": []
+  }
+ },
+ {
+  "dataset": "A20_B0_Cmax",
+  "axes": {
+   "A_pool_target": 20,
+   "A_pool_sizes": [
+    3,
+    18,
+    27,
+    24,
+    15,
+    18,
+    19,
+    25,
+    18,
+    20,
+    15,
+    26
+   ],
+   "A_pool_mean": 19.0,
+   "B_attestation_coverage_target": "0",
+   "B_attestation_coverage_achieved": "0/12",
+   "C_selection_rule": "max_under_cap",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "outcomes": {
+   "Determinate": 3,
+   "Unresolved": 6,
+   "Ambiguous": 11
+  },
+  "confident_wrong_on_our_lines": 0,
+  "foreign_lines_adopted": 0,
+  "foreign_lines_in_file": 8,
+  "rows_misplaced": 0,
+  "determined_instances": 0,
+  "determined_abstained": 0,
+  "unrepresentable_claims": 4,
+  "mean_candidate_set_size": 23.214285714285715,
+  "detail": {
+   "wrong": [],
+   "foreign": [],
+   "unrepresentable": [
+    {
+     "bank_index": 0,
+     "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
+    },
+    {
+     "bank_index": 2,
+     "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
+    },
+    {
+     "bank_index": 5,
+     "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
+    },
+    {
+     "bank_index": 7,
+     "why": "11 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    }
+   ]
+  }
+ },
+ {
+  "dataset": "A20_B100_Cfifo",
+  "axes": {
+   "A_pool_target": 20,
+   "A_pool_sizes": [
+    5,
+    19,
+    16,
+    14,
+    19,
+    25,
+    12,
+    23,
+    21,
+    21,
+    18,
+    26
+   ],
+   "A_pool_mean": 18.25,
+   "B_attestation_coverage_target": "1",
+   "B_attestation_coverage_achieved": "12/12",
+   "C_selection_rule": "fifo_under_cap",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "outcomes": {
+   "Ambiguous": 8,
+   "Unresolved": 8,
+   "Determinate": 4
+  },
+  "confident_wrong_on_our_lines": 0,
+  "foreign_lines_adopted": 0,
+  "foreign_lines_in_file": 8,
+  "rows_misplaced": 0,
+  "determined_instances": 10,
+  "determined_abstained": 6,
+  "unrepresentable_claims": 4,
+  "mean_candidate_set_size": 14.25,
+  "detail": {
+   "wrong": [],
+   "foreign": [],
+   "unrepresentable": [
+    {
+     "bank_index": 0,
+     "why": "2 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 2,
+     "why": "15 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 4,
+     "why": "8 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 7,
+     "why": "5 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    }
+   ]
+  }
+ },
+ {
+  "dataset": "A20_B100_Cmax",
+  "axes": {
+   "A_pool_target": 20,
+   "A_pool_sizes": [
+    4,
+    20,
+    23,
+    19,
+    16,
+    17,
+    20,
+    18,
+    22,
+    14,
+    27,
+    28
+   ],
+   "A_pool_mean": 19.0,
+   "B_attestation_coverage_target": "1",
+   "B_attestation_coverage_achieved": "12/12",
+   "C_selection_rule": "max_under_cap",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "outcomes": {
+   "Determinate": 6,
+   "Unresolved": 8,
+   "Ambiguous": 6
+  },
+  "confident_wrong_on_our_lines": 0,
+  "foreign_lines_adopted": 0,
+  "foreign_lines_in_file": 8,
+  "rows_misplaced": 0,
+  "determined_instances": 10,
+  "determined_abstained": 5,
+  "unrepresentable_claims": 5,
+  "mean_candidate_set_size": 6.916666666666667,
+  "detail": {
+   "wrong": [],
+   "foreign": [],
+   "unrepresentable": [
+    {
+     "bank_index": 5,
+     "why": "9 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 6,
+     "why": "15 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 9,
+     "why": "20 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 11,
+     "why": "7 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 14,
+     "why": "5 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    }
+   ]
+  }
+ },
+ {
+  "dataset": "A20_B100_Crandom",
+  "axes": {
+   "A_pool_target": 20,
+   "A_pool_sizes": [
+    4,
+    27,
+    8,
+    20,
+    20,
+    17,
+    26,
+    29,
+    14,
+    34,
+    17,
+    24
+   ],
+   "A_pool_mean": 20.0,
+   "B_attestation_coverage_target": "1",
+   "B_attestation_coverage_achieved": "12/12",
+   "C_selection_rule": "random_valid",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "outcomes": {
+   "Determinate": 3,
+   "Unresolved": 10,
+   "Ambiguous": 7
+  },
+  "confident_wrong_on_our_lines": 0,
+  "foreign_lines_adopted": 0,
+  "foreign_lines_in_file": 8,
+  "rows_misplaced": 0,
+  "determined_instances": 9,
+  "determined_abstained": 7,
+  "unrepresentable_claims": 4,
+  "mean_candidate_set_size": 11.3,
+  "detail": {
+   "wrong": [],
+   "foreign": [],
+   "unrepresentable": [
+    {
+     "bank_index": 2,
+     "why": "25 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 6,
+     "why": "19 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 9,
+     "why": "10 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 16,
+     "why": "15 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    }
+   ]
+  }
+ },
+ {
+  "dataset": "A20_B100_Crandom0",
+  "axes": {
+   "A_pool_target": 20,
+   "A_pool_sizes": [
+    1,
+    29,
+    17,
+    24,
+    39,
+    20,
+    37,
+    23,
+    31,
+    19,
+    25,
+    29
+   ],
+   "A_pool_mean": 24.5,
+   "B_attestation_coverage_target": "1",
+   "B_attestation_coverage_achieved": "12/12",
+   "C_selection_rule": "random_valid",
+   "C_floor_fraction": "0"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "outcomes": {
+   "Determinate": 4,
+   "Unresolved": 8,
+   "Ambiguous": 8
+  },
+  "confident_wrong_on_our_lines": 0,
+  "foreign_lines_adopted": 0,
+  "foreign_lines_in_file": 8,
+  "rows_misplaced": 0,
+  "determined_instances": 6,
+  "determined_abstained": 2,
+  "unrepresentable_claims": 3,
+  "mean_candidate_set_size": 16.083333333333332,
+  "detail": {
+   "wrong": [],
+   "foreign": [],
+   "unrepresentable": [
+    {
+     "bank_index": 7,
+     "why": "4 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 15,
+     "why": "9 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 18,
+     "why": "8 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    }
+   ]
+  }
+ },
+ {
+  "dataset": "A20_B50_Cmax",
+  "axes": {
+   "A_pool_target": 20,
+   "A_pool_sizes": [
+    4,
+    30,
+    20,
+    12,
+    23,
+    18,
+    29,
+    15,
+    23,
+    20,
+    18,
+    15
+   ],
+   "A_pool_mean": 18.92,
+   "B_attestation_coverage_target": "1/2",
+   "B_attestation_coverage_achieved": "6/12",
+   "C_selection_rule": "max_under_cap",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "outcomes": {
+   "Determinate": 6,
+   "Unresolved": 8,
+   "Ambiguous": 6
+  },
+  "confident_wrong_on_our_lines": 0,
+  "foreign_lines_adopted": 0,
+  "foreign_lines_in_file": 8,
+  "rows_misplaced": 0,
+  "determined_instances": 4,
+  "determined_abstained": 3,
+  "unrepresentable_claims": 9,
+  "mean_candidate_set_size": 4.5,
+  "detail": {
+   "wrong": [],
+   "foreign": [],
+   "unrepresentable": [
+    {
+     "bank_index": 0,
+     "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
+    },
+    {
+     "bank_index": 2,
+     "why": "29 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 6,
+     "why": "13 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 7,
+     "why": "16 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 8,
+     "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
+    },
+    {
+     "bank_index": 12,
+     "why": "8 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 13,
+     "why": "22 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 18,
+     "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
+    }
+   ]
+  }
+ },
+ {
+  "dataset": "A20_B75_Cmax",
+  "axes": {
+   "A_pool_target": 20,
+   "A_pool_sizes": [
+    2,
+    27,
+    21,
+    20,
+    21,
+    18,
+    22,
+    13,
+    20,
+    18,
+    21,
+    20
+   ],
+   "A_pool_mean": 18.58,
+   "B_attestation_coverage_target": "3/4",
+   "B_attestation_coverage_achieved": "9/12",
+   "C_selection_rule": "max_under_cap",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "outcomes": {
+   "Determinate": 4,
+   "Unresolved": 7,
+   "Ambiguous": 9
+  },
+  "confident_wrong_on_our_lines": 0,
+  "foreign_lines_adopted": 0,
+  "foreign_lines_in_file": 8,
+  "rows_misplaced": 0,
+  "determined_instances": 8,
+  "determined_abstained": 5,
+  "unrepresentable_claims": 6,
+  "mean_candidate_set_size": 13.0,
+  "detail": {
+   "wrong": [],
+   "foreign": [],
+   "unrepresentable": [
+    {
+     "bank_index": 0,
+     "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
+    },
+    {
+     "bank_index": 8,
+     "why": "10 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 10,
+     "why": "11 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 11,
+     "why": "15 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 15,
+     "why": "17 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 18,
+     "why": "4 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    }
+   ]
+  }
+ },
+ {
+  "dataset": "A30_B100_Cmax",
+  "axes": {
+   "A_pool_target": 30,
+   "A_pool_sizes": [
+    4,
+    30,
+    38,
+    28,
+    27,
+    30,
+    33,
+    40,
+    23,
+    19,
+    34,
+    37
+   ],
+   "A_pool_mean": 28.58,
+   "B_attestation_coverage_target": "1",
+   "B_attestation_coverage_achieved": "12/12",
+   "C_selection_rule": "max_under_cap",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "outcomes": {
+   "Determinate": 4,
+   "Ambiguous": 7,
+   "Unresolved": 9
+  },
+  "confident_wrong_on_our_lines": 0,
+  "foreign_lines_adopted": 0,
+  "foreign_lines_in_file": 8,
+  "rows_misplaced": 0,
+  "determined_instances": 9,
+  "determined_abstained": 6,
+  "unrepresentable_claims": 4,
+  "mean_candidate_set_size": 15.363636363636363,
+  "detail": {
+   "wrong": [],
+   "foreign": [],
+   "unrepresentable": [
+    {
+     "bank_index": 7,
+     "why": "14 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 9,
+     "why": "13 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 15,
+     "why": "12 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 16,
+     "why": "7 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    }
+   ]
+  }
+ },
+ {
+  "dataset": "A40_B100_Cfifo",
+  "axes": {
+   "A_pool_target": 40,
+   "A_pool_sizes": [
+    6,
+    37,
+    38,
+    38,
+    42,
+    32,
+    34,
+    37,
+    45,
+    36,
+    36,
+    43
+   ],
+   "A_pool_mean": 35.33,
+   "B_attestation_coverage_target": "1",
+   "B_attestation_coverage_achieved": "12/12",
+   "C_selection_rule": "fifo_under_cap",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "outcomes": {
+   "Determinate": 5,
+   "Ambiguous": 7,
+   "Unresolved": 8
+  },
+  "confident_wrong_on_our_lines": 0,
+  "foreign_lines_adopted": 1,
+  "foreign_lines_in_file": 8,
+  "rows_misplaced": 10,
+  "determined_instances": 6,
+  "determined_abstained": 3,
+  "unrepresentable_claims": 3,
+  "mean_candidate_set_size": 16.166666666666668,
+  "detail": {
+   "wrong": [],
+   "foreign": [
+    {
+     "bank_index": 14,
+     "kind": "foreign_credit",
+     "rows_placed": 10
+    }
+   ],
+   "unrepresentable": [
+    {
+     "bank_index": 7,
+     "why": "5 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 11,
+     "why": "24 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 14,
+     "why": "Determinate on a bank line that is not a settlement of ours (kind=foreign_credit)"
+    }
+   ]
+  }
+ },
+ {
+  "dataset": "A40_B100_Cmax",
+  "axes": {
+   "A_pool_target": 40,
+   "A_pool_sizes": [
+    3,
+    43,
+    34,
+    43,
+    25,
+    41,
+    43,
+    37,
+    34,
+    40,
+    39,
+    36
+   ],
+   "A_pool_mean": 34.83,
+   "B_attestation_coverage_target": "1",
+   "B_attestation_coverage_achieved": "12/12",
+   "C_selection_rule": "max_under_cap",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "outcomes": {
+   "Determinate": 1,
+   "Unresolved": 5,
+   "Ambiguous": 14
+  },
+  "confident_wrong_on_our_lines": 0,
+  "foreign_lines_adopted": 0,
+  "foreign_lines_in_file": 8,
+  "rows_misplaced": 0,
+  "determined_instances": 5,
+  "determined_abstained": 4,
+  "unrepresentable_claims": 5,
+  "mean_candidate_set_size": 22.666666666666668,
+  "detail": {
+   "wrong": [],
+   "foreign": [],
+   "unrepresentable": [
+    {
+     "bank_index": 2,
+     "why": "30 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 7,
+     "why": "22 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 9,
+     "why": "8 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 10,
+     "why": "45 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 16,
+     "why": "12 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    }
+   ]
+  }
+ },
+ {
+  "dataset": "A40_B100_Crandom",
+  "axes": {
+   "A_pool_target": 40,
+   "A_pool_sizes": [
+    9,
+    33,
+    37,
+    33,
+    30,
+    29,
+    49,
+    45,
+    40,
+    42,
+    36,
+    37
+   ],
+   "A_pool_mean": 35.0,
+   "B_attestation_coverage_target": "1",
+   "B_attestation_coverage_achieved": "12/12",
+   "C_selection_rule": "random_valid",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "outcomes": {
+   "Determinate": 2,
+   "Unresolved": 9,
+   "Ambiguous": 9
+  },
+  "confident_wrong_on_our_lines": 0,
+  "foreign_lines_adopted": 0,
+  "foreign_lines_in_file": 8,
+  "rows_misplaced": 0,
+  "determined_instances": 7,
+  "determined_abstained": 6,
+  "unrepresentable_claims": 1,
+  "mean_candidate_set_size": 24.09090909090909,
+  "detail": {
+   "wrong": [],
+   "foreign": [],
+   "unrepresentable": [
+    {
+     "bank_index": 3,
+     "why": "31 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    }
+   ]
+  }
+ },
+ {
+  "dataset": "A40_B50_Cmax",
+  "axes": {
+   "A_pool_target": 40,
+   "A_pool_sizes": [
+    9,
+    42,
+    43,
+    46,
+    31,
+    28,
+    42,
+    38,
+    38,
+    34,
+    37,
+    38
+   ],
+   "A_pool_mean": 35.5,
+   "B_attestation_coverage_target": "1/2",
+   "B_attestation_coverage_achieved": "6/12",
+   "C_selection_rule": "max_under_cap",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "outcomes": {
+   "Determinate": 2,
+   "Ambiguous": 12,
+   "Unresolved": 6
+  },
+  "confident_wrong_on_our_lines": 0,
+  "foreign_lines_adopted": 0,
+  "foreign_lines_in_file": 8,
+  "rows_misplaced": 0,
+  "determined_instances": 0,
+  "determined_abstained": 0,
+  "unrepresentable_claims": 5,
+  "mean_candidate_set_size": 21.285714285714285,
+  "detail": {
+   "wrong": [],
+   "foreign": [],
+   "unrepresentable": [
+    {
+     "bank_index": 0,
+     "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
+    },
+    {
+     "bank_index": 1,
+     "why": "38 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 2,
+     "why": "41 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 4,
+     "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
+    },
+    {
+     "bank_index": 12,
+     "why": "6 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    }
+   ]
+  }
+ },
+ {
+  "dataset": "A60_B100_Cmax",
+  "axes": {
+   "A_pool_target": 60,
+   "A_pool_sizes": [
+    5,
+    43,
+    63,
+    43,
+    55,
+    46,
+    50,
+    62,
+    66,
+    49,
+    80,
+    60
+   ],
+   "A_pool_mean": 51.83,
+   "B_attestation_coverage_target": "1",
+   "B_attestation_coverage_achieved": "12/12",
+   "C_selection_rule": "max_under_cap",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "outcomes": {
+   "Determinate": 1,
+   "Unresolved": 11,
+   "Ambiguous": 8
+  },
+  "confident_wrong_on_our_lines": 0,
+  "foreign_lines_adopted": 0,
+  "foreign_lines_in_file": 8,
+  "rows_misplaced": 0,
+  "determined_instances": 3,
+  "determined_abstained": 2,
+  "unrepresentable_claims": 3,
+  "mean_candidate_set_size": 21.666666666666668,
+  "detail": {
+   "wrong": [],
+   "foreign": [],
+   "unrepresentable": [
+    {
+     "bank_index": 2,
+     "why": "45 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 4,
+     "why": "64 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 14,
+     "why": "47 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    }
+   ]
+  }
+ }
+]

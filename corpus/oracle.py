@@ -22,10 +22,21 @@ gates come in two kinds, and both are required:
 | G4 | rows assigned through a path carrying no warrant | yes |
 | G5 | `Verified` at 0% attestation coverage (contract sec 6.3) | yes |
 | G6 | evidence whose declared provenance the corpus contradicts | yes |
-| **G7** | **abstention on a DETERMINED instance** | **NO** |
+| **G7** | **abstention on a DETERMINED instance** (attested) | **NO** |
+| **G8** | **abstention on a RECONSTRUCTIBLE instance** (unattested) | **NO** |
 
-G7 is the counterweight. Without it the other six are a certificate of
-abstention rather than an oracle.
+G7 and G8 are the counterweight. Without them the other six are a certificate
+of abstention rather than an oracle.
+
+**G8 was added after the corpus was generated, and that is recorded rather than
+folded in.** Measured on the built corpus: at 0% attestation coverage
+`determined_instances` is EMPTY -- determinedness requires the attestation --
+while 11 bank lines still had unique, complete, objective-free closure. So on
+the one axis point that is purely about reconstruction, G5 forced
+`|Verified| = 0` by theorem and G7 had nothing to range over: **every gate was
+vacuous and a silent resolver scored perfectly.** That is sec 6.1's hole
+reopened one axis over. G8 closes it, is derived from closure registers already
+present in every key, and required no dataset to be regenerated.
 
 ## What is deliberately NOT reported
 
@@ -56,11 +67,13 @@ if str(ROOT) not in sys.path:
 
 from resolver_contract.types import (          # noqa: E402  interface only
     Ambiguous, AttestationDiscrepancy, CorrectlyUnmatched, DeterminedInstance,
-    Evidence, LineOutcome, Reconstructed, ResolverOutput, SOURCE_PARTY,
-    Unresolved, UnresolvedReason, Verified, Warrant,
+    Evidence, LineOutcome, Reconstructed, ReconstructibleInstance,
+    ResolverOutput, SOURCE_PARTY, Unresolved, UnresolvedReason, Verified,
+    Warrant,
 )
 
-__all__ = ["OracleReport", "score", "determined_instances"]
+__all__ = ["OracleReport", "score", "determined_instances",
+           "reconstructible_instances"]
 
 
 # --------------------------------------------------------------------------
@@ -103,7 +116,8 @@ class OracleReport:
             "G4": "rows assigned through a path with no warrant",
             "G5": "Verified at 0% attestation coverage (contract 6.3)",
             "G6": "evidence provenance the corpus contradicts",
-            "G7": "ABSTENTION on a determined instance",
+            "G7": "ABSTENTION on a determined instance (attested)",
+            "G8": "ABSTENTION on a reconstructible instance (unattested)",
         }
         counts = self.by_gate()
         for gate, description in gates.items():
@@ -172,6 +186,46 @@ def determined_instances(truth: dict) -> list[DeterminedInstance]:
             true_composition_row_ids=tuple(sorted(batch["composition"])),
             closure_count=batch["closure"]["count"],
             closure_complete=batch["closure"]["complete"]))
+    return out
+
+
+def reconstructible_instances(truth: dict) -> list[ReconstructibleInstance]:
+    """Unattested lines that nonetheless have exactly one explanation.
+
+    `Reconstructed` is achievable on these, so abstaining is a defect (G8).
+    `Verified` is not expected -- there is no attestation to corroborate.
+
+    Cross-line exclusivity is computed here rather than read: the subset must
+    not also close another settlement's payout in the window. Uniqueness held
+    at all three lines that produced the 50 wrong rows, so uniqueness alone
+    would rebuild the very failure the contract exists to prevent.
+    """
+    unattested = set(truth["attestation"]["unattested_settlement_ids"])
+    wrong = {item["settlement_id"]
+             for item in truth["attestation"]["wrong_attestations"]}
+    payouts: dict[str, int] = {batch["settlement_id"]: batch["payout_paise"]
+                               for batch in truth["batches"]}
+    out: list[ReconstructibleInstance] = []
+    for batch in truth["batches"]:
+        if batch.get("bank_line_index") is None:
+            continue
+        if batch["settlement_id"] not in unattested \
+                and batch["settlement_id"] not in wrong:
+            continue
+        register = batch["closure"]
+        if register["recoverable"] != "unique" or not register["complete"]:
+            continue
+        others = [amount for settlement, amount in payouts.items()
+                  if settlement != batch["settlement_id"]]
+        exclusive = batch["payout_paise"] not in set(others)
+        if not exclusive:
+            continue
+        out.append(ReconstructibleInstance(
+            bank_index=batch["bank_line_index"],
+            true_composition_row_ids=tuple(sorted(batch["composition"])),
+            closure_count=register["count"],
+            closure_complete=register["complete"],
+            cross_line_exclusive=True))
     return out
 
 
@@ -296,18 +350,25 @@ def score(output: ResolverOutput, truth: dict) -> OracleReport:
             report.violations.append(Violation(
                 "G4", None, f"row {row_id} is assigned but carries no warrant"))
 
-    # ---- G7: abstention on a determined instance -------------------------
+    # ---- G7 / G8: abstention where an answer was available ---------------
     determined = determined_instances(truth)
     for bank_index, reason in output.abstention_failures(determined):
         report.violations.append(Violation("G7", bank_index, reason))
 
+    reconstructible = reconstructible_instances(truth)
+    for bank_index, reason in output.abstention_failures(reconstructible):
+        report.violations.append(Violation(
+            "G8", bank_index,
+            reason + " -- unattested, but exactly one subset closes and it "
+                     "closes nothing else in the window"))
+
     report.measured = _measure(output, truth, by_line, bank_truth,
-                               determined, wrong_attested)
+                               determined, wrong_attested, reconstructible)
     return report
 
 
 def _measure(output, truth, by_line, bank_truth, determined,
-             wrong_attested) -> dict:
+             wrong_attested, reconstructible=()) -> dict:
     accounting = output.accounting()
     measured: dict = {
         "accounting": {
@@ -400,12 +461,18 @@ def _measure(output, truth, by_line, bank_truth, determined,
     resolved = sum(1 for instance in determined
                    if isinstance(output.by_line().get(instance.bank_index),
                                  (Verified, Reconstructed)))
+    rebuilt = sum(1 for instance in reconstructible
+                  if isinstance(output.by_line().get(instance.bank_index),
+                                Reconstructed))
     measured["determined"] = {
-        "instances": len(determined), "resolved": resolved,
-        "abstained": len(determined) - resolved,
-        "note": "the subpopulation the corpus PROVES is determined. Abstention "
-                "here is gated at zero (G7) and is the only gate silence "
-                "cannot pass"}
+        "determined_instances": len(determined), "determined_resolved": resolved,
+        "determined_abstained": len(determined) - resolved,
+        "reconstructible_instances": len(reconstructible),
+        "reconstructible_resolved": rebuilt,
+        "reconstructible_abstained": len(reconstructible) - rebuilt,
+        "note": "the subpopulations the corpus PROVES have an answer. "
+                "Abstention here is gated at zero (G7 attested, G8 "
+                "unattested) and these are the only gates silence cannot pass"}
     return measured
 
 
