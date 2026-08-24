@@ -556,9 +556,30 @@ so it never exposes one, and axis C falls back to an outcome-level proxy that
 is degenerate when the wrong-answer rate is zero. The statistic is sound for a
 resolver that obeys the contract and blind to one that does not.
 
-**No resolver exists.** Deliberately. Building the corpus and the resolver
-together is how the resolver ends up shaped to the corpus. The contract was
-committed first, the corpus second; the resolver is separate work.
+**The UNDETECTABLE false attestation is named, not planted.** §6.6's plant is
+discoverable by a cross-party temporal check. A swap drawn from the batch's own
+eligible pool would close arithmetically, use only eligible rows, claim nothing
+twice and leave no temporal trace — **undetectable in principle**, so any
+resolver that trusts a composition claim, including one obeying the contract to
+the letter, would return a wrong `Verified`. That would be a finding about the
+contract's `Verified` being unsound rather than about any resolver, and it is
+recorded in `DECISIONS.md` §34 with the reason it was not built: manufacturing
+a guaranteed gate failure teaches less than measuring whether a discoverable
+one gets discovered. The easier reading — that the version the resolver can
+pass was chosen — is available, and this is the answer to it.
+
+**Attestation is a property of a SETTLEMENT, never of a row.** Coverage is
+varied by sampling settlements, so no dataset has a batch that is half
+attested. A resolver cannot be measured here on anchoring an attested core and
+reconstructing a residual, and the resolver in this repo therefore does not
+implement that path (`DECISIONS.md` §38): it would be a branch no dataset can
+execute, which is exactly what defect D2 was.
+
+**The resolver was built after the corpus, and separately.** The contract was
+committed first, the corpus second, the resolver third, and the resolver was
+frozen before the oracle scored it once — all four visible in `git log`.
+Building the corpus and the resolver together is how the resolver ends up
+shaped to the corpus, so they were not.
 
 **Two implementations of one spec.** `corpus/generator/sim.py` re-implements
 the batch-formation loop. The drift risk is real and is closed by differential

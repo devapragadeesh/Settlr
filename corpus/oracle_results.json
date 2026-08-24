@@ -1,0 +1,2094 @@
+[
+ {
+  "dataset": "datasets/A10_B100_Cmax",
+  "family": "datasets",
+  "seconds": 25.8,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 57,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 4
+   },
+   "unresolved_by_reason": {
+    "not_our_credit": 3,
+    "no_subset_closes": 4,
+    "other": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 1,
+    "reported": 2,
+    "correctly_identified": 1,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 37,
+    "reason_wrong": 0,
+    "row_settled_after_all": 20,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 0,
+    "excluded_resolver_did_not_rank": 0,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 11,
+    "determined_resolved": 10,
+    "determined_abstained": 1,
+    "reconstructible_instances": 1,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 1,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A20_B0_Cmax",
+  "family": "datasets",
+  "seconds": 59.85,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 11,
+    "attestation_discrepancy": 1,
+    "reconstructed": 0,
+    "ambiguous": 1,
+    "unresolved": 7,
+    "correctly_unmatched": 62,
+    "mean_candidate_set_size": 1.5,
+    "max_candidate_set_size": 7,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 11
+   },
+   "unresolved_by_reason": {
+    "other": 2,
+    "no_subset_closes": 2,
+    "not_our_credit": 3
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 0,
+    "reported": 1,
+    "correctly_identified": 0,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 51,
+    "reason_wrong": 8,
+    "row_settled_after_all": 3,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 0,
+    "excluded_resolver_did_not_rank": 1,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 0,
+    "determined_resolved": 0,
+    "determined_abstained": 0,
+    "reconstructible_instances": 11,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 11,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A20_B100_Cfifo",
+  "family": "datasets",
+  "seconds": 42.16,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 119,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 10
+   },
+   "unresolved_by_reason": {
+    "no_subset_closes": 1,
+    "not_our_credit": 3,
+    "enumeration_truncated": 3,
+    "other": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 1,
+    "reported": 2,
+    "correctly_identified": 1,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 62,
+    "reason_wrong": 8,
+    "row_settled_after_all": 49,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 1,
+    "excluded_resolver_did_not_rank": 0,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 10,
+    "determined_resolved": 9,
+    "determined_abstained": 1,
+    "reconstructible_instances": 1,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 1,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A20_B100_Cmax",
+  "family": "datasets",
+  "seconds": 59.31,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 110,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 9
+   },
+   "unresolved_by_reason": {
+    "no_subset_closes": 1,
+    "other": 1,
+    "not_our_credit": 3,
+    "enumeration_truncated": 3
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 1,
+    "reported": 2,
+    "correctly_identified": 1,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 63,
+    "reason_wrong": 1,
+    "row_settled_after_all": 46,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 0,
+    "excluded_resolver_did_not_rank": 1,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 10,
+    "determined_resolved": 9,
+    "determined_abstained": 1,
+    "reconstructible_instances": 1,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 1,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A20_B100_Crandom",
+  "family": "datasets",
+  "seconds": 70.21,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 119,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 10
+   },
+   "unresolved_by_reason": {
+    "not_our_credit": 3,
+    "no_subset_closes": 2,
+    "enumeration_truncated": 2,
+    "other": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 1,
+    "reported": 2,
+    "correctly_identified": 1,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 60,
+    "reason_wrong": 0,
+    "row_settled_after_all": 59,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 0,
+    "excluded_resolver_did_not_rank": 2,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 9,
+    "determined_resolved": 8,
+    "determined_abstained": 1,
+    "reconstructible_instances": 1,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 1,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A20_B100_Crandom0",
+  "family": "datasets",
+  "seconds": 61.0,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 1,
+    "unresolved": 7,
+    "correctly_unmatched": 87,
+    "mean_candidate_set_size": 11.454545454545455,
+    "max_candidate_set_size": 116,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 8
+   },
+   "unresolved_by_reason": {
+    "not_our_credit": 3,
+    "no_subset_closes": 1,
+    "enumeration_truncated": 2,
+    "other": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 1,
+    "reported": 2,
+    "correctly_identified": 1,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 49,
+    "reason_wrong": 5,
+    "row_settled_after_all": 33,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 1,
+    "excluded_resolver_did_not_rank": 5,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 6,
+    "determined_resolved": 6,
+    "determined_abstained": 0,
+    "reconstructible_instances": 0,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 0,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A20_B50_Cmax",
+  "family": "datasets",
+  "seconds": 38.58,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 1,
+    "ambiguous": 0,
+    "unresolved": 7,
+    "correctly_unmatched": 86,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 9
+   },
+   "unresolved_by_reason": {
+    "not_our_credit": 3,
+    "no_subset_closes": 1,
+    "enumeration_truncated": 2,
+    "other": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 1,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 1,
+    "reported": 2,
+    "correctly_identified": 1,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 57,
+    "reason_wrong": 3,
+    "row_settled_after_all": 26,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 1,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 0,
+    "excluded_resolver_did_not_rank": 1,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 4,
+    "determined_resolved": 4,
+    "determined_abstained": 0,
+    "reconstructible_instances": 7,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 7,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A20_B75_Cmax",
+  "family": "datasets",
+  "seconds": 71.37,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 114,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 7
+   },
+   "unresolved_by_reason": {
+    "not_our_credit": 3,
+    "enumeration_truncated": 4,
+    "other": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 1,
+    "reported": 2,
+    "correctly_identified": 1,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 42,
+    "reason_wrong": 20,
+    "row_settled_after_all": 52,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 0,
+    "excluded_resolver_did_not_rank": 0,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 8,
+    "determined_resolved": 7,
+    "determined_abstained": 1,
+    "reconstructible_instances": 4,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 4,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A20_Bnone_Cmax",
+  "family": "datasets",
+  "seconds": 90.37,
+  "passed": false,
+  "violations_by_gate": {
+   "G3": 9,
+   "G8": 9
+  },
+  "violations": [
+   "G3   bank[5]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[7]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[9]    the truth is absent from a candidate set of 14 (enumeration incomplete)",
+   "G3   bank[10]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[12]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[14]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[15]   the truth is absent from a candidate set of 10 (enumeration incomplete)",
+   "G3   bank[16]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[17]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G8   bank[1]    Ambiguous(76) on an instance with exactly one closing subset -- unattested, but exactly one subset closes and it closes nothing else in the window",
+   "G8   bank[5]    Unresolved(enumeration_truncated) on a determined instance -- unattested, but exactly one subset closes and it closes nothing else in the window",
+   "G8   bank[7]    Unresolved(enumeration_truncated) on a determined instance -- unattested, but exactly one subset closes and it closes nothing else in the window"
+  ],
+  "measured": {
+   "accounting": {
+    "verified": 0,
+    "attestation_discrepancy": 1,
+    "reconstructed": 1,
+    "ambiguous": 1,
+    "unresolved": 17,
+    "correctly_unmatched": 311,
+    "mean_candidate_set_size": 38.5,
+    "max_candidate_set_size": 76,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 0
+   },
+   "unresolved_by_reason": {
+    "enumeration_truncated": 13,
+    "not_our_credit": 3,
+    "other": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 1,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 0,
+    "reported": 1,
+    "correctly_identified": 0,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 50,
+    "reason_wrong": 7,
+    "row_settled_after_all": 254,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 1,
+    "rank1_hit_rate": 0.0,
+    "chance_rate_mean_1_over_k": 0.1111,
+    "excess_over_chance": -0.1111,
+    "excluded_enumeration_capped": 0,
+    "excluded_resolver_did_not_rank": 0,
+    "note": "0 under the null for every selection rule; positive means the resolver's objective agrees with the generator's rule more often than chance (contract 6.2)"
+   },
+   "determined": {
+    "determined_instances": 0,
+    "determined_resolved": 0,
+    "determined_abstained": 0,
+    "reconstructible_instances": 11,
+    "reconstructible_resolved": 1,
+    "reconstructible_abstained": 10,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A30_B100_Cmax",
+  "family": "datasets",
+  "seconds": 44.78,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 11,
+    "attestation_discrepancy": 1,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 114,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 10
+   },
+   "unresolved_by_reason": {
+    "enumeration_truncated": 4,
+    "other": 1,
+    "not_our_credit": 3
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 1,
+    "reported": 1,
+    "correctly_identified": 1,
+    "false_findings": 0,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 75,
+    "reason_wrong": 7,
+    "row_settled_after_all": 32,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 1,
+    "excluded_resolver_did_not_rank": 1,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 9,
+    "determined_resolved": 9,
+    "determined_abstained": 0,
+    "reconstructible_instances": 1,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 1,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A40_B100_Cfifo",
+  "family": "datasets",
+  "seconds": 42.66,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 200,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 9
+   },
+   "unresolved_by_reason": {
+    "enumeration_truncated": 4,
+    "other": 1,
+    "not_our_credit": 3
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 1,
+    "reported": 2,
+    "correctly_identified": 1,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 110,
+    "reason_wrong": 11,
+    "row_settled_after_all": 79,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 3,
+    "excluded_resolver_did_not_rank": 2,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 6,
+    "determined_resolved": 5,
+    "determined_abstained": 1,
+    "reconstructible_instances": 1,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 1,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A40_B100_Cmax",
+  "family": "datasets",
+  "seconds": 79.72,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 173,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 10
+   },
+   "unresolved_by_reason": {
+    "other": 1,
+    "no_subset_closes": 1,
+    "not_our_credit": 3,
+    "enumeration_truncated": 3
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 1,
+    "reported": 2,
+    "correctly_identified": 1,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 110,
+    "reason_wrong": 17,
+    "row_settled_after_all": 46,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 4,
+    "excluded_resolver_did_not_rank": 2,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 5,
+    "determined_resolved": 4,
+    "determined_abstained": 1,
+    "reconstructible_instances": 0,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 0,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A40_B100_Crandom",
+  "family": "datasets",
+  "seconds": 42.02,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 11,
+    "attestation_discrepancy": 1,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 159,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 10
+   },
+   "unresolved_by_reason": {
+    "other": 1,
+    "enumeration_truncated": 4,
+    "not_our_credit": 3
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 1,
+    "reported": 1,
+    "correctly_identified": 1,
+    "false_findings": 0,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 113,
+    "reason_wrong": 12,
+    "row_settled_after_all": 34,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 4,
+    "excluded_resolver_did_not_rank": 0,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 7,
+    "determined_resolved": 7,
+    "determined_abstained": 0,
+    "reconstructible_instances": 1,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 1,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A40_B50_Cmax",
+  "family": "datasets",
+  "seconds": 35.6,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 206,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 9
+   },
+   "unresolved_by_reason": {
+    "not_our_credit": 3,
+    "enumeration_truncated": 4,
+    "other": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 1,
+    "reported": 2,
+    "correctly_identified": 1,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 114,
+    "reason_wrong": 8,
+    "row_settled_after_all": 84,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 4,
+    "excluded_resolver_did_not_rank": 2,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 0,
+    "determined_resolved": 0,
+    "determined_abstained": 0,
+    "reconstructible_instances": 2,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 2,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A40_Bnone_Cmax",
+  "family": "datasets",
+  "seconds": 62.24,
+  "passed": false,
+  "violations_by_gate": {
+   "G3": 11,
+   "G8": 6
+  },
+  "violations": [
+   "G3   bank[2]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[4]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[5]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[7]    the truth is absent from a COMPLETE candidate set of 194 -- the resolver's enumeration is wrong, not merely undecided",
+   "G3   bank[9]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[11]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[12]   the truth is absent from a COMPLETE candidate set of 2 -- the resolver's enumeration is wrong, not merely undecided",
+   "G3   bank[14]   the truth is absent from a COMPLETE candidate set of 80 -- the resolver's enumeration is wrong, not merely undecided",
+   "G3   bank[15]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[17]   the truth is absent from a COMPLETE candidate set of 81 -- the resolver's enumeration is wrong, not merely undecided",
+   "G3   bank[19]   the truth is absent from a COMPLETE candidate set of 138 -- the resolver's enumeration is wrong, not merely undecided",
+   "G8   bank[2]    Unresolved(enumeration_truncated) on a determined instance -- unattested, but exactly one subset closes and it closes nothing else in the window"
+  ],
+  "measured": {
+   "accounting": {
+    "verified": 0,
+    "attestation_discrepancy": 1,
+    "reconstructed": 0,
+    "ambiguous": 8,
+    "unresolved": 11,
+    "correctly_unmatched": 599,
+    "mean_candidate_set_size": 96.375,
+    "max_candidate_set_size": 199,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 0
+   },
+   "unresolved_by_reason": {
+    "other": 1,
+    "enumeration_truncated": 7,
+    "not_our_credit": 3
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 0,
+    "reported": 1,
+    "correctly_identified": 0,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 103,
+    "reason_wrong": 2,
+    "row_settled_after_all": 494,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 5,
+    "excluded_resolver_did_not_rank": 0,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 0,
+    "determined_resolved": 0,
+    "determined_abstained": 0,
+    "reconstructible_instances": 7,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 7,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets/A60_B100_Cmax",
+  "family": "datasets",
+  "seconds": 52.27,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 336,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 9
+   },
+   "unresolved_by_reason": {
+    "not_our_credit": 3,
+    "enumeration_truncated": 4,
+    "other": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 1,
+    "reported": 2,
+    "correctly_identified": 1,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 162,
+    "reason_wrong": 18,
+    "row_settled_after_all": 156,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 7,
+    "excluded_resolver_did_not_rank": 1,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 3,
+    "determined_resolved": 3,
+    "determined_abstained": 0,
+    "reconstructible_instances": 0,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 0,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets_v2/A10_B100_Cmax",
+  "family": "datasets_v2",
+  "seconds": 30.01,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 9,
+    "attestation_discrepancy": 3,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 67,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 7
+   },
+   "unresolved_by_reason": {
+    "not_our_credit": 3,
+    "no_subset_closes": 2,
+    "other": 1,
+    "enumeration_truncated": 2
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 2,
+    "reported": 3,
+    "correctly_identified": 2,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 26,
+    "reason_wrong": 4,
+    "row_settled_after_all": 37,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 0,
+    "excluded_resolver_did_not_rank": 0,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 10,
+    "determined_resolved": 9,
+    "determined_abstained": 1,
+    "reconstructible_instances": 2,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 2,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 1,
+  "false_settlement_id_caught": 1,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets_v2/A20_B0_Cmax",
+  "family": "datasets_v2",
+  "seconds": 37.19,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 11,
+    "attestation_discrepancy": 1,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 78,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 9
+   },
+   "unresolved_by_reason": {
+    "no_subset_closes": 2,
+    "not_our_credit": 3,
+    "other": 1,
+    "enumeration_truncated": 2
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 0,
+    "reported": 1,
+    "correctly_identified": 0,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 52,
+    "reason_wrong": 1,
+    "row_settled_after_all": 25,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 1,
+    "excluded_resolver_did_not_rank": 0,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 0,
+    "determined_resolved": 0,
+    "determined_abstained": 0,
+    "reconstructible_instances": 11,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 11,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 0,
+  "false_settlement_id_caught": 0,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets_v2/A20_B100_Cfifo",
+  "family": "datasets_v2",
+  "seconds": 16.58,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 9,
+    "attestation_discrepancy": 3,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 126,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 6
+   },
+   "unresolved_by_reason": {
+    "no_subset_closes": 3,
+    "not_our_credit": 3,
+    "other": 1,
+    "enumeration_truncated": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 2,
+    "reported": 3,
+    "correctly_identified": 2,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 55,
+    "reason_wrong": 8,
+    "row_settled_after_all": 63,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 0,
+    "excluded_resolver_did_not_rank": 0,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 10,
+    "determined_resolved": 9,
+    "determined_abstained": 1,
+    "reconstructible_instances": 2,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 2,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 1,
+  "false_settlement_id_caught": 1,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets_v2/A20_B100_Cmax",
+  "family": "datasets_v2",
+  "seconds": 31.93,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 9,
+    "attestation_discrepancy": 3,
+    "reconstructed": 0,
+    "ambiguous": 1,
+    "unresolved": 7,
+    "correctly_unmatched": 114,
+    "mean_candidate_set_size": 1.3,
+    "max_candidate_set_size": 4,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 6
+   },
+   "unresolved_by_reason": {
+    "no_subset_closes": 1,
+    "not_our_credit": 3,
+    "enumeration_truncated": 2,
+    "other": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 2,
+    "reported": 3,
+    "correctly_identified": 2,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 58,
+    "reason_wrong": 5,
+    "row_settled_after_all": 51,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 1,
+    "excluded_resolver_did_not_rank": 0,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 9,
+    "determined_resolved": 8,
+    "determined_abstained": 1,
+    "reconstructible_instances": 2,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 2,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 1,
+  "false_settlement_id_caught": 1,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets_v2/A20_B100_Crandom",
+  "family": "datasets_v2",
+  "seconds": 54.21,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 90,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 9
+   },
+   "unresolved_by_reason": {
+    "no_subset_closes": 1,
+    "not_our_credit": 3,
+    "other": 1,
+    "enumeration_truncated": 3
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 2,
+    "reported": 2,
+    "correctly_identified": 2,
+    "false_findings": 0,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 55,
+    "reason_wrong": 3,
+    "row_settled_after_all": 32,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 0,
+    "excluded_resolver_did_not_rank": 2,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 7,
+    "determined_resolved": 7,
+    "determined_abstained": 0,
+    "reconstructible_instances": 2,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 2,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 1,
+  "false_settlement_id_caught": 1,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets_v2/A20_B100_Crandom0",
+  "family": "datasets_v2",
+  "seconds": 60.1,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 9,
+    "attestation_discrepancy": 3,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 122,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 8
+   },
+   "unresolved_by_reason": {
+    "no_subset_closes": 1,
+    "not_our_credit": 3,
+    "enumeration_truncated": 3,
+    "other": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 2,
+    "reported": 3,
+    "correctly_identified": 2,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 45,
+    "reason_wrong": 6,
+    "row_settled_after_all": 71,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 3,
+    "excluded_resolver_did_not_rank": 2,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 5,
+    "determined_resolved": 5,
+    "determined_abstained": 0,
+    "reconstructible_instances": 2,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 2,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 1,
+  "false_settlement_id_caught": 1,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets_v2/A20_B50_Cmax",
+  "family": "datasets_v2",
+  "seconds": 19.75,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 120,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 7
+   },
+   "unresolved_by_reason": {
+    "no_subset_closes": 2,
+    "not_our_credit": 3,
+    "enumeration_truncated": 2,
+    "other": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 2,
+    "reported": 2,
+    "correctly_identified": 2,
+    "false_findings": 0,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 54,
+    "reason_wrong": 9,
+    "row_settled_after_all": 57,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 0,
+    "excluded_resolver_did_not_rank": 0,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 4,
+    "determined_resolved": 4,
+    "determined_abstained": 0,
+    "reconstructible_instances": 7,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 7,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 1,
+  "false_settlement_id_caught": 1,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets_v2/A20_B75_Cmax",
+  "family": "datasets_v2",
+  "seconds": 34.53,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 9,
+    "attestation_discrepancy": 3,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 138,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 8
+   },
+   "unresolved_by_reason": {
+    "no_subset_closes": 2,
+    "other": 1,
+    "not_our_credit": 3,
+    "enumeration_truncated": 2
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 2,
+    "reported": 3,
+    "correctly_identified": 2,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 53,
+    "reason_wrong": 10,
+    "row_settled_after_all": 75,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 0,
+    "excluded_resolver_did_not_rank": 1,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 6,
+    "determined_resolved": 5,
+    "determined_abstained": 1,
+    "reconstructible_instances": 5,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 5,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 1,
+  "false_settlement_id_caught": 1,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets_v2/A30_B100_Cmax",
+  "family": "datasets_v2",
+  "seconds": 45.3,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 9,
+    "attestation_discrepancy": 3,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 184,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 7
+   },
+   "unresolved_by_reason": {
+    "not_our_credit": 3,
+    "enumeration_truncated": 4,
+    "other": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 2,
+    "reported": 3,
+    "correctly_identified": 2,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 78,
+    "reason_wrong": 7,
+    "row_settled_after_all": 99,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 3,
+    "excluded_resolver_did_not_rank": 0,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 7,
+    "determined_resolved": 7,
+    "determined_abstained": 0,
+    "reconstructible_instances": 2,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 2,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 1,
+  "false_settlement_id_caught": 1,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets_v2/A40_B100_Cfifo",
+  "family": "datasets_v2",
+  "seconds": 43.37,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 1,
+    "unresolved": 7,
+    "correctly_unmatched": 157,
+    "mean_candidate_set_size": 1.2727272727272727,
+    "max_candidate_set_size": 4,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 10
+   },
+   "unresolved_by_reason": {
+    "not_our_credit": 3,
+    "other": 1,
+    "no_subset_closes": 2,
+    "enumeration_truncated": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 2,
+    "reported": 2,
+    "correctly_identified": 1,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 100,
+    "reason_wrong": 19,
+    "row_settled_after_all": 38,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 4,
+    "excluded_resolver_did_not_rank": 1,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 5,
+    "determined_resolved": 4,
+    "determined_abstained": 1,
+    "reconstructible_instances": 2,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 2,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 1,
+  "false_settlement_id_caught": 1,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets_v2/A40_B100_Cmax",
+  "family": "datasets_v2",
+  "seconds": 52.44,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 9,
+    "attestation_discrepancy": 3,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 204,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 9
+   },
+   "unresolved_by_reason": {
+    "other": 1,
+    "not_our_credit": 3,
+    "enumeration_truncated": 4
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 2,
+    "reported": 3,
+    "correctly_identified": 2,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 94,
+    "reason_wrong": 22,
+    "row_settled_after_all": 88,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 5,
+    "excluded_resolver_did_not_rank": 0,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 6,
+    "determined_resolved": 5,
+    "determined_abstained": 1,
+    "reconstructible_instances": 1,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 1,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 1,
+  "false_settlement_id_caught": 1,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets_v2/A40_B100_Crandom",
+  "family": "datasets_v2",
+  "seconds": 82.83,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 9,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 190,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 9
+   },
+   "unresolved_by_reason": {
+    "enumeration_truncated": 4,
+    "other": 1,
+    "not_our_credit": 3
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 2,
+    "reported": 2,
+    "correctly_identified": 1,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 85,
+    "reason_wrong": 5,
+    "row_settled_after_all": 100,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 4,
+    "excluded_resolver_did_not_rank": 3,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 3,
+    "determined_resolved": 2,
+    "determined_abstained": 1,
+    "reconstructible_instances": 1,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 1,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 1,
+  "false_settlement_id_caught": 1,
+  "bank_lines": 19
+ },
+ {
+  "dataset": "datasets_v2/A40_B50_Cmax",
+  "family": "datasets_v2",
+  "seconds": 47.11,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 9,
+    "attestation_discrepancy": 3,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 253,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 8
+   },
+   "unresolved_by_reason": {
+    "no_subset_closes": 1,
+    "not_our_credit": 3,
+    "other": 1,
+    "enumeration_truncated": 3
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 2,
+    "reported": 3,
+    "correctly_identified": 2,
+    "false_findings": 1,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 118,
+    "reason_wrong": 6,
+    "row_settled_after_all": 129,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 6,
+    "excluded_resolver_did_not_rank": 1,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 0,
+    "determined_resolved": 0,
+    "determined_abstained": 0,
+    "reconstructible_instances": 4,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 4,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 1,
+  "false_settlement_id_caught": 1,
+  "bank_lines": 20
+ },
+ {
+  "dataset": "datasets_v2/A60_B100_Cmax",
+  "family": "datasets_v2",
+  "seconds": 45.68,
+  "passed": true,
+  "violations_by_gate": {},
+  "violations": [],
+  "measured": {
+   "accounting": {
+    "verified": 10,
+    "attestation_discrepancy": 2,
+    "reconstructed": 0,
+    "ambiguous": 0,
+    "unresolved": 8,
+    "correctly_unmatched": 299,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
+    "incomplete_enumerations": 0,
+    "verified_non_decisive": 10
+   },
+   "unresolved_by_reason": {
+    "no_subset_closes": 1,
+    "not_our_credit": 3,
+    "enumeration_truncated": 3,
+    "other": 1
+   },
+   "reconstructed_accuracy": {
+    "correct": 0,
+    "wrong": 0,
+    "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
+   },
+   "attestation_discrepancy": {
+    "planted": 2,
+    "reported": 2,
+    "correctly_identified": 2,
+    "false_findings": 0,
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
+   },
+   "correctly_unmatched": {
+    "reason_correct": 152,
+    "reason_wrong": 10,
+    "row_settled_after_all": 137,
+    "note": "the REASON is scored, not the classification"
+   },
+   "foreign_lines": {
+    "in_file": 8,
+    "falsely_adopted": 0,
+    "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
+   },
+   "premise_sharing": {
+    "multi_closure_instances_scored": 0,
+    "excluded_enumeration_capped": 7,
+    "excluded_resolver_did_not_rank": 1,
+    "note": "no scoreable instance: the resolver exposed no ranking, so premise sharing cannot be measured on this run"
+   },
+   "determined": {
+    "determined_instances": 4,
+    "determined_resolved": 4,
+    "determined_abstained": 0,
+    "reconstructible_instances": 0,
+    "reconstructible_resolved": 0,
+    "reconstructible_abstained": 0,
+    "note": "the subpopulations the corpus PROVES have an answer. Abstention here is gated at zero (G7 attested, G8 unattested) and these are the only gates silence cannot pass"
+   }
+  },
+  "false_settlement_id_planted": 1,
+  "false_settlement_id_caught": 1,
+  "bank_lines": 20
+ }
+]

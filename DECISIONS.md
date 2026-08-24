@@ -1367,3 +1367,90 @@ entails a checkable prediction about the bank's amount, and `Verified` is
 reachable. The old §6.3 theorem said that cell must be empty and gate G5
 enforced it; both are withdrawn, and this tier is the code that would have
 tripped the withdrawn gate.
+
+---
+
+## 39. `complete` means CP-SAT exhausted the search space, and nothing weaker
+
+**The defect, as shipped.** `resolver/enumerate_closures.py` computed
+
+```python
+timed_out = status == UNKNOWN or (elapsed >= time_budget and status != OPTIMAL)
+complete  = not hit_cap and not timed_out
+```
+
+`elapsed` is measured **outside** the solver with `perf_counter`, while CP-SAT
+enforces its own `max_time_in_seconds` **inside**. When the solver stopped on
+its internal limit at 9.98 s of a 10 s budget and returned `FEASIBLE`,
+`elapsed >= time_budget` was False, `timed_out` was False, and **a truncated
+enumeration was recorded as exhaustive.**
+
+**The repro.** `corpus/datasets/A40_Bnone_Cmax` bank[7], during the first
+scored run, with a second CP-SAT process on the machine: 194 subsets returned
+with `complete=True` and the true composition **not among them**. Oracle gate
+G3 named it exactly — *"the truth is absent from a COMPLETE candidate set of
+194 — the resolver's enumeration is wrong, not merely undecided."* Run alone,
+the same line correctly reports 200 subsets and `cap_reached`. The true
+composition is in the pool at that line (42 rows of a 209-row pool, verified
+directly), so the enumeration, not the pool, was at fault.
+
+**What it should have been, and now is.**
+
+```python
+complete = status == OPTIMAL
+```
+
+With `enumerate_all_solutions`, `OPTIMAL` is CP-SAT's own statement that it
+exhausted the search space. Everything else — `FEASIBLE`, `UNKNOWN`, a
+cap-triggered `StopSearch` — means it stopped early, whatever any external
+clock says.
+
+**Why this is the defect class this repository exists to catch.** `complete`
+is the difference between "exactly one subset closes" and "one subset was
+found before I gave up". `Reconstructed` requires the first; the contract
+spells that out in §4.5 and `Closures.is_unique` enforces it. The old test
+claimed the stronger epistemic state on weaker evidence — the identical shape
+as `Determinate` meaning "unique among subsets maximising applied debits", as
+`BalanceProof` proving an identity that cannot fail, and as withdrawn §6.3
+asserting a theorem it never measured. **It was written into the resolver built
+to prevent it, by someone who had just catalogued the other three.**
+
+**What else it could silently have affected, named rather than waited for.**
+
+* **A false `Reconstructed`.** A truncated set of size one satisfies
+  `count == 1 and complete` under the old test, and `Reconstructed` would then
+  assign a composition on an enumeration that never proved uniqueness. Run 1
+  produced **2 `Reconstructed` in total, of which 1 was wrong** — an adoption
+  of a foreign bank line at `datasets/A20_B50_Cmax`, a line that is not a
+  settlement of ours at all. Whether that specific outcome was produced by this
+  bug is checked by the re-run, not asserted here.
+* **A false `rival_count_is_lower_bound = False`** on a `Verified`, which would
+  report a rival closure count as exact when it is a floor — understating how
+  weak the corroboration was, in the one field contract §3.3 makes mandatory
+  precisely so weakness cannot hide.
+* **`Ambiguous` with `complete=True`**, whose `common_rows` is then computed
+  over a set that is not all the candidates. `common_rows` is never assigned
+  from, so this is a reporting error rather than a soundness one — but it is
+  the property D3 turned into 45 unwarranted assignments in the previous
+  engine, so it is named.
+* **Run-to-run variation with machine load**, since the trigger is a race
+  between two clocks. Determinism is claimed throughout this repo and it was
+  not holding here.
+
+**Rejected: also replacing the wall-clock budget with CP-SAT's deterministic
+time.** It would remove the load-dependence entirely and it is the better
+long-run answer. It also changes *every* number rather than only the
+mislabelled ones, in a component that had already been frozen and scored. The
+scope taken was the one-line correctness fix; the determinism improvement is
+named as open work.
+
+**Rejected: reporting run 1 and leaving the code alone.** Preserves the
+freeze-before-scoring ordering most literally, and ships a resolver that can
+claim an exhaustive enumeration it did not perform.
+
+**Both runs are published.** `corpus/ORACLE_RESULTS_RUN1.md` and
+`corpus/oracle_results_run1.json` are the pre-fix run, kept rather than
+discarded, and `corpus/THREE_SYSTEMS.md` carries the delta attributed to this
+fix. A before/after pair is stronger evidence that a fix is real than a single
+clean number, which is the same standard applied to every other correction
+here.

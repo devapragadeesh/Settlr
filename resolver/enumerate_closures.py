@@ -97,9 +97,26 @@ def closing_subsets(pool: Sequence[tuple[str, int]], target: int, *,
     hit_cap = len(collector.found) >= cap
     timed_out = status == cp_model.UNKNOWN or (
         elapsed >= time_budget and status != cp_model.OPTIMAL)
+    # `complete` means ONE thing: CP-SAT exhausted the search space and said so.
+    #
+    # It used to mean "we did not hit the cap and the clock we measured
+    # OUTSIDE did not run out", which is a different and weaker statement. When
+    # the solver stopped on its own internal `max_time_in_seconds` at, say,
+    # 9.98s of an externally-measured 10s budget, `timed_out` was False and a
+    # truncated enumeration was recorded as exhaustive. Measured at
+    # `corpus/datasets/A40_Bnone_Cmax` bank[7] under CPU load: 194 subsets
+    # returned with `complete=True` and the truth not among them. Run alone the
+    # same line correctly reports 200 / cap_reached.
+    #
+    # That is this repository's own defect class -- a claim of a stronger
+    # epistemic state than was measured -- inside the resolver written to
+    # prevent it, and it is a soundness hazard rather than a cosmetic one:
+    # `Reconstructed` requires unique closure PROVEN COMPLETE, so a truncated
+    # set of size one could have been promoted to a confident answer.
+    # See DECISIONS.md 39.
     return Closures(
         subsets=tuple(sorted(collector.found)),
-        complete=not hit_cap and not timed_out,
+        complete=status == cp_model.OPTIMAL,
         cap=cap,
         status=("cap_reached" if hit_cap else
                 "time_budget_exceeded" if timed_out else
