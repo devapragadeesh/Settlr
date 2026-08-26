@@ -118,6 +118,7 @@ class OracleReport:
             "G6": "evidence provenance the corpus contradicts",
             "G7": "ABSTENTION on a determined instance (attested)",
             "G8": "ABSTENTION on a reconstructible instance (unattested)",
+            "G9": "ProvenUnmatched rows that actually settled",
         }
         counts = self.by_gate()
         for gate, description in gates.items():
@@ -133,7 +134,8 @@ class OracleReport:
         out += ["", "## Measured, not gated", ""]
         accounting = self.measured.get("accounting", {})
         for name in ("verified", "attestation_discrepancy", "reconstructed",
-                     "ambiguous", "unresolved", "correctly_unmatched"):
+                     "ambiguous", "unresolved", "proven_unmatched",
+                     "open_breaks"):
             out.append(f"  {name:<24} {accounting.get(name, 0)}")
         out += [
             "",
@@ -148,7 +150,8 @@ class OracleReport:
             ("unresolved_by_reason", "Unresolved by reason"),
             ("reconstructed_accuracy", "Reconstructed correctness (weaker claim)"),
             ("attestation_discrepancy", "AttestationDiscrepancy detected vs planted"),
-            ("correctly_unmatched", "CorrectlyUnmatched reason accuracy"),
+            ("proven_unmatched", "ProvenUnmatched -- gated by G9"),
+            ("open_break", "OpenBreak -- asserts nothing, never gated"),
             ("foreign_lines", "Foreign bank lines (not ours)"),
             ("premise_sharing", "Premise sharing: rank-1 hit rate vs chance"),
             ("determined", "Determined subpopulation"),
@@ -382,7 +385,8 @@ def _measure(output, truth, by_line, bank_truth, determined,
             "reconstructed": accounting.reconstructed,
             "ambiguous": accounting.ambiguous,
             "unresolved": accounting.unresolved,
-            "correctly_unmatched": accounting.correctly_unmatched,
+            "proven_unmatched": accounting.proven_unmatched,
+            "open_breaks": accounting.open_breaks,
             "mean_candidate_set_size": accounting.mean_candidate_set_size,
             "max_candidate_set_size": accounting.max_candidate_set_size,
             "incomplete_enumerations": accounting.incomplete_enumerations,
@@ -424,30 +428,68 @@ def _measure(output, truth, by_line, bank_truth, determined,
         "note": "the highest-value output the contract defines, and the one "
                 "the old engine structurally could not produce"}
 
-    # --- CorrectlyUnmatched: is each DERIVED reason right? ----------------
+    # --- G9: a ProvenUnmatched row that actually settled ------------------
+    # Contract 4.7.1. Until this gate existed, "0 wrong answers" in every
+    # report in this repository meant "0 wrong Verified" ONLY, while a second
+    # outcome type that also asserted something was wrong 2,469 times and
+    # nothing looked at it. G9 closes that hole and is zero-tolerance.
     reason_of = truth.get("unsettled_reason", {})
-    mapping = {
-        "netted_out": "netted_out_by_full_refund",
-        "rolled_forward": "rolled_forward_past_horizon",
-        "not_yet_eligible": "not_yet_eligible_at_horizon",
-        "dispute_held": "on_hold_dispute",
-        "debit_deferred": "debit_deferred_past_horizon",
-        "failed_at_gateway": "not_captured",
-    }
-    correct = mislabelled = unknown = 0
-    for item in output.unmatched:
+    settled_in = truth.get("settled_in", {})
+    proven_rows = proven_wrong = 0
+    for item in output.proven_unmatched:
+        for row_id in item.row_ids:
+            proven_rows += 1
+            if reason_of.get(row_id) is None:
+                proven_wrong += 1
+                report.violations.append(Violation(
+                    "G9", -1,
+                    f"ProvenUnmatched({item.reason.value}) claims the ledger "
+                    f"entails no bank credit for {row_id}, which settled in "
+                    f"{settled_in.get(row_id)}"))
+
+    # Is the ENTAILMENT'S OWN reason right, over rows that did not settle?
+    proven_map = {"netted_out": "netted_out_by_full_refund",
+                  "not_captured": "not_captured"}
+    pu_right = pu_wrong = 0
+    for item in output.proven_unmatched:
         for row_id in item.row_ids:
             actual = reason_of.get(row_id)
             if actual is None:
-                unknown += 1
-            elif mapping.get(item.reason.value) == actual:
-                correct += 1
+                continue
+            if proven_map.get(item.reason.value) == actual:
+                pu_right += 1
             else:
-                mislabelled += 1
-    measured["correctly_unmatched"] = {
-        "reason_correct": correct, "reason_wrong": mislabelled,
-        "row_settled_after_all": unknown,
-        "note": "the REASON is scored, not the classification"}
+                pu_wrong += 1
+    measured["proven_unmatched"] = {
+        "rows": proven_rows, "row_settled_after_all": proven_wrong,
+        "reason_correct": pu_right, "reason_wrong": pu_wrong,
+        "note": "GATED at zero by G9. A positive claim, unlike OpenBreak"}
+
+    # --- OpenBreak: NEVER scored for correctness, only described ----------
+    # It asserts nothing, so there is nothing here to be right or wrong about.
+    # What IS reported is whether the queue is usable: how it clusters, how it
+    # ages, and how many rows the resolver could not classify at all.
+    ages: dict[str, int] = {}
+    by_reason: dict[str, int] = {}
+    causes: set[int] = set()
+    clustered = settled_rows = 0
+    for item in output.open_breaks:
+        n = len(item.row_ids)
+        by_reason[item.reason.value] = by_reason.get(item.reason.value, 0) + n
+        ages[item.age_bucket] = ages.get(item.age_bucket, 0) + n
+        if item.caused_by is not None:
+            causes.add(item.caused_by)
+            clustered += n
+        settled_rows += sum(1 for r in item.row_ids if reason_of.get(r) is None)
+    measured["open_break"] = {
+        "rows": sum(len(i.row_ids) for i in output.open_breaks),
+        "by_reason": by_reason, "by_age": ages,
+        "clustered_rows": clustered, "distinct_causes": len(causes),
+        "rows_per_cause": round(clustered / len(causes), 1) if causes else 0.0,
+        "rows_that_did_settle": settled_rows,
+        "note": "NOT GATED and not scored for correctness -- an OpenBreak "
+                "asserts nothing. `rows_that_did_settle` is descriptive: those "
+                "rows are correctly OPEN, not correctly explained"}
 
     # --- foreign bank lines: can the resolver say "not ours"? -------------
     foreign = [index for index, line in bank_truth.items()

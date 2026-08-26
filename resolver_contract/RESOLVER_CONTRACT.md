@@ -273,12 +273,182 @@ Carries `partial_candidates` when enumeration truncated. A resolver that
 discards a truncated set has destroyed the evidence of its own miss, and the
 oracle checks whether the truth was inside what the resolver actually built.
 
-### 4.6 `CorrectlyUnmatched`
+### 4.6 SUPERSEDED (2026-08-25) by §4.7 — `CorrectlyUnmatched`
+
+**Superseded, original text retained below.** The outcome conflated a positive
+claim with an absence of evidence and was measured at 45.7% accuracy over
+4,994 claims. See `investigation/DERIVED_BRANCH_AUDIT.md` and §4.7.
+
+### 4.6 (original text, superseded) `CorrectlyUnmatched`
 
 Rows that correctly have no bank credit, with a **derived** reason from
 `UnmatchedReason`: netted out, rolled forward, not yet eligible, dispute held,
 debit deferred, failed at gateway. The oracle scores the *reason*, not the
 classification. "Unmatched, and I have a label for it" is not the claim.
+
+### 4.7 Amendment (2026-08-25): `ProvenUnmatched` and `OpenBreak`
+
+**Added after the corpus and the first resolver were built, and dated rather
+than folded in**, for the same reason §6.4 is dated: this document's claim on
+being trustworthy is that it was written before the data it judges.
+
+#### Why §4.6 had to be replaced
+
+`CorrectlyUnmatched` asserted one thing and was used for two. Measured over
+all 30 datasets — 4,994 claims, full enumeration, no sampling:
+
+| branch | right | wrong reason | **row actually settled** | total | accuracy |
+|---|---:|---:|---:|---:|---:|
+| positively derived | 1,828 | 36 | 8 | 1,872 | 97.6% |
+| residual fallthrough | 455 | 206 | **2,461** | 3,122 | **14.6%** |
+| all | 2,283 | 242 | 2,469 | 4,994 | 45.7% |
+
+`ROLLED_FORWARD` — defined in `types.py` as *"eligible, not selected"*, a
+residual by construction — was right **17 times out of 2,397**. The contract
+demanded that every reason be "DERIVED, not assumed" and in the same file
+specified a bucket that cannot derive.
+
+Two different claims were wearing one type:
+
+* **(a)** *the ledger entails no bank credit exists for this row* — a positive
+  claim, derivable from row state alone;
+* **(b)** *I did not place this row* — an absence of evidence, reported as if
+  it were (a).
+
+#### The gate is ENTAILMENT, not accuracy
+
+Correcting the derivations to transcribe `engine/simulator.py` exactly makes
+the reasons **more accurate** (36 wrong → 10) and the soundness gate
+**dramatically worse** (8 rows-that-settled → 64), because a corrected
+`dispute_held` promotes 142 rows out of the residual, where they assert
+nothing, into a derived branch, where they become positive false claims.
+
+A more accurate classifier is a more dangerous one here. Accuracy is not the
+property this outcome needs. **Admission to `ProvenUnmatched` is by
+entailment: there must exist a derivation from merchant-visible ledger state
+to "no bank credit exists", and a reason that scores well without one does not
+qualify.**
+
+#### 4.7.1 `ProvenUnmatched`
+
+> **`ProvenUnmatched` asserts that the merchant-visible ledger alone entails
+> that this row's money never reached the bank — because it was never
+> captured, or because it and its refunds annihilate to zero before it ever
+> became eligible — and it makes no claim about any row whose settlement is
+> merely deferred, withheld, or unknown.**
+
+Weaker than "the ledger entails no bank credit exists", deliberately, and for
+the reason §3.3 gives for `Verified`: name the limit rather than define an
+unreachable ideal.
+
+Exactly two reasons qualify, and the list is closed by measurement:
+
+| `ProvenUnmatchedReason` | derivation | measured counterexamples |
+|---|---|---:|
+| `NOT_CAPTURED` | `credit == 0`; a payment never captured never became money | **0** of 215 |
+| `NETTED_OUT` | Σ refund amounts `==` the payment's **gross** amount **and** every refund created at or before `eligible_at`. `SETTLEMENT_SPEC.md` §3; transcribed from `engine/simulator.py` | **0** of 484 |
+
+`NETTED_OUT` requires *exact* equality against the **gross** amount and a
+timing test on **every** refund. The first resolver used `>=` against the
+fee-net `credit` with no timing test, and each of those three divergences
+alone produced false claims.
+
+**Gated by G9 at zero tolerance.** A `ProvenUnmatched` row that settled is a
+gate failure, not a measured statistic. Until this amendment, "0 wrong
+answers" in every report meant **"0 wrong `Verified`"** only; a second outcome
+type was wrong thousands of times and no gate looked at it.
+
+#### 4.7.2 `OpenBreak`
+
+**An `OpenBreak` asserts nothing and is therefore never gated on
+correctness.** It records that an item is unreconciled, why the resolver
+thinks so, how long it has been open, and what would close it. A row the
+resolver simply failed to place is an `OpenBreak`, always — there is no path
+by which failing to place a row becomes evidence about the row.
+
+This follows production reconciliation practice, where an unmatched item is a
+*break* carried forward with a classified reason and an age until it is
+resolved, not a verdict. Oracle-vendor and PeopleSoft reconciliation models
+have no terminal "correctly unmatched" state at all: an item is reconciled, or
+it is an exception awaiting resolution.
+
+| `BreakReason` | means | owner | closes when |
+|---|---|---|---|
+| `MISSING_SOURCE` | an expected artefact is absent — no settlement report, no bank line for the period | data ops | the missing artefact arrives |
+| `TIMING_DIFFERENCE` | activity falls across the reporting boundary; not yet eligible, rolled forward | none — carry forward | the item settles in a later window |
+| `MAPPING_ISSUE` | the row does not fit the expected linkage — unjoinable adjustment, no ERP order | integrations | a linkage is established |
+| `UNEXPECTED_CHANGE` | dispute hold, reversal, revocation | disputes ops | the hold or reversal resolves |
+| `TRUE_ERROR` | duplicate, omission, or wrong amount | finance | the correcting entry posts |
+| `UPSTREAM_UNRESOLVED` | this row's disposition depends on a **bank line** whose own outcome is unsettled | whoever owns the causing finding | the causing line becomes `Verified` or `ProvenUnmatched` — at which point every row clustered under it is re-evaluated **together** |
+| `UNEXPLAINED` | the resolver could not classify it | investigation | — |
+
+`UNEXPLAINED` **is a real, reported category and must never be eliminated by
+widening the others.** A high `UNEXPLAINED` count is an honest finding. The
+whole failure §4.6 records is what happens when a residual is given a name
+that sounds like a derivation.
+
+`UPSTREAM_UNRESOLVED` is the sixth reason the standard five do not cover.
+These rows are not `MISSING_SOURCE` (the source is present and legible), not
+`TIMING_DIFFERENCE` (they are inside the window), not `MAPPING_ISSUE` (they
+map fine), not `UNEXPECTED_CHANGE` (nothing about the row changed), and not
+`TRUE_ERROR` (no error has been established). Their batch membership is
+unknown **because an upstream finding about a different object is
+unresolved**. Measured: 2,461 rows cluster under 83 causing bank lines, mean
+29.7 rows per cause — a 30× reduction in queue length. Forcing them into
+`TRUE_ERROR` would assert an error nobody has demonstrated; forcing them into
+`UNEXPLAINED` would hide the one thing actually known about them.
+
+#### 4.7.3 Aging
+
+Every `OpenBreak` carries `age_days` from the date the item first became
+reconcilable — `eligible_at` for a payment, `created_at` otherwise — to the
+reporting horizon, and the period in which it first appeared. Reported in the
+standard buckets **0–30 / 31–60 / 61–90 / 90+**. An item aged past a prior
+period is red-flagged.
+
+Aging is what makes "rolled forward" a *tracked state* rather than a terminal
+verdict, and its absence is what let §4.6's residual look like an answer.
+
+#### 4.7.4 Reasons that score well and still do not qualify
+
+Measured, corrected predicates, full enumeration:
+
+| reason | rows | **settled** | verdict |
+|---|---:|---:|---|
+| `not_yet_eligible` | 952 | **0** | entailed **for this window only** → `OpenBreak / TIMING_DIFFERENCE`, flagged `provable_within_window` |
+| `dispute_held` | 345 | **64** | **not entailed** → `OpenBreak / UNEXPECTED_CHANGE` |
+
+`not_yet_eligible` is sound by a *provable* margin, not by luck: the
+resolver's horizon is the last bank `value_date`, the true horizon is the last
+batch time, and the former is always the later of the two, so the test is
+strictly stronger and can miss but never false-positive. It is nonetheless an
+`OpenBreak`, because `ProvenUnmatched` means *no bank credit exists* and a
+not-yet-eligible row's bank credit exists next Tuesday. Gating a temporary
+state as a permanent proof is how the distinction rots. The strength of the
+evidence is preserved in a flag, not in the outcome type.
+
+`dispute_held` fails on phase semantics, not on implementation quality
+(`SETTLEMENT_SPEC.md` §6.1): `retrieval` and `fraud` *withhold* funds, while
+`chargeback` *claws back after settlement*. All 31 lost chargebacks in the
+corpus settled and were then reversed by a debit. A clawback is a later debit,
+not a non-settlement.
+
+#### 4.7.5 `attested_row_ids` is defined here, having never been defined
+
+§4.2 named no field. The implementation gave one field three meanings across
+five call sites, and real cause-pointer coverage was 701 of 1,765 rows
+(39.7%). Two distinct questions were sharing one answer:
+
+* **`Contradiction.row_ids`** — the rows *implicated in the contradiction*.
+  The offending subset, and only it.
+* **`AttestationDiscrepancy.attested_row_ids`** — **every row the PSP attested
+  to this bank line**, whether or not it is implicated. Populated whenever an
+  attestation exists, including on a reversed credit, where the settlement
+  report names the rows even though the money came back.
+
+The `OpenBreak` cause pointer reads the second. A discrepancy that names only
+its offending rows under-points: `temporal_impossibility` named 13 rows out of
+294 in the affected batches, and the other 281 are equally blocked.
 
 ---
 
@@ -292,14 +462,31 @@ AttestationDiscrepancy    n   by contradiction kind
 Reconstructed             n
 Ambiguous                 n   (of which incomplete enumerations: n)
 Unresolved                n   by reason
-CorrectlyUnmatched        n   by reason
+ProvenUnmatched           n   by reason      <- gated at zero by G9
+OpenBreak                 n   by reason, and by age bucket 0-30/31-60/61-90/90+
+                              (of which clustered under a causing line: n
+                               across k distinct causes)
 mean candidate set size   x.xx        <- always, unprompted
 max candidate set size    n
 ```
 
+**`OpenBreak` is reported by age as well as by reason** (§4.7.3). A break
+count without an age distribution cannot distinguish a healthy queue from one
+carrying the same items across three periods.
+
+**`ProvenUnmatched` and `OpenBreak` are never summed into one figure.** One
+asserts, the other does not, and a total over both would recreate exactly the
+conflation §4.7 exists to undo.
+
 **Mean candidate set size is reported always and unprompted.** Without it,
 "declined fewer lines" and "enumerated more candidates until the truth was
 somewhere in the set" are indistinguishable, and only the first is skill.
+
+**"0 wrong answers" means what it is scoped to and nothing more.** Before the
+§4.7 amendment every such claim in this repository meant *"0 wrong
+`Verified`"*, while `CorrectlyUnmatched` — an outcome that also asserted
+something — was wrong 2,469 times unexamined. Any soundness claim must now
+name the outcomes it covers, and G9 covers `ProvenUnmatched`.
 
 **Deliberately NOT reported: "balance-identity violations".** Task 4 of the
 defect report proved it structurally incapable of being non-zero — every

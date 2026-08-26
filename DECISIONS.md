@@ -1454,3 +1454,173 @@ discarded, and `corpus/THREE_SYSTEMS.md` carries the delta attributed to this
 fix. A before/after pair is stronger evidence that a fix is real than a single
 clean number, which is the same standard applied to every other correction
 here.
+
+---
+
+## 40. `CorrectlyUnmatched` splits into `ProvenUnmatched` and `OpenBreak`, and the admission test is entailment rather than accuracy
+
+**Decision.** Contract §4.6 is superseded by a dated §4.7 amendment. The single
+outcome becomes two: `ProvenUnmatched`, a positive claim gated at zero by a new
+oracle gate G9; and `OpenBreak`, which asserts nothing, carries a classified
+reason, an age, an owner and a close condition, and is therefore never gated on
+correctness. Exactly two reasons are admitted to `ProvenUnmatched` —
+`NOT_CAPTURED` and `NETTED_OUT`.
+
+**Why.** `CorrectlyUnmatched` asserted one thing and was used for two: *"the
+ledger entails no bank credit exists"* and *"I did not place this row"*.
+Measured over all 30 datasets, 4,994 claims, full enumeration: 45.7% accurate
+overall, splitting into a positively derived branch at 97.6% (1,828/1,872) and
+a residual fallthrough at 14.6% (455/3,122). `ROLLED_FORWARD` — defined in
+`types.py` as *"eligible, not selected"*, a residual by construction, four
+lines under a docstring demanding every reason be "DERIVED, not assumed" — was
+right **17 times out of 2,397**.
+
+**The measurement that set the admission test.** Correcting the derivations to
+transcribe `engine/simulator.py` exactly makes the reasons **more accurate**
+(36 wrong → 10) and the soundness gate **five times worse** (8 rows that
+actually settled → 64). A corrected `dispute_held` promotes 142 rows out of the
+residual, where they assert nothing that is scored, into a derived branch,
+where they become positive false claims. Accuracy was never the property this
+outcome needed. The gate is entailment.
+
+**Rejected: keep one outcome and fix the reasons.** This is the option the
+measurement above refutes. It produces a *better classifier* and a *worse
+system*, and it was the plan of record until the numbers came back.
+
+**Rejected: admit `dispute_held` to `ProvenUnmatched`, narrowed to
+`status == under_review`.** That narrowing is genuinely clean on this corpus —
+199 rows, 0 counterexamples, against 345 rows and 64 counterexamples unnarrowed.
+It is still rejected. The clean split is over *current* dispute status read
+against a *past* horizon, which is the same bi-temporal error the branch was
+already making (§41), so its soundness is a property of this corpus rather than
+of the rule. And the phase semantics are against it: `SETTLEMENT_SPEC.md` §6.1
+has `chargeback` clawing back *after* settlement, and all 31 lost chargebacks
+in the corpus settled and were then reversed. A hold cannot entail
+non-settlement at any level of implementation quality.
+
+**Rejected: admit `not_yet_eligible`.** This one *earns* a gate and does not
+get one. It has 0 counterexamples in 952 rows and the soundness is provable
+rather than lucky: the resolver's horizon is the last bank `value_date`, the
+answer key's is the last batch time, and the former is always later, so the
+test is strictly stronger and can miss but never false-positive. It is an
+`OpenBreak` anyway, because `ProvenUnmatched` means *no bank credit exists* and
+a not-yet-eligible row's bank credit exists next Tuesday. Gating a temporary
+state as a permanent proof is how the distinction rots. The strength of the
+evidence is preserved in a `provable_within_window` flag, not in the outcome
+type.
+
+**Rejected: drop `UNEXPLAINED`, or widen the other reasons until it empties.**
+`UNEXPLAINED` is a real, reported category. Predicted at 593 rows. A residual
+given a name that sounds like a derivation is precisely how `ROLLED_FORWARD`
+happened, and eliminating the honest bucket is how it would happen again.
+
+**Rejected: report a single "unmatched" total.** `ProvenUnmatched` and
+`OpenBreak` are never summed. A total over an assertion and a non-assertion
+recreates exactly the conflation the amendment undoes.
+
+**What this admits.** Every soundness claim in this repository before now —
+"0 wrong answers", repeated in the README, `THREE_SYSTEMS.md` and
+`CHECKPOINT.md` — meant **"0 wrong `Verified`"** and nothing more, while a
+second outcome type that also asserted something was wrong 2,469 times and no
+gate looked at it. G9 exists because that was true and unstated.
+
+---
+
+## 41. The `netted_out` predicate is transcribed from the frozen simulator, not paraphrased from the spec
+
+**Decision.** `resolver/breaks.py:netted_out_payments` copies
+`engine/simulator.py:366-376` literally: `sum(refund.amount) == payment.amount`
+**and** `all(refund.created_at <= eligible_at)`. Both halves, exact equality,
+against the **gross** amount.
+
+**Why.** The first resolver paraphrased the same rule as
+`sum(refund.debit) >= payment.credit` with no timing test. Three independent
+divergences, each sufficient alone to produce a false claim, and all 8 of the
+G9 failures in the audit had all three:
+
+| divergence | consequence |
+|---|---|
+| `>=` instead of `==` | an over-refunded payment reads as netted; it settles |
+| `credit` (`amount − fee`) instead of `amount` | a refund short of gross by less than the fee reads as full. Measured: refunds of 2,014,800 against a payment of 2,014,900 — one rupee short — passed |
+| no timing test | a refund raised weeks after settlement counts as having prevented it |
+
+**Rejected: reading `SETTLEMENT_SPEC.md` §3 and implementing from the prose.**
+That is what produced the paraphrase. The spec's prose is correct — it says
+plainly that a partially refunded payment "settles at **full** `amount − fee`"
+— and the implementation still drifted, because prose does not say which of
+`amount` and `credit` a comparison should use. `engine/simulator.py` is the
+normative artefact and it is frozen, so transcription costs nothing and drift
+becomes a test failure. `test_the_predicate_matches_the_frozen_simulator_on_
+every_dataset` asserts set equality with the answer key's own `netted_out`, so
+drift in either direction fails.
+
+**Watched to fail.** The predicate was deliberately regressed to
+`sum(debit) >= credit` and `test_an_OVER_refunded_payment_does_not_net_out`
+failed immediately, as did the frozen-simulator equality test. Reverted.
+
+---
+
+## 42. `attested_row_ids` and `Contradiction.row_ids` answer different questions
+
+**Decision.** `Contradiction.row_ids` carries only the rows *implicated in the
+contradiction*. `AttestationDiscrepancy.attested_row_ids` carries **every row
+the PSP attested to that bank line**, whether implicated or not. Defined in
+contract §4.7.5, having never been defined anywhere before.
+
+**Why.** `RESOLVER_CONTRACT.md` §4.2 named no field, and an undefined field
+acquired three meanings across five call sites:
+
+| kind | n | rows named | rows in the true batches |
+|---|---:|---:|---:|
+| `claimed_credit_not_on_statement` | 22 | 688 | 688 |
+| `temporal_impossibility` | 10 | **13** | **294** |
+| `credit_reversed` | 30 | **0** | 783 |
+
+Real cause-pointer coverage was **701 of 1,765 rows (39.7%)**. The
+`OpenBreak` cause pointer reads `attested_row_ids`, so without the separation
+`UPSTREAM_UNRESOLVED` could reach under 40% of the rows it should and the
+clustering that makes the exception queue usable would not exist.
+
+**Rejected: patch `_reversed_credit` alone.** It was the visible hole and
+fixing it raises coverage to roughly 83%, which is why it is the tempting
+option. It leaves `temporal_impossibility` naming 13 rows out of 294 and
+*silently* under-pointing — a worse failure than the empty one, because an
+empty field is obviously empty.
+
+**Rejected: make `attested_row_ids` mean the offending subset everywhere.**
+Consistent, and it destroys the only field that can answer "what did this
+finding block".
+
+---
+
+## 43. `UPSTREAM_UNRESOLVED` is a sixth break reason, and absence datasets do not get one
+
+**Decision.** The standard five break reasons — `MISSING_SOURCE`,
+`TIMING_DIFFERENCE`, `MAPPING_ISSUE`, `UNEXPECTED_CHANGE`, `TRUE_ERROR` — gain
+a sixth, `UPSTREAM_UNRESOLVED`: this row's disposition depends on a **bank
+line** whose own outcome is unsettled. It closes when the causing line becomes
+`Verified` or `ProvenUnmatched`, at which point every row clustered under it is
+re-evaluated together.
+
+**Why.** 2,461 rows cluster under 83 causing bank lines, mean 29.7 rows per
+cause. Reported flat the queue is noise; clustered it is 83 items, which is how
+exception queues are actually worked. None of the five fits: the source is
+present and legible, the rows are inside the window, they map fine, nothing
+about them changed, and no error has been established.
+
+**Rejected: `TRUE_ERROR`.** Asserts an error nobody has demonstrated.
+
+**Rejected: `UNEXPLAINED`.** Hides the one thing actually known about them,
+which is precisely *why* they are open.
+
+**Consequence accepted, not worked around.** At a PSP-absence dataset no
+attestation exists, so no cause is nameable and every unplaced row falls to
+`UNEXPLAINED` — roughly 689 rows the ground truth *can* attribute to an
+`Unresolved` line but the resolver cannot. The committed prediction in
+`investigation/DERIVED_BRANCH_AUDIT.md` §4.3 puts 2,405 rows under
+`UPSTREAM_UNRESOLVED`, and that figure was computed with a ground-truth cause
+pointer, so it is an **upper bound on what the resolver can derive**, not a
+forecast of what it will. The gap is reported rather than closed. Building a
+"was in the candidate pool of these Unresolved lines" pointer would be new
+apparatus of exactly the kind this phase is under instruction not to build, and
+it is many-to-one, so it would weaken the field's meaning to raise a number.

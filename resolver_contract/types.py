@@ -533,6 +533,84 @@ class UnmatchedReason(enum.Enum):
     FAILED_AT_GATEWAY = "failed_at_gateway"      # never captured
 
 
+class ProvenUnmatchedReason(enum.Enum):
+    """The CLOSED list of derivations that entail no bank credit exists.
+
+    Contract sec 4.7.1. Admission is by ENTAILMENT, not by accuracy: there must
+    be a derivation from merchant-visible ledger state to "no bank credit
+    exists". A reason that scores well without one does not qualify, and
+    `dispute_held` -- which reads a status field and scored 90.2% -- is the
+    worked example of why (64 of its rows settled).
+    """
+
+    #: `credit == 0`. A payment never captured never became money.
+    NOT_CAPTURED = "not_captured"
+    #: Sum of refund amounts EXACTLY equals the payment's GROSS amount, and
+    #: every refund was created at or before `eligible_at`. Both halves are
+    #: load-bearing; `>=` against the fee-net credit produced false claims.
+    NETTED_OUT = "netted_out"
+
+
+class BreakReason(enum.Enum):
+    """Why an item is open. Contract sec 4.7.2.
+
+    An `OpenBreak` ASSERTS NOTHING, so none of these is ever gated on
+    correctness. Each carries an owner and a close condition, because a
+    classification whose only use is to be counted is a label, not a routing
+    decision.
+    """
+
+    #: An expected artefact is absent -- no settlement report, no bank line.
+    MISSING_SOURCE = "missing_source"
+    #: Activity falls across the reporting boundary. Carried forward.
+    TIMING_DIFFERENCE = "timing_difference"
+    #: The row does not fit the expected linkage.
+    MAPPING_ISSUE = "mapping_issue"
+    #: Dispute hold, reversal, revocation.
+    UNEXPECTED_CHANGE = "unexpected_change"
+    #: Duplicate, omission, or wrong amount.
+    TRUE_ERROR = "true_error"
+    #: Blocked by an unresolved finding about a BANK LINE, not about this row.
+    #: The sixth reason the standard five do not cover.
+    UPSTREAM_UNRESOLVED = "upstream_unresolved"
+    #: Could not classify. A REAL category that must never be eliminated by
+    #: widening the others -- that is precisely how ROLLED_FORWARD happened.
+    UNEXPLAINED = "unexplained"
+
+
+#: Who acts, and what closes the item. Contract sec 4.7.2.
+BREAK_ROUTING: dict[BreakReason, tuple[str, str]] = {
+    BreakReason.MISSING_SOURCE: (
+        "data ops", "the missing artefact arrives"),
+    BreakReason.TIMING_DIFFERENCE: (
+        "none -- carry forward", "the item settles in a later window"),
+    BreakReason.MAPPING_ISSUE: (
+        "integrations", "a linkage is established"),
+    BreakReason.UNEXPECTED_CHANGE: (
+        "disputes ops", "the hold or reversal resolves"),
+    BreakReason.TRUE_ERROR: (
+        "finance", "the correcting entry posts"),
+    BreakReason.UPSTREAM_UNRESOLVED: (
+        "whoever owns the causing finding",
+        "the causing bank line becomes Verified or ProvenUnmatched"),
+    BreakReason.UNEXPLAINED: (
+        "investigation", "-- no close condition is known, which is the point"),
+}
+
+#: Contract sec 4.7.3. The standard aging buckets.
+AGE_BUCKETS: tuple[tuple[str, int, int], ...] = (
+    ("0-30", 0, 30), ("31-60", 31, 60), ("61-90", 61, 90),
+    ("90+", 91, 10 ** 9),
+)
+
+
+def age_bucket(age_days: int) -> str:
+    for label, low, high in AGE_BUCKETS:
+        if low <= age_days <= high:
+            return label
+    return AGE_BUCKETS[0][0] if age_days < 0 else AGE_BUCKETS[-1][0]
+
+
 class UnresolvedReason(enum.Enum):
     """Why the resolver said nothing. An ENUM, not free text, because the
     oracle reports `Unresolved` split by reason per axis cell -- and
@@ -788,9 +866,90 @@ class CorrectlyUnmatched:
         return ()
 
 
+@dataclass(frozen=True, slots=True)
+class ProvenUnmatched:
+    """The ledger ENTAILS that no bank credit exists for these rows.
+
+    Contract sec 4.7.1. A positive claim, gated at zero by G9.
+
+    Supersedes the (a) half of `CorrectlyUnmatched`. The (b) half -- "I did not
+    place this row" -- is `OpenBreak` and is not a claim at all. Conflating the
+    two is what made the old outcome 45.7% accurate while every report in the
+    repository said "0 wrong answers", because "0 wrong" was scoped to
+    `Verified` alone.
+    """
+
+    row_ids: tuple[str, ...]
+    reason: ProvenUnmatchedReason
+    warrant: Warrant
+
+    @property
+    def assigned_rows(self) -> tuple[str, ...]:
+        return ()
+
+
+@dataclass(frozen=True, slots=True)
+class OpenBreak:
+    """An unreconciled item, classified and AGED. It asserts NOTHING.
+
+    Contract sec 4.7.2/4.7.3. Never gated on correctness, because there is no
+    claim here to be right or wrong about. A row the resolver simply failed to
+    place is an `OpenBreak`, always.
+
+    `provable_within_window` records that the ledger DOES entail no credit
+    exists *in the observed window* -- true of `TIMING_DIFFERENCE` -- without
+    promoting a temporary state to a permanent proof (sec 4.7.4).
+    """
+
+    row_ids: tuple[str, ...]
+    reason: BreakReason
+    #: Days from when the item first became reconcilable to the horizon.
+    age_days: int
+    #: The reporting period in which it first became reconcilable, ISO date.
+    first_seen: str
+    #: The bank line whose unresolved outcome blocks these rows, if any.
+    #: Set only for UPSTREAM_UNRESOLVED.
+    caused_by: int | None = None
+    #: Evidence, where any exists. An OpenBreak may carry none -- saying "I do
+    #: not know" needs no warrant, and demanding one would push the resolver
+    #: back towards inventing reasons.
+    warrant: Warrant | None = None
+    provable_within_window: bool = False
+
+    def __post_init__(self) -> None:
+        if self.reason is BreakReason.UPSTREAM_UNRESOLVED and self.caused_by is None:
+            raise ContractViolation(
+                "UPSTREAM_UNRESOLVED without a causing bank line is just "
+                "UNEXPLAINED wearing a better name -- which is the exact "
+                "failure mode sec 4.7.2 exists to prevent")
+        if self.caused_by is not None and self.reason is not BreakReason.UPSTREAM_UNRESOLVED:
+            raise ContractViolation(
+                f"caused_by is meaningful only for UPSTREAM_UNRESOLVED, "
+                f"not {self.reason.value}")
+
+    @property
+    def owner(self) -> str:
+        return BREAK_ROUTING[self.reason][0]
+
+    @property
+    def close_condition(self) -> str:
+        return BREAK_ROUTING[self.reason][1]
+
+    @property
+    def age_bucket(self) -> str:
+        return age_bucket(self.age_days)
+
+    @property
+    def assigned_rows(self) -> tuple[str, ...]:
+        return ()
+
+
 LineOutcome = (Verified | AttestationDiscrepancy | Reconstructed
                | Ambiguous | Unresolved)
-Outcome = LineOutcome | CorrectlyUnmatched
+#: Superseded by sec 4.7; `CorrectlyUnmatched` is retained so the old shape
+#: stays readable and the amendment stays legible as an amendment.
+RowOutcome = ProvenUnmatched | OpenBreak | CorrectlyUnmatched
+Outcome = LineOutcome | RowOutcome
 
 
 def may_consume(outcome: Outcome) -> bool:
@@ -930,7 +1089,16 @@ class OutcomeAccounting:
     reconstructed: int
     ambiguous: int
     unresolved: int
+    #: Superseded by sec 4.7 and retained only so the old shape stays readable.
+    #: Equals proven_unmatched + open_breaks, and the two are NEVER summed in a
+    #: report -- one asserts, the other does not.
     correctly_unmatched: int
+    proven_unmatched: int = 0
+    open_breaks: int = 0
+    #: OpenBreak rows by age bucket, and how many cluster under a causing line.
+    age_buckets: dict[str, int] = field(default_factory=dict)
+    clustered_rows: int = 0
+    distinct_causes: int = 0
     reasons: dict[str, dict[str, int]] = field(default_factory=dict)
     mean_candidate_set_size: float = 0.0
     max_candidate_set_size: int = 0
@@ -959,7 +1127,7 @@ class ResolverOutput:
     resolver: str
     dataset: str
     line_outcomes: tuple[LineOutcome, ...]
-    unmatched: tuple[CorrectlyUnmatched, ...] = ()
+    unmatched: tuple[RowOutcome, ...] = ()
 
     def __post_init__(self) -> None:
         seen: dict[str, int] = {}
@@ -970,6 +1138,26 @@ class ResolverOutput:
                         f"row {row_id} assigned to bank[{seen[row_id]}] and "
                         f"bank[{outcome.bank_index}]; a row settles once")
                 seen[row_id] = outcome.bank_index
+        # A row gets ONE disposition. Reporting it as both proven-unmatched and
+        # open would let a resolver hedge, which is the whole failure sec 4.7
+        # undoes -- one type carrying an assertion and a non-assertion at once.
+        where: dict[str, str] = {}
+        for outcome in self.unmatched:
+            label = type(outcome).__name__ + "/" + outcome.reason.value
+            for row_id in outcome.row_ids:
+                if row_id in where:
+                    raise ContractViolation(
+                        f"row {row_id} reported as both {where[row_id]} and "
+                        f"{label}; a row has one disposition")
+                where[row_id] = label
+
+    @property
+    def proven_unmatched(self) -> tuple[ProvenUnmatched, ...]:
+        return tuple(o for o in self.unmatched if isinstance(o, ProvenUnmatched))
+
+    @property
+    def open_breaks(self) -> tuple[OpenBreak, ...]:
+        return tuple(o for o in self.unmatched if isinstance(o, OpenBreak))
 
     @property
     def row_assignments(self) -> dict[str, int]:
@@ -1023,7 +1211,8 @@ class ResolverOutput:
         non_decisive = 0
         reasons: dict[str, dict[str, int]] = {
             "unresolved": {}, "attestation_discrepancy": {},
-            "correctly_unmatched": {}}
+            "correctly_unmatched": {}, "proven_unmatched": {},
+            "open_break": {}}
 
         def bump(bucket: str, key: str) -> None:
             reasons[bucket][key] = reasons[bucket].get(key, 0) + 1
@@ -1046,10 +1235,20 @@ class ResolverOutput:
             elif isinstance(outcome, Unresolved):
                 counts["unresolved"] += 1
                 bump("unresolved", outcome.reason.value)
+        ages: dict[str, int] = {}
+        causes: set[int] = set()
+        clustered = 0
         for item in self.unmatched:
-            reasons["correctly_unmatched"][item.reason.value] = (
-                reasons["correctly_unmatched"].get(item.reason.value, 0)
-                + len(item.row_ids))
+            bucket = ("proven_unmatched" if isinstance(item, ProvenUnmatched)
+                      else "open_break" if isinstance(item, OpenBreak)
+                      else "correctly_unmatched")
+            reasons[bucket][item.reason.value] = (
+                reasons[bucket].get(item.reason.value, 0) + len(item.row_ids))
+            if isinstance(item, OpenBreak):
+                ages[item.age_bucket] = ages.get(item.age_bucket, 0) + len(item.row_ids)
+                if item.caused_by is not None:
+                    causes.add(item.caused_by)
+                    clustered += len(item.row_ids)
         return OutcomeAccounting(
             verified=counts["verified"],
             attestation_discrepancy=counts["attestation_discrepancy"],
@@ -1057,6 +1256,10 @@ class ResolverOutput:
             ambiguous=counts["ambiguous"],
             unresolved=counts["unresolved"],
             correctly_unmatched=sum(len(i.row_ids) for i in self.unmatched),
+            proven_unmatched=sum(len(i.row_ids) for i in self.proven_unmatched),
+            open_breaks=sum(len(i.row_ids) for i in self.open_breaks),
+            age_buckets=ages, clustered_rows=clustered,
+            distinct_causes=len(causes),
             reasons=reasons,
             mean_candidate_set_size=(sum(sizes) / len(sizes)) if sizes else 0.0,
             max_candidate_set_size=max(sizes) if sizes else 0,

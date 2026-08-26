@@ -62,7 +62,7 @@ nothing. See `DECISIONS.md` 37 for the rejected alternative.
   `AttestationDiscrepancy`, which carries no composition, so a reachable
   `Reconstructed` is forgone. The vocabulary cannot say "the record is wrong
   AND here is what actually happened". See `DECISIONS.md` 34.
-* **`CorrectlyUnmatched` reasons cite derived arithmetic over the PSP feed**,
+* **`ProvenUnmatched` reasons cite derived arithmetic over the PSP feed**,
   because the contract has no evidence kind meaning "a ledger field says so".
 """
 
@@ -74,13 +74,14 @@ from datetime import date, datetime, timedelta
 
 from resolver_contract.types import (
     Ambiguous, arithmetic_closure_over, AttestationDiscrepancy, CandidateSet,
-    Composition, Contradiction, ContradictionKind, CorrectlyUnmatched,
+    Composition, Contradiction, ContradictionKind,
     Evidence, EvidenceKind, LineOutcome, RankingAnnotation, Reconstructed,
-    ResolverOutput, SourceSystem, UnmatchedReason, Unresolved,
+    ResolverOutput, SourceSystem, Unresolved,
     UnresolvedReason, Verified, Warrant,
 )
 
 from resolver.eligibility import IST, eligible_at, end_of_day, net, pool_at
+from resolver.breaks import dispositions
 from resolver.enumerate_closures import Closures, closing_subsets
 from resolver.loaders import BankLine, Dataset
 
@@ -252,7 +253,39 @@ def resolve(dataset: Dataset, *, cap: int = 200,
     return ResolverOutput(
         resolver=NAME, dataset=dataset.name,
         line_outcomes=tuple(sorted(outcomes, key=lambda o: o.bank_index)),
-        unmatched=tuple(unmatched_rows(dataset, assigned)))
+        unmatched=tuple(dispositions(dataset, assigned,
+                                     _blocked_by(outcomes, assigned))))
+
+
+def _blocked_by(outcomes: list[LineOutcome], assigned: set[str]
+                ) -> dict[str, int]:
+    """`row id -> the bank line whose unresolved outcome blocks it`.
+
+    Contract 4.7.2, `UPSTREAM_UNRESOLVED`. A row the PSP attested to a line the
+    resolver could not settle is not unexplained -- the explanation is that a
+    finding about a DIFFERENT object is open. 2,461 such rows cluster under 83
+    causing lines in the corpus, mean 29.7 per cause, and clustering them is
+    the difference between a queue nobody reads and one an operator works
+    through.
+
+    Reads only `attested_row_ids`, which is why contract 4.7.5's separation had
+    to land first: while a reversal named none of its rows and a temporal
+    discrepancy named only its offending subset, this pointer could reach 39.7%
+    of the rows it should.
+
+    At a PSP-absence dataset no attestation exists, so nothing is nameable and
+    every unplaced row falls to `UNEXPLAINED`. That is the honest answer and it
+    reports something true: without the PSP artefact the resolver cannot even
+    say why it failed.
+    """
+    blocked: dict[str, int] = {}
+    for outcome in outcomes:
+        if isinstance(outcome, Verified):
+            continue
+        for row_id in getattr(outcome, "attested_row_ids", ()):
+            if row_id not in assigned:
+                blocked.setdefault(row_id, outcome.bank_index)
+    return blocked
 
 
 def _resolve_collisions(outcomes: list[LineOutcome], state: _State
@@ -365,7 +398,16 @@ def _reversed_credit(line: BankLine, debit_index: int, dataset: Dataset,
                f"{line.value_date} was reversed by the debit at "
                f"bank[{debit_index}]. Any composition claimed for it is a "
                "claim about money that came back.",
-        between=frozenset({SourceSystem.BANK, SourceSystem.PSP_LEDGER}))
+        between=frozenset({SourceSystem.BANK, SourceSystem.PSP_LEDGER}),
+        row_ids=())
+    # `attested_row_ids` is EVERY row the PSP attested to this line, whether or
+    # not it is implicated in the contradiction (contract 4.7.5). This path
+    # previously left it empty, so a reversal -- the single largest cause of
+    # blocked rows in the corpus, 30 of 62 discrepancies and 783 rows -- named
+    # none of them, and no downstream consumer could say what a reversal
+    # blocked. The settlement report names them even though the money came
+    # back; that the credit was returned is exactly why they are unresolved.
+    attested = tuple(sorted(_attested_rows(line, dataset, state)))
     return AttestationDiscrepancy(
         bank_index=line.index, contradiction=contradiction,
         warrant=Warrant.over(
@@ -375,7 +417,21 @@ def _reversed_credit(line: BankLine, debit_index: int, dataset: Dataset,
             rationale="the bank contradicts itself across two lines, and the "
                       "PSP's settlement record does not carry the reversal",
             contradictions=[contradiction]),
+        attested_row_ids=attested,
         bank_amount=line.amount_paise)
+
+
+def _attested_rows(line: BankLine, dataset: Dataset, state: _State
+                   ) -> list[str]:
+    """Every recon row the PSP places in this bank line's settlement.
+
+    Reads the PSP's own two artefacts and nothing else. Returns [] where no
+    attestation exists, which at a PSP-absence dataset is every line.
+    """
+    for settlement, entry in dataset.settlement_report.items():
+        if entry.get("reported_reference") and entry["reported_reference"] == line.reference:
+            return list(state.by_settlement.get(settlement, []))
+    return []
 
 
 def _credit_line(line: BankLine, dataset: Dataset, state: _State,
@@ -414,6 +470,9 @@ def _tier_a(line: BankLine, settlement: str, dataset: Dataset, state: _State,
             f"the report names settlement {settlement} for this credit, but no "
             "recon row carries that settlement id",
             [attestation, existence], attested_net=None,
+            # Both row fields are empty here and that is CORRECT rather than an
+            # omission: the attestation names a settlement no row belongs to,
+            # so there is no attested set to carry (contract 4.7.5).
             bank_amount=line.amount_paise)
 
     # 1. the PSP's own two artefacts must agree with the bank about the AMOUNT
@@ -462,7 +521,8 @@ def _tier_a(line: BankLine, settlement: str, dataset: Dataset, state: _State,
             f"{when:%Y-%m-%d %H:%M}). The arithmetic closes, so a sum check "
             "cannot see this; the rows are still impossible.",
             [attestation, existence], attested_net=attested_net,
-            bank_amount=line.amount_paise, rows=tuple(impossible))
+            bank_amount=line.amount_paise, rows=tuple(impossible),
+            attested=tuple(claimed))
 
     # 4. a row settles once
     double = sorted(r for r in claimed if r in state.consumed)
@@ -472,7 +532,8 @@ def _tier_a(line: BankLine, settlement: str, dataset: Dataset, state: _State,
             f"{len(double)} rows attested to {settlement} were already "
             f"consumed by an earlier settled credit: {double[:4]}",
             [attestation, existence], attested_net=attested_net,
-            bank_amount=line.amount_paise, rows=tuple(double))
+            bank_amount=line.amount_paise, rows=tuple(double),
+            attested=tuple(claimed))
 
     return _verify(line, claimed, state, [attestation, existence],
                    rationale="the PSP named a composition; the BANK posted an "
@@ -544,7 +605,8 @@ def _tier_b(line: BankLine, dataset: Dataset, state: _State, cap: int,
             f"{len(impossible)} rows claimed for {settlement} were created "
             f"after the bank posted this credit on {line.value_date}",
             [claim, existence], attested_net=line.amount_paise,
-            bank_amount=line.amount_paise, rows=tuple(impossible))
+            bank_amount=line.amount_paise, rows=tuple(impossible),
+            attested=tuple(claimed))
 
     return _verify(line, claimed, state, [claim, existence],
                    rationale="the PSP's ledger names a composition and the "
@@ -721,7 +783,9 @@ def _verify(line: BankLine, claimed: list[str], state: _State,
 def _discrepancy(line: BankLine, kind: ContradictionKind, detail: str,
                  evidence: list[Evidence], *, attested_net: int | None,
                  bank_amount: int | None,
-                 rows: tuple[str, ...] = ()) -> AttestationDiscrepancy:
+                 rows: tuple[str, ...] = (),
+                 attested: tuple[str, ...] | None = None
+                 ) -> AttestationDiscrepancy:
     """The sources disagree. Carries NO composition, by contract 4.2: a
     discrepancy is a finding about the record, not a claim about which rows
     settled. It consumes nothing, so a contradicted line cannot starve the
@@ -737,67 +801,23 @@ def _discrepancy(line: BankLine, kind: ContradictionKind, detail: str,
             rationale="two parties disagree about this credit, and the "
                       "disagreement is the finding",
             contradictions=[contradiction]),
-        attested_row_ids=rows, attested_net=attested_net,
-        bank_amount=bank_amount)
+        # Two questions, two fields (contract 4.7.5). `Contradiction.row_ids`
+        # is the OFFENDING subset; `attested_row_ids` is the WHOLE attestation.
+        # One field answered both, so `temporal_impossibility` named 13 rows
+        # out of 294 in the batches it blocked and read as full coverage.
+        attested_row_ids=rows if attested is None else attested,
+        attested_net=attested_net, bank_amount=bank_amount)
 
 
 # --------------------------------------------------------------------------
-# rows that correctly have no bank credit
+# SUPERSEDED (contract 4.7): `unmatched_rows` and `_unmatched_reason`
+#
+# They produced one `CorrectlyUnmatched` per row with a reason drawn from a
+# list whose last two entries were residual fallthroughs. Measured over 4,994
+# claims: `rolled_forward` was right 17 times out of 2,397, and 2,469 rows the
+# resolver said had no bank credit had in fact settled.
+#
+# Replaced by `resolver/breaks.py`, which splits the claim from the absence of
+# one. Deleted rather than deprecated: a residual left reachable is a residual.
 # --------------------------------------------------------------------------
 
-
-def unmatched_rows(dataset: Dataset, consumed: set[str]
-                   ) -> list[CorrectlyUnmatched]:
-    """A DERIVED reason per unassigned row. The oracle scores the reason.
-
-    The contract has no evidence kind meaning "a ledger field says so", so each
-    reason declares derived arithmetic over the PSP feed and says which fields
-    it read. That is a limitation of the vocabulary, named here rather than
-    papered over with a kind that means something else.
-    """
-    rows_by_id = {row["entity_id"]: row for row in dataset.rows}
-    horizon = max(line.value_date for line in dataset.bank)
-    refunded: dict[str, int] = defaultdict(int)
-    for row in dataset.rows:
-        if row["type"] == "refund" and row.get("payment_id"):
-            refunded[row["payment_id"]] += row["debit"]
-
-    buckets: dict[UnmatchedReason, list[str]] = defaultdict(list)
-    for row in dataset.rows:
-        row_id = row["entity_id"]
-        if row_id in consumed:
-            continue
-        buckets[_unmatched_reason(row, rows_by_id, refunded, horizon)].append(row_id)
-
-    out: list[CorrectlyUnmatched] = []
-    for reason, row_ids in sorted(buckets.items(), key=lambda kv: kv[0].value):
-        out.append(CorrectlyUnmatched(
-            row_ids=tuple(sorted(row_ids)), reason=reason,
-            warrant=Warrant.over(
-                [Evidence(kind=EvidenceKind.ARITHMETIC_CLOSURE,
-                          derived_from=PSP,
-                          detail=f"{reason.value}: derived from the recon "
-                                 "feed's own created_at / on_hold / credit / "
-                                 "refund columns, over rows no bank credit "
-                                 "explains")],
-                rationale="a reason derived from the ledger, not a label "
-                          "applied to whatever was left over")))
-    return out
-
-
-def _unmatched_reason(row, rows_by_id, refunded, horizon) -> UnmatchedReason:
-    if row["type"] == "payment" and row["credit"] == 0:
-        return UnmatchedReason.FAILED_AT_GATEWAY
-    if row.get("on_hold"):
-        return UnmatchedReason.DISPUTE_HELD
-    if row["type"] == "payment":
-        if refunded.get(row["entity_id"], 0) >= row["credit"] > 0:
-            return UnmatchedReason.NETTED_OUT
-        if eligible_at(row["created_at"]) > end_of_day(horizon):
-            return UnmatchedReason.NOT_YET_ELIGIBLE
-        return UnmatchedReason.ROLLED_FORWARD
-    if row["type"] == "refund":
-        parent = rows_by_id.get(row.get("payment_id") or "")
-        if parent and refunded.get(parent["entity_id"], 0) >= parent["credit"] > 0:
-            return UnmatchedReason.NETTED_OUT
-    return UnmatchedReason.DEBIT_DEFERRED
