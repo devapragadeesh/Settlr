@@ -56,7 +56,6 @@ def pool_at(rows: list[dict], value_date: date, consumed: set[str]
     Excluded, each for a reason the merchant can state:
 
     * already consumed by a `Verified` outcome -- a row settles once;
-    * `on_hold` -- disputed funds are locked and do not settle;
     * an uncaptured payment -- it never became money;
     * created after the bank posted -- it did not exist when the money left;
     * a payment not yet eligible under T+2 at the posting date.
@@ -64,13 +63,28 @@ def pool_at(rows: list[dict], value_date: date, consumed: set[str]
     The value DATE rather than the settlement instant is the ceiling, because
     the settlement instant is exactly what the resolver does not know. That
     makes the pool a superset of the true one, which is the safe direction.
+
+    FRAME (`DECISIONS.md` §44). Every test below is evaluated **as at
+    `value_date`**, and every field it reads must be one that was already true
+    then. `created_at` and `credit` are immutable facts about a row, so they
+    qualify. `on_hold` does NOT: it is a CURRENT-STATE snapshot taken when the
+    feed was exported, days after `value_date`, and it used to be a filter
+    here. A row held now but not held then was silently dropped from the pool,
+    which breaks the superset promise this docstring makes two paragraphs up --
+    err-large became err-small, and a true composition could become
+    unreachable.
+
+    It never bit: 0 rows carrying `on_hold` appear in any true composition
+    across the 30 corpus datasets, so the filter was correct here by a property
+    of the generated data rather than of the rule. That is defect D2's shape,
+    and it is why the filter is gone rather than guarded. Holds are still
+    reported -- as `OpenBreak(UNEXPECTED_CHANGE)`, which asserts nothing
+    (contract §4.7.2) and so is allowed to read a snapshot.
     """
     ceiling = end_of_day(value_date)
     out: list[tuple[str, int]] = []
     for row in rows:
         if row["entity_id"] in consumed:
-            continue
-        if row.get("on_hold"):
             continue
         if row["created_at"] > ceiling:
             continue

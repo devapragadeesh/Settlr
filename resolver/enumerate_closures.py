@@ -95,6 +95,17 @@ def closing_subsets(pool: Sequence[tuple[str, int]], target: int, *,
 
     elapsed = time.perf_counter() - began
     hit_cap = len(collector.found) >= cap
+    # FRAME (`DECISIONS.md` sec 44, instance F3). This line mixes an EXTERNALLY
+    # measured `elapsed` with the solver's INTERNAL status -- the exact mixture
+    # sec 39 removed from `complete`, eighteen lines below, and it survived the
+    # fix that removed it. It is retained deliberately rather than tidied,
+    # because it is the evidence for how this defect class hides: the fix was
+    # correct, the review was looking at the right function, and nobody saw the
+    # same mixture one line up.
+    #
+    # It is LABEL-ONLY. `timed_out` reaches `status` and NOTHING else. It must
+    # never be allowed to reach `complete`, which is a soundness claim; the
+    # moment it does, sec 39's defect is back.
     timed_out = status == cp_model.UNKNOWN or (
         elapsed >= time_budget and status != cp_model.OPTIMAL)
     # `complete` means ONE thing: CP-SAT exhausted the search space and said so.
