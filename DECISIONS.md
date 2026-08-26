@@ -1624,3 +1624,142 @@ forecast of what it will. The gap is reported rather than closed. Building a
 "was in the candidate pool of these Unresolved lines" pointer would be new
 apparatus of exactly the kind this phase is under instruction not to build, and
 it is many-to-one, so it would weaken the field's meaning to raise a number.
+
+---
+
+## 44. The reference-frame defect class: a predicate whose two sides come from different frames
+
+**The class.** A predicate reads the **wrong reference frame** — wrong clock,
+wrong horizon, wrong quantity, wrong pool — while looking locally correct at
+every call site. Each instance produced a claim *stronger than the evidence
+supported*. Each was invisible to review, because nothing about the line of
+code is wrong; what is wrong is what the two sides mean.
+
+**The rule this implies, and it is the only part of this entry that is a
+decision rather than a finding:**
+
+> Every predicate over a mutable, derived, or time-dependent quantity must
+> name **in code** which frame it evaluates in. A comparison whose two sides
+> come from different frames is a defect **even when it currently agrees** —
+> because the agreement is then a property of the data, not of the rule.
+
+### 44.1 Five instances
+
+The class was named after three. A directed sweep of 20 predicates across
+`resolver/` and `corpus/oracle.py` found two more, and one of the two is in
+the **oracle** — the component that scores everything else.
+
+| # | where | left side | right side | claim it inflated |
+|---|---|---|---|---|
+| §39 | `enumerate_closures.py` | **external** wall clock | CP-SAT's **internal** limit | a truncated enumeration recorded as exhaustive; `Reconstructed` requires closure *proven complete*, so a truncated set of size one could have been promoted |
+| §41 | `breaks.py` (was `resolve.py`) | refunds vs **fee-net** `credit` | frozen simulator's **gross** `amount` | an over-refunded or ₹1-short payment read as fully netted; 8 rows claimed as never-settled had settled |
+| D13 | `breaks.py` break reason | `on_hold` **current-state snapshot** | the **past** settlement horizon | 202 of 540 disputed rows (37.4%) disagree between the two |
+| **F1** | `eligibility.py:73` | the **same** snapshot | the **same** past horizon | the pool's stated **superset** invariant, silently broken |
+| **F2** | `oracle.py:219, 551` | uniqueness over the **true** pool | a resolver searching a **derived** pool 1.4×–14× larger | "the benchmark proves this line has exactly one explanation" |
+
+F1 and D13 are *the same error, one file apart*. Cataloguing D13 did not
+prevent F1, and F1 was written after D13 was known — which is the point of
+§44.4.
+
+### 44.2 What each instance cost
+
+**§39** and **§41** were soundness hazards and are fixed. **D13** is bounded
+by an API ceiling and is open (44.5). **F1** is fixed in the cycle that
+follows this entry; it never bit, which is exactly why it needed fixing —
+see §45. **F2** is a *corpus* defect and the gate is **not** loosened for it;
+only every statement of a G8 result is rescoped (§46).
+
+### 44.3 A mixed-frame computation survived one line above the fix that removed it
+
+`enumerate_closures.py:98` still computes `timed_out` from an externally
+measured `elapsed` against an internal solver status — one line above line
+119, where §39 replaced exactly that mixture with `status == OPTIMAL`. It
+feeds only the reported status *label* and can never reach `complete`, so it
+is not a soundness hazard, and it is deliberately left in place with a comment
+saying so rather than quietly tidied.
+
+It is recorded because **that is how these hide**: the fix was correct, the
+review that accepted it was looking at the right function, and the same
+mixture eighteen characters up was not seen by anyone, including the author of
+the fix.
+
+### 44.4 The meta-observation, recorded plainly
+
+The sweep was run by someone who had just finished cataloguing three instances
+of this exact class and was explicitly looking for a fourth. **It found two
+more, and the more serious of the two was in the scorer.**
+
+This is the same result `corpus/leakage_audit.py` produced on the corpus, in a
+different coordinate: a directed search by an informed searcher still finds
+things, which means the informed searcher was not the control. It says the
+same thing both times — **this class is not eliminable by care, only by
+mechanism.** Care found five; nothing establishes there is not a sixth.
+
+The mechanism the rule in this entry asks for — frames named in code — is
+weaker than a checker that verifies them, and no such checker exists here.
+That is a named gap, not a solved problem.
+
+### 44.5 D13's ceiling is the API, not the algorithm
+
+Razorpay's dispute entity publishes `id`, `entity`, `payment_id`, `amount`,
+`currency`, `amount_deducted`, `reason_code`, `reason_description`,
+`respond_by`, `status`, `phase`, `created_at`, `evidence`. There is **no
+resolution timestamp of any kind** — no won/lost/closed date, no hold-release
+field — and `status` is a current-state scalar.
+
+So `created_at` makes *"the hold had not begun at the horizon"* computable,
+and nothing makes *"the hold was released before the horizon"* computable.
+That is a bound on **any** resolver consuming this feed, not a gap in this
+one, which is the stronger and more useful statement.
+
+Two incidental corpus gaps found while checking: the corpus models 3 of the 5
+documented phases (`pre_arbitration` and `arbitration` are absent — a won
+chargeback re-challenged, which is precisely the retroactive case §37 is
+about) and 3 of the 5 documented statuses (`open` and `closed` absent).
+
+### 44.6 Rejected alternatives
+
+**Rejected: fix F2 by loosening G8.** Loosening a gate after watching a
+resolver fail it is the move the freeze discipline exists to forbid, and G8
+exists precisely because abstention is otherwise free. It keeps failing, and
+what changes is the *claim*, not the threshold.
+
+**Rejected: leave F1 alone because it measures 0 rows affected.** That is the
+D2 argument verbatim — a branch whose safety came from the data, inside a
+passing suite, right up until held-out data moved 50 rows.
+
+**Rejected: fold the `timed_out` mixture into the enum while I am here.**
+Tidying it destroys the evidence in §44.3, which is the most instructive part
+of this entry.
+
+**Rejected: treat "five instances found, class understood" as closure.** The
+count is the argument in the other direction. See §44.4.
+
+### 44.7 Appendix — the full 20-predicate inventory
+
+Every predicate comparing two quantities in `resolver/` and
+`corpus/oracle.py`. Reported in full, failures and passes alike: **a clean
+sweep is evidence only if it was exhaustive.**
+
+| # | predicate | left frame | right frame | verdict |
+|---|---|---|---|---|
+| 1 | `breaks.py:81` `Σrefund.debit == row["amount"]` | PSP gross | PSP gross | ✅ (§41 fix) |
+| 2 | `breaks.py:82` `refund.created_at <= eligible_at` | PSP ledger | PSP-derived | ✅ |
+| 3 | `breaks.py:90` `row["credit"] == 0` | PSP | literal | ✅ |
+| 4 | `breaks.py:155` `first_reconcilable > end_of_day(horizon)` | PSP-derived | **bank** | ⚠️ D14 — sound in one direction only, guarded by `test_horizon_ordering` |
+| 5 | `breaks.py:160` `dispute is not None or on_hold` | snapshot | — | ⚠️ **safe by construction** — feeds `OpenBreak`, which asserts nothing (§40) |
+| 6 | `eligibility.py:73` `row.get("on_hold")` | **snapshot** | **as-at past `value_date`** | ❌ **F1**, fixed in §45 |
+| 7 | `eligibility.py:75, 80` `created_at / eligible_at > ceiling` | PSP | bank end-of-day | ⚠️ errs LARGE, stated in the docstring |
+| 8 | `eligibility.py:82` `net(row) == 0` | PSP net | literal | ✅ |
+| 9 | `enumerate_closures.py:98` `elapsed >= time_budget` | **external clock** | **internal status** | ⚠️ **F3**, label-only, retained deliberately (§44.3) |
+| 10 | `enumerate_closures.py:119` `complete = status == OPTIMAL` | internal | internal | ✅ (§39 fix) |
+| 11 | `resolve.py:189–191` reversal window | bank | bank | ✅ |
+| 12 | `resolve.py:479` `reported_amount != line.amount_paise` | PSP payout | bank payout | ✅ verified the same quantity |
+| 13 | `resolve.py:493` `attested_net != line.amount_paise` | PSP fee-net | bank payout | ✅ both fee-net |
+| 14 | `resolve.py:512, 601` `created_at > ceiling` | PSP | bank | ⚠️ deliberate cross-party check; the contradiction IS the finding |
+| 15 | `resolve.py:566` `Σnet == line.amount_paise` | PSP fee-net | bank | ✅ |
+| 16 | `resolve.py:673` rival amounts | bank | bank | ✅ |
+| 17 | `loaders.py:36` `amount_paise > 0` | bank | literal | ✅ |
+| 18 | `oracle.py:219` `recoverable != "unique"` | corpus register, **true** pool | resolver search, **derived** pool | ❌ **F2**, §46 |
+| 19 | `oracle.py:551` `register["count"] < 2` | as #18 | as #18 | ❌ same root |
+| 20 | `oracle.py:279, 341, 406, 459` composition / candidate equality | truth | resolver | ✅ |
