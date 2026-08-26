@@ -87,7 +87,8 @@ visible in `git log` and is the point.
 | `Reconstructed` | unattested, exactly one subset closes under **no objective filter**, and that subset closes no other unexplained credit in the window. Strictly weaker than `Verified` | no |
 | `Ambiguous` | two or more compositions explain the credit. Carries the whole candidate set and its size. Has no `decomposition` attribute and never will | no |
 | `Unresolved` | insufficient evidence, with a reason from an enum — `no_subset_closes` and `enumeration_truncated` are different findings | no |
-| `CorrectlyUnmatched` | these rows correctly have no bank credit, for a *derived* reason | n/a |
+| `ProvenUnmatched` | the ledger **entails** no bank credit exists — never captured, or netted to zero before eligibility. A claim | **G9** |
+| `OpenBreak` | unplaced, classified, **aged**, routed to an owner with a close condition. Asserts nothing | never gated |
 
 `Verified` is not "the composition is proven." No party outside the PSP ever
 witnesses which rows formed a batch, so an outcome demanding independent
@@ -127,6 +128,7 @@ An accounting, not a rate. `corpus/oracle.py` scores
 | G6 | evidence whose declared provenance the corpus contradicts |
 | **G7** | **abstention on a determined instance** (attested) |
 | **G8** | **abstention on a reconstructible instance** (unattested) |
+| **G9** | a `ProvenUnmatched` row that actually settled |
 
 G1–G6 are soundness gates and **every one of them is passed by a resolver that
 answers nothing.** Worse, enumeration truncates first on the largest pools, so
@@ -207,6 +209,30 @@ attestation there — so the eligible pool grows monotonically across the window
 from 8 rows at the first credit to 265 at the last, and closure stops being
 unique. It is the only system that runs on those datasets at all, and it
 declines most of the work. Both facts are the result.
+
+**"0 wrong answers" used to mean "0 wrong `Verified`" and nothing more.** A
+second outcome, `CorrectlyUnmatched`, also asserted something — that a row
+correctly had no bank credit — and no gate looked at it. Enumerated over all
+30 datasets it was **45.7% accurate across 4,994 claims**, and **2,469 of the
+rows it said had no bank credit had settled**. One of its six reasons,
+`rolled_forward`, was right **17 times out of 2,397**; it was defined in the
+contract as *"eligible, not selected"* — a residual — four lines below a
+requirement that every reason be derived. It is now split into
+`ProvenUnmatched` (699 rows, gated at zero by G9, **0 failures**) and
+`OpenBreak` (4,295 rows, which assert nothing). Full audit:
+[`investigation/DERIVED_BRANCH_AUDIT.md`](investigation/DERIVED_BRANCH_AUDIT.md).
+
+**The proven rate is 14%, and that is the intended shape.** A small set with a
+genuine entailment claim behind a zero-tolerance gate, plus a large classified
+and aged break queue, is what production reconciliation ships. A system
+claiming to have positively explained all 4,994 rows would be the less
+credible artefact — that is precisely what the old outcome claimed.
+
+**1,469 `OpenBreak` rows are `unexplained`**, 758 of them at the two
+PSP-absence datasets, where no attestation exists so no causing line can be
+named and the resolver cannot say why it failed. The category is reported
+rather than absorbed into a neighbouring one, because absorbing it is exactly
+how `rolled_forward` came to exist.
 
 **87% of `Verified` are non-decisive** — 238 of 275. The composition claim was
 corroborated by a consequence a rival composition would also have satisfied.

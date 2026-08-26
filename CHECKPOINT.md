@@ -710,3 +710,109 @@ New, from this phase:
   false one because its numerator is *planted wrong attestations*. Both are
   reported in `corpus/THREE_SYSTEMS.md` under *"What the new resolver gets
   wrong"*.
+
+---
+
+## 13. The `CorrectlyUnmatched` split (2026-08-26)
+
+### 13.1 What was wrong, and how long it had been wrong
+
+Every soundness claim in this repository — "0 wrong answers", in the README, in
+`corpus/THREE_SYSTEMS.md`, in §12 of this file — meant **"0 wrong `Verified`"**
+and nothing more. A second outcome type also asserted something, and no gate
+looked at it.
+
+Enumerated over all 30 datasets, 4,994 claims, no sampling:
+
+| branch | right | wrong reason | **row actually settled** | total | accuracy |
+|---|---:|---:|---:|---:|---:|
+| positively derived | 1,828 | 36 | 8 | 1,872 | 97.6% |
+| residual fallthrough | 455 | 206 | **2,461** | 3,122 | **14.6%** |
+| all | 2,283 | 242 | 2,469 | 4,994 | **45.7%** |
+
+`ROLLED_FORWARD` was right **17 times out of 2,397**, and was *specified* as a
+residual: `types.py` defined it as "eligible, not selected" four lines under a
+docstring requiring every reason to be "DERIVED, not assumed".
+
+The earlier claim that these were "almost all at the absence points" was
+arithmetically impossible and is withdrawn: the absence points hold 748 of
+2,469 (30%), and all 30 datasets contribute.
+
+### 13.2 The measurement that changed the design
+
+Correcting the derivations to transcribe `engine/simulator.py` exactly makes
+the reasons **more accurate** (36 wrong → 10) and the soundness gate **five
+times worse** (8 rows that settled → 64). A corrected `dispute_held` promotes
+142 rows out of a residual that asserts nothing into a branch that asserts
+something false.
+
+**The gate is entailment, not accuracy.** Contract §4.7, `DECISIONS.md` §40.
+"Keep one outcome and fix the reasons" was the plan of record until those
+numbers came back, and is recorded as rejected with the measurement attached.
+
+### 13.3 Result — the prediction was committed first
+
+`investigation/DERIVED_BRANCH_AUDIT.md` §4.3 was committed in `1c7403f`,
+before any Part 2 code existed. The resolver was committed in `27259ea`,
+before the oracle ran.
+
+| | predicted | actual |
+|---|---:|---:|
+| `ProvenUnmatched` | **699** | **699** |
+| `OpenBreak` | **4,295** | **4,295** |
+| **G9 failures** | **0** | **0** |
+
+G1, G2, G4, G6, G7, **G9** are all zero across 30 datasets. 28/30 PASS; the two
+failures are unchanged — both PSP-absence points, on G3 and G8.
+
+The sub-split moved, and in the direction the audit flagged:
+
+| `OpenBreak` reason | predicted | actual |
+|---|---:|---:|
+| `upstream_unresolved` | 2,405 | **1,573** |
+| `unexplained` | 593 | **1,469** |
+| `timing_difference` | 952 | 950 |
+| `unexpected_change` | 345 | 303 |
+
+The 2,405 figure was computed with a **ground-truth** cause pointer and was
+named as an upper bound in `DECISIONS.md` §43 before the run. The resolver can
+only name a cause where an attestation exists: 758 rows at the two absence
+points and 50 at the two 0%-coverage cells have no attestation at all, so they
+fall to `UNEXPLAINED`. That is the honest answer and it reports something true
+— without the PSP artefact the resolver cannot say why it failed.
+
+Clustering holds: **1,573 rows under 54 causing lines, 29.1 rows per cause.**
+Aging: 2,600 rows at 0–30 days, 954 at 31–60, 741 at 61–90, 0 beyond.
+
+### 13.4 Running defect log
+
+* **D12 — `attested_row_ids` had three meanings and was never defined.**
+  `RESOLVER_CONTRACT.md` §4.2 named no field. Across five call sites it meant
+  the whole attestation (22 discrepancies, 688 of 688 rows), the offending
+  subset only (`temporal_impossibility`, **13 of 294**), or nothing at all
+  (`credit_reversed`, **0 of 783**). Real cause-pointer coverage was 701 of
+  1,765 rows (39.7%). Fixed in `27259ea`; defined in contract §4.7.5. The
+  silent under-pointing was worse than the empty field, because an empty field
+  is obviously empty.
+* **D13 — the recon feed's `on_hold` is a current-state snapshot read against
+  a past horizon.** `engine/simulator.py:382` defines the hold as
+  time-parameterised and evaluates it at the settlement horizon; the recon
+  column reflects export time, days later. They disagree for **202 of 540
+  disputed rows (37.4%)**. Same defect class as the mislabelled `complete`
+  flag (§6.6): a point-in-time fact read as a timeless one. One direction is
+  recoverable from `disputes.json`'s `opened_at`; the other is **not** —
+  no `hold_until` is published, so "the hold was released before the horizon"
+  cannot be computed by any merchant-side resolver. **Open.**
+* **D14 — the resolver's horizon is not the answer key's.** The resolver uses
+  the last bank `value_date`; the key uses the last batch time. They differ by
+  0.29–2.29 days. For `not_yet_eligible` this is safe *in one direction and
+  provably so*, which is why that reason has 0 counterexamples in 952 rows.
+  Nothing guards a future reason that tests the horizon the other way.
+  **Open, named, unguarded.**
+
+### 13.5 Standing gaps, unchanged by this phase
+
+The consumption/reconstruction conflict (§12.4) is untouched: contract §2.4
+still gives consumption to `Verified` alone, and the two absence datasets still
+fail G3 and G8 for that reason. This phase deliberately built no apparatus for
+it.

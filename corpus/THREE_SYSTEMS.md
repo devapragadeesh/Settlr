@@ -46,7 +46,7 @@ Over-determined: the answer is recoverable by a `GROUP BY`. Any sound resolver m
 |---|---|---|---:|---|---|---|---:|---:|---:|
 | **naive GROUP BY** | 14/14 | 168/168 | 0 | 0/88 | 0/31 | 0 (13) | 168 | 1.00 | 0s |
 | **frozen cascade** | 14/14 | 55/56 | 1 | 50/88 | 16/31 | 0 (13) | 54 | 15.22 | 2313s |
-| **new resolver** | 14/14 | 143/144 | 1 | 0/88 | 0/31 | 13 (13) | 0 | 1.78 | 724s |
+| **new resolver** | 14/14 | 143/144 | 1 | 0/88 | 0/31 | 13 (13) | 0 | 1.78 | 721s |
 
 ## PSP absence — nothing to group on
 
@@ -63,7 +63,7 @@ The recon feed carries no settlement fields and there is no settlement report. T
 |---|---|---|---:|---|---|---|---:|---:|---:|
 | **naive GROUP BY** | 0/2 | 0/0 | 0 | 0/0 | 0/0 | 0 (0) | 0 | 0.00 | 0s |
 | **frozen cascade** | 0/2 | 0/0 | 0 | 0/0 | 0/0 | 0 (0) | 0 | 0.00 | 0s |
-| **new resolver** | 2/2 | 1/1 | 0 | 0/0 | 15/18 | 0 (0) | 0 | 19.25 | 164s |
+| **new resolver** | 2/2 | 1/1 | 0 | 0/0 | 15/18 | 0 (0) | 0 | 19.25 | 166s |
 
 ## datasets_v2 — one FALSE `settlement_id` per dataset
 
@@ -92,7 +92,7 @@ A restatement: one batch's attested membership names rows that are not its compo
 |---|---|---|---:|---|---|---|---:|---:|---:|
 | **naive GROUP BY** | 14/14 | 154/167 | 13 | 0/76 | 0/43 | 0 (26) | 167 | 1.00 | 0s |
 | **frozen cascade** | 14/14 | 48/50 | 2 | 42/76 | 29/43 | 0 (26) | 47 | 17.53 | 2825s |
-| **new resolver** | 14/14 | 132/132 | 0 | 0/76 | 0/43 | 24 (26) | 0 | 1.04 | 594s |
+| **new resolver** | 14/14 | 132/132 | 0 | 0/76 | 0/43 | 24 (26) | 0 | 1.04 | 612s |
 ---
 
 ## What the new resolver gets wrong
@@ -109,7 +109,11 @@ It **FAILS the oracle on 2 of 30 datasets**: `datasets/A20_Bnone_Cmax`, `dataset
 | planted false `settlement_id` caught | 13 / 13 |
 | `AttestationDiscrepancy` correctly identified / planted | 37 / 39 |
 | `AttestationDiscrepancy` reported in total | 62 |
-| `CorrectlyUnmatched` reason right / wrong / row actually settled | 2283 / 242 / **2469** |
+| `ProvenUnmatched` rows that actually settled (G9) | **0** |
+| `ProvenUnmatched` rows in total | 699 |
+| `OpenBreak` rows in total — these assert nothing | 4295 |
+| `OpenBreak` by reason | {'timing_difference': 950, 'unexpected_change': 303, 'unexplained': 1469, 'upstream_unresolved': 1573} |
+| `OpenBreak` clustered under a causing line / distinct causes | 1573 / 54 |
 | `Unresolved` by reason | {'not_our_credit': 90, 'enumeration_truncated': 134, 'other': 31} |
 | mean candidate set size, max over datasets | 116 |
 
@@ -117,7 +121,8 @@ Read in order:
 
 1. **238 of 275 `Verified` are non-decisive.** The composition claim was corroborated by a consequence that a rival composition would also have satisfied. That is not a bug — contract §3.3 says decisiveness is reported, never required, because demanding it would make `Verified` unreachable on exactly the large pools worth exploring — but anyone quoting the `Verified` count without this number is quoting half of it.
 2. **1 wrong `Reconstructed`.** It is an adoption of a bank line that is not a settlement of ours at all, at `datasets/A20_B50_Cmax`. `Reconstructed` errors are measured rather than gated because the claim is weaker than `Verified` — but it is still a wrong answer, and it is the resolver's only one.
-3. **2469 rows called `CorrectlyUnmatched` that did settle.** Almost all of them are at the absence points, where the resolver assigns almost nothing, so everything falls into the unmatched bucket with a derived reason. The reason machinery is right 2283 times and wrong 242 times on rows that genuinely did not settle; the third column is the cost of declining.
+3. **4295 rows are `OpenBreak` against 699 `ProvenUnmatched`** — a 14% proven rate, and that is the intended shape rather than a shortfall. The outcome these replace asserted that 4,994 rows correctly had no bank credit and was **45.7% accurate**; 2,469 of them had settled. A small proven set behind a zero-tolerance gate, plus a large classified and aged break queue, is what production reconciliation actually ships, and it is the more credible artefact. See contract §4.7 and `investigation/DERIVED_BRANCH_AUDIT.md`.
+3b. **1469 rows the resolver could not classify at all**, and that number is reported rather than absorbed. 758 of them are at the two PSP-absence points, where no attestation exists, so no causing line is nameable and the honest answer is that the resolver cannot say why it failed. Widening another reason to absorb these is exactly how `ROLLED_FORWARD` — right 17 times out of 2,397 — came to exist.
 4. **25 `AttestationDiscrepancy` findings the oracle counts as false.** Most are reversed credits: a bank debit revoking an earlier credit is a genuine cross-party contradiction, but the oracle's numerator is `planted wrong attestations`, so a true finding of a different kind scores as a false one. The metric is narrower than the outcome. Two genuine misses remain, both at pool 40 where the bank blanked its own reference: the line falls to tier B, which matches on the amount from the recon rows, and the recon rows are correct — so the corrupted scalar in `settlement_report.csv` is never read.
 5. **The premise-sharing statistic still cannot be computed.** Contract §6.2 needs instances where the corpus's independent enumerator found *k ≥ 2* complete closing subsets AND the resolver exposed a ranking. Exactly **1** instance qualifies across all 30 datasets. The frozen cascade could not supply one because it filters before enumerating; this resolver ranks everything it enumerates but mostly does not need to enumerate, because the attestation resolves the line first. Same unmeasurable, different reason.
 

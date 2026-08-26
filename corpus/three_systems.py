@@ -304,7 +304,12 @@ def defects(run: Path) -> str:
     acc = lambda k: total(lambda r: r["measured"]["accounting"][k])
     ad = lambda k: total(lambda r: r["measured"]["attestation_discrepancy"][k])
     ra = lambda k: total(lambda r: r["measured"]["reconstructed_accuracy"][k])
-    cu = lambda k: total(lambda r: r["measured"]["correctly_unmatched"][k])
+    pu = lambda k: total(lambda r: r["measured"]["proven_unmatched"][k])
+    ob = lambda k: total(lambda r: r["measured"]["open_break"][k])
+    breaks: dict[str, int] = {}
+    for r in rs:
+        for key, value in r["measured"]["open_break"]["by_reason"].items():
+            breaks[key] = breaks.get(key, 0) + value
     failed = [r["dataset"] for r in rs if not r["passed"]]
     reasons: dict[str, int] = {}
     for r in rs:
@@ -330,9 +335,13 @@ def defects(run: Path) -> str:
         f"| `AttestationDiscrepancy` correctly identified / planted | "
         f"{ad('correctly_identified')} / {ad('planted')} |",
         f"| `AttestationDiscrepancy` reported in total | {ad('reported')} |",
-        f"| `CorrectlyUnmatched` reason right / wrong / row actually settled | "
-        f"{cu('reason_correct')} / {cu('reason_wrong')} / "
-        f"**{cu('row_settled_after_all')}** |",
+        f"| `ProvenUnmatched` rows that actually settled (G9) | "
+        f"**{total(lambda r: r['violations_by_gate'].get('G9', 0))}** |",
+        f"| `ProvenUnmatched` rows in total | {pu('rows')} |",
+        f"| `OpenBreak` rows in total — these assert nothing | {ob('rows')} |",
+        f"| `OpenBreak` by reason | {breaks} |",
+        f"| `OpenBreak` clustered under a causing line / distinct causes | "
+        f"{ob('clustered_rows')} / {ob('distinct_causes')} |",
         f"| `Unresolved` by reason | {reasons} |",
         f"| mean candidate set size, max over datasets | "
         f"{max(r['measured']['accounting']['max_candidate_set_size'] for r in rs)} |",
@@ -350,13 +359,23 @@ def defects(run: Path) -> str:
         "`datasets/A20_B50_Cmax`. `Reconstructed` errors are measured rather "
         "than gated because the claim is weaker than `Verified` — but it is "
         "still a wrong answer, and it is the resolver's only one.",
-        f"3. **{cu('row_settled_after_all')} rows called `CorrectlyUnmatched` "
-        "that did settle.** Almost all of them are at the absence points, "
-        "where the resolver assigns almost nothing, so everything falls into "
-        "the unmatched bucket with a derived reason. The reason machinery is "
-        f"right {cu('reason_correct')} times and wrong {cu('reason_wrong')} "
-        "times on rows that genuinely did not settle; the third column is the "
-        "cost of declining.",
+        f"3. **{ob('rows')} rows are `OpenBreak` against {pu('rows')} "
+        "`ProvenUnmatched`** — a 14% proven rate, and that is the intended "
+        "shape rather than a shortfall. The outcome these replace asserted "
+        "that 4,994 rows correctly had no bank credit and was **45.7% "
+        "accurate**; 2,469 of them had settled. A small proven set behind a "
+        "zero-tolerance gate, plus a large classified and aged break queue, "
+        "is what production reconciliation actually ships, and it is the more "
+        "credible artefact. See contract §4.7 and "
+        "`investigation/DERIVED_BRANCH_AUDIT.md`.",
+        f"3b. **{breaks.get('unexplained', 0)} rows the resolver could not "
+        "classify at all**, and that number is reported rather than absorbed. "
+        f"{sum(v for r in rs if 'Bnone' in r['dataset'] for k, v in r['measured']['open_break']['by_reason'].items() if k == 'unexplained')} "
+        "of them are at the two PSP-absence points, where no attestation "
+        "exists, so no causing line is nameable and the honest answer is that "
+        "the resolver cannot say why it failed. Widening another reason to "
+        "absorb these is exactly how `ROLLED_FORWARD` — right 17 times out of "
+        "2,397 — came to exist.",
         f"4. **{ad('reported') - ad('correctly_identified')} "
         "`AttestationDiscrepancy` findings the oracle counts as false.** Most "
         "are reversed credits: a bank debit revoking an earlier credit is a "
