@@ -3,6 +3,11 @@
 Reconciles a payment ledger against a bank statement, an ERP order book and
 GSTR-2B, and — the part that matters — **says what it does not know.**
 
+> The measured work is **settlement-side only**. Every benchmark axis varies
+> pool size, attestation coverage and selection rule; none varies anything
+> about GST. **No GST or ITC claim in this repository is demonstrated** — see
+> *The GST leg is not earned* below.
+
 A settlement batch is a *subset* of eligible payments, net of refunds and
 adjustments: Razorpay's own documentation states that "when settling
 transactions, we will only choose the ones that add up to your current live
@@ -26,6 +31,15 @@ was structurally incapable of exposing the engine's defects. Everything here
 follows from taking that seriously.
 
 ---
+
+## Every number in one place
+
+**[`CLAIMS.md`](CLAIMS.md)** lists every quantitative claim this repository
+makes with its denominator, its scope, the artefact that produces it and the
+command that reproduces it — including the claims that **cannot** be
+regenerated, which are flagged as such. It is generated, so it cannot drift
+from the runs. If a number anywhere else disagrees with it, that number is
+stale.
 
 ## Run it
 
@@ -64,12 +78,53 @@ The full per-dataset table, generated: **[`corpus/THREE_SYSTEMS.md`](corpus/THRE
 <!-- THREE-SYSTEM-SUMMARY:START -->
 | dataset family | naive `GROUP BY` | frozen cascade | new resolver |
 |---|---|---|---|
-| **original 14** | 168/168 right, **0 wrong**<br>abstained 0/88 det, 0/31 rec<br>discrepancies 0/13 | 55/56 right, **1 wrong**<br>abstained 50/88 det, 16/31 rec<br>discrepancies 0/13 | 143/144 right, **1 wrong**<br>abstained 0/88 det, 0/31 rec<br>discrepancies 13/13 |
-| **PSP absent (2)** | **cannot run** | **cannot run** | 1/1 right, **0 wrong**<br>abstained 0/0 det, 15/18 rec<br>discrepancies 0/0 |
-| **false attestation (14)** | 154/167 right, **13 wrong**<br>abstained 0/76 det, 0/43 rec<br>discrepancies 0/26 | 48/50 right, **2 wrong**<br>abstained 42/76 det, 29/43 rec<br>discrepancies 0/26 | 132/132 right, **0 wrong**<br>abstained 0/76 det, 0/43 rec<br>discrepancies 24/26 |
+| **original 14** | coverage **168/168 (100%)**<br>168/168 right, **0 wrong**<br>abstained 0/88 det, 0/31 rec<br>discrepancies 0/13 | coverage **56/168 (33%)**<br>55/56 right, **1 wrong**<br>abstained 50/88 det, 16/31 rec<br>discrepancies 0/13 | coverage **143/168 (85%)**<br>143/143 right, **0 wrong**<br>abstained 0/88 det, 0/31 rec<br>discrepancies 13/13 |
+| **PSP absent (2)** | **cannot run** | **cannot run** | coverage **1/24 (4%)**<br>1/1 right, **0 wrong**<br>abstained 0/0 det, 15/18 rec<br>discrepancies 0/0 |
+| **false attestation (14)** | coverage **167/167 (100%)**<br>154/167 right, **13 wrong**<br>abstained 0/76 det, 0/43 rec<br>discrepancies 0/26 | coverage **50/167 (30%)**<br>48/50 right, **2 wrong**<br>abstained 42/76 det, 29/43 rec<br>discrepancies 0/26 | coverage **132/167 (79%)**<br>132/132 right, **0 wrong**<br>abstained 0/76 det, 0/43 rec<br>discrepancies 24/26 |
 
-*right/attempted* is compositions exactly correct. *abstained* is silence on instances the benchmark proves have exactly one answer — oracle gates G7 and G8. *discrepancies* is planted record errors found. Full table, including mean candidate set size and runtime: [`corpus/THREE_SYSTEMS.md`](corpus/THREE_SYSTEMS.md).
+**Read coverage first.** *coverage* is settlement lines attempted out of settlement lines present — the denominator all three systems face. *right/attempted* is compositions exactly correct **out of the lines that system tried**, so it says nothing about the ones it declined; a system that declines a line and a system that answers it correctly look identical in that ratio. *abstained* is silence on instances that have exactly one answer — oracle gates G7 and G8, and **G8’s uniqueness is scoped to the pool the simulator drew from, 1.4×–14× smaller than the pool the resolver searches** (`DECISIONS.md` §46). *discrepancies* is planted record errors found, and the reported total is larger than the planted total because reversals are real findings the corpus did not plant — the genuinely-false count is **zero**. Full table: [`corpus/THREE_SYSTEMS.md`](corpus/THREE_SYSTEMS.md).
 <!-- THREE-SYSTEM-SUMMARY:END -->
+
+### The uncomfortable result first
+
+**On the original fourteen datasets the naive `GROUP BY` wins outright** — 168
+of 168 compositions, 0 wrong, 100% coverage, abstaining on none of the 88
+determined and 31 reconstructible instances. That is not a fact about the
+resolvers. It is a fact about those datasets: `settlement_id` is populated on
+every settled row and none of them ever plants a false one, so trusting the PSP
+is perfectly calibrated there and the benchmark cannot tell a sound resolver
+from a credulous one (`CHECKPOINT.md` §0.1).
+
+**The fifteen-line version is right until the record is wrong — and then it is
+confidently wrong and cannot tell you.** On the fourteen datasets carrying one
+false `settlement_id` each, it asserts 13 wrong compositions with no way to
+signal doubt, while the resolver asserts 0 and reports 24 of 26 planted record
+errors as findings. That sentence is supported by the false-attestation
+measurements and by nothing else. It does **not** claim the absence cells work:
+there the resolver attempts **1 of 24** settlement lines and fails the oracle.
+
+### `AttestationDiscrepancy`: the false-alarm rate is zero
+
+62 reported against 39 planted reads like a 40% false-alarm rate. It is not
+one, and the difference is checked against the answer key's own
+`reversal_debit` lines rather than argued:
+
+| | count |
+|---|---:|
+| reported | **62** |
+| planted and found | 37 |
+| **true finding of another kind** — a bank debit revoking an earlier credit, corroborated in ground truth | **25** |
+| **genuinely false** | **0** |
+| planted but missed | 2 |
+
+The 25 are a class of record error **the benchmark did not know to plant**: the
+PSP says settled, the bank took the money back, and the two records contradict
+each other. The two misses are `setl_igkKlAiC79ERI6`
+(`datasets_v2/A40_B100_Cfifo`) and `setl_97AhUNQc71f0nz`
+(`datasets_v2/A40_B100_Crandom`) — in both the bank blanked its own reference,
+so the line falls to a tier that matches on amount from the recon rows, and the
+recon rows are correct, so the corrupted scalar in `settlement_report.csv` is
+never read.
 
 ---
 
@@ -127,7 +182,7 @@ An accounting, not a rate. `corpus/oracle.py` scores
 | G4 | rows assigned through a path carrying no warrant |
 | G6 | evidence whose declared provenance the corpus contradicts |
 | **G7** | **abstention on a determined instance** (attested) |
-| **G8** | **abstention on a reconstructible instance** (unattested) |
+| **G8** | **abstention on a reconstructible instance** (unattested) — uniqueness scoped to the simulator's pool, §46 |
 | **G9** | a `ProvenUnmatched` row that actually settled |
 
 G1–G6 are soundness gates and **every one of them is passed by a resolver that
@@ -201,8 +256,12 @@ false-attestation datasets exist. On the original 14, **the naive baseline
 wins outright.**
 
 **The resolver fails the oracle on the two PSP-absence datasets**, on gates G8
-(it stays silent on 15 of 18 bank lines the benchmark proves have exactly one
-explanation) and G3 (the truth is not inside the candidate sets it managed to
+(it stays silent on 15 of 18 bank lines that have exactly one explanation
+**over the pool the simulator drew from** — 3 to 42 rows — while the resolver
+searches a pool it derived itself, 7 to 414 rows, up to **14× larger**;
+uniqueness in 2¹⁵ is not evidence of uniqueness in 2²¹³, so the gate compares
+two frames and the earlier phrasing "the benchmark proves have exactly one
+explanation" was false as written, `DECISIONS.md` §46) and G3 (the truth is not inside the candidate sets it managed to
 build). The cause is structural and was written down before the run: only
 `Verified` may consume rows, `Verified` needs an attestation, and there is no
 attestation there — so the eligible pool grows monotonically across the window,
@@ -234,15 +293,11 @@ named and the resolver cannot say why it failed. The category is reported
 rather than absorbed into a neighbouring one, because absorbing it is exactly
 how `rolled_forward` came to exist.
 
-**87% of `Verified` are non-decisive** — 238 of 275. The composition claim was
-corroborated by a consequence a rival composition would also have satisfied.
-The contract requires that number to be reported precisely so the `Verified`
-count cannot be quoted without it.
+<!-- MEASURED-LIMITATIONS:START -->
+**87% of `Verified` are non-decisive** — 239 of 275. The composition claim was corroborated by a consequence a rival composition would also have satisfied. The contract requires that number to be reported precisely so the `Verified` count cannot be quoted without it.
 
-**The resolver's one wrong answer** is a `Reconstructed` on a bank line that is
-not a settlement of ours, at `datasets/A20_B50_Cmax`. Reconstruction errors are
-measured rather than gated because the claim is weaker than `Verified`. It is
-still a wrong answer.
+**Wrong answers, by outcome type and with its population.** `Verified` wrong: **0** of 275 (gate G1). `ProvenUnmatched` rows that in fact settled: **0** (gate G9). `Reconstructed` wrong: **0** of 1. That last denominator is 1 — `Reconstructed` occurs almost never in this corpus, so it is reported as a **count and not a rate**; neither this figure nor the previous run's “1 wrong of 2” says anything about accuracy.
+<!-- MEASURED-LIMITATIONS:END -->
 
 **A theorem in the contract was false, and a gate enforced it.** §6.3 asserted
 that at 0% attestation coverage no composition claim exists, so `Verified` must

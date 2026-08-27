@@ -157,6 +157,38 @@ def render(results: list[dict]) -> str:
                          for k in ("0-30", "31-60", "61-90", "90+"))
                + f"{agg['unexplained']:>7}")
 
+    # --- the four-way discrepancy split ---------------------------------
+    out += ["", "## `AttestationDiscrepancy` — the four-way split", "",
+            "`reported − planted` is **not** a false-alarm rate. A bank debit "
+            "revoking an earlier credit is a genuine cross-party "
+            "contradiction; it is simply not one the corpus planted. Each is "
+            "checked against a `reversal_debit` line in the answer key rather "
+            "than assumed.", "",
+            "| | count |", "|---|---:|"]
+    ads = lambda k: sum(r["measured"]["attestation_discrepancy"].get(k, 0)
+                        for r in results)
+    out += [f"| reported | {ads('reported')} |",
+            f"| planted and found | {ads('correctly_identified')} |",
+            f"| **true finding of another kind** (reversal, corroborated) | "
+            f"**{ads('true_finding_of_another_kind')}** |",
+            f"| **genuinely false** | **{ads('genuinely_false')}** |",
+            f"| planted but missed | "
+            f"{ads('planted') - ads('correctly_identified')} |"]
+    missed = [(r["dataset"], sid)
+              for r in results
+              for sid in r["measured"]["attestation_discrepancy"].get(
+                  "planted_but_missed", [])]
+    if missed:
+        out += ["", "Planted discrepancies missed, by settlement id:", ""]
+        out += [f"* `{sid}` in `{name}`" for name, sid in missed]
+    bogus = [(r["dataset"], d)
+             for r in results
+             for d in r["measured"]["attestation_discrepancy"].get(
+                 "genuinely_false_detail", [])]
+    out += ["", ("Genuinely false findings: " + ", ".join(
+        f"`{name}` {d}" for name, d in bogus)) if bogus
+        else "**No genuinely false findings.** The false-alarm rate is zero."]
+
     out += ["", "### `OpenBreak` by reason, all datasets", ""]
     reasons: Counter[str] = Counter()
     for r in results:

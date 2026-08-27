@@ -2,7 +2,7 @@
  {
   "dataset": "datasets/A10_B100_Cmax",
   "family": "datasets",
-  "seconds": 28.9,
+  "seconds": 25.64,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -34,12 +34,8 @@
     "planted": 1,
     "reported": 2,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 9,
@@ -95,7 +91,7 @@
  {
   "dataset": "datasets/A20_B0_Cmax",
   "family": "datasets",
-  "seconds": 46.82,
+  "seconds": 59.61,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -108,14 +104,14 @@
     "unresolved": 7,
     "proven_unmatched": 15,
     "open_breaks": 47,
-    "mean_candidate_set_size": 1.0833333333333333,
-    "max_candidate_set_size": 2,
+    "mean_candidate_set_size": 1.5,
+    "max_candidate_set_size": 7,
     "incomplete_enumerations": 0,
     "verified_non_decisive": 11
    },
    "unresolved_by_reason": {
-    "other": 1,
-    "enumeration_truncated": 3,
+    "other": 2,
+    "enumeration_truncated": 2,
     "not_our_credit": 3
    },
    "reconstructed_accuracy": {
@@ -127,12 +123,8 @@
     "planted": 0,
     "reported": 1,
     "correctly_identified": 0,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 15,
@@ -187,7 +179,7 @@
  {
   "dataset": "datasets/A20_B100_Cfifo",
   "family": "datasets",
-  "seconds": 38.55,
+  "seconds": 41.81,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -219,12 +211,8 @@
     "planted": 1,
     "reported": 2,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -280,7 +268,7 @@
  {
   "dataset": "datasets/A20_B100_Cmax",
   "family": "datasets",
-  "seconds": 59.21,
+  "seconds": 58.74,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -312,12 +300,8 @@
     "planted": 1,
     "reported": 2,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -373,7 +357,7 @@
  {
   "dataset": "datasets/A20_B100_Crandom",
   "family": "datasets",
-  "seconds": 61.39,
+  "seconds": 69.37,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -405,12 +389,8 @@
     "planted": 1,
     "reported": 2,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -466,7 +446,7 @@
  {
   "dataset": "datasets/A20_B100_Crandom0",
   "family": "datasets",
-  "seconds": 62.45,
+  "seconds": 60.78,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -475,18 +455,18 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 1,
+    "unresolved": 7,
     "proven_unmatched": 15,
     "open_breaks": 72,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
+    "mean_candidate_set_size": 11.454545454545455,
+    "max_candidate_set_size": 116,
     "incomplete_enumerations": 0,
     "verified_non_decisive": 8
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
-    "enumeration_truncated": 4,
+    "enumeration_truncated": 3,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -498,12 +478,8 @@
     "planted": 1,
     "reported": 2,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 15,
@@ -558,7 +534,7 @@
  {
   "dataset": "datasets/A20_B50_Cmax",
   "family": "datasets",
-  "seconds": 23.83,
+  "seconds": 38.3,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -566,13 +542,13 @@
    "accounting": {
     "verified": 10,
     "attestation_discrepancy": 2,
-    "reconstructed": 0,
-    "ambiguous": 1,
+    "reconstructed": 1,
+    "ambiguous": 0,
     "unresolved": 7,
-    "proven_unmatched": 17,
-    "open_breaks": 84,
-    "mean_candidate_set_size": 1.8181818181818181,
-    "max_candidate_set_size": 10,
+    "proven_unmatched": 15,
+    "open_breaks": 71,
+    "mean_candidate_set_size": 1.0,
+    "max_candidate_set_size": 1,
     "incomplete_enumerations": 0,
     "verified_non_decisive": 9
    },
@@ -583,49 +559,45 @@
    },
    "reconstructed_accuracy": {
     "correct": 0,
-    "wrong": 0,
+    "wrong": 1,
     "note": "a weaker claim than Verified, so errors here are MEASURED, not gated -- but they are still errors and are reported"
    },
    "attestation_discrepancy": {
     "planted": 1,
     "reported": 2,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
-    "rows": 17,
+    "rows": 15,
     "row_settled_after_all": 0,
-    "reason_correct": 17,
+    "reason_correct": 15,
     "reason_wrong": 0,
     "note": "GATED at zero by G9. A positive claim, unlike OpenBreak"
    },
    "open_break": {
-    "rows": 84,
+    "rows": 71,
     "by_reason": {
      "timing_difference": 30,
-     "unexpected_change": 7,
-     "unexplained": 32,
-     "upstream_unresolved": 15
+     "unexpected_change": 6,
+     "unexplained": 29,
+     "upstream_unresolved": 6
     },
     "by_age": {
-     "0-30": 70,
+     "0-30": 63,
      "61-90": 4,
-     "31-60": 10
+     "31-60": 4
     },
-    "clustered_rows": 15,
+    "clustered_rows": 6,
     "distinct_causes": 1,
-    "rows_per_cause": 15.0,
-    "rows_that_did_settle": 38,
+    "rows_per_cause": 6.0,
+    "rows_that_did_settle": 26,
     "note": "NOT GATED and not scored for correctness -- an OpenBreak asserts nothing. `rows_that_did_settle` is descriptive: those rows are correctly OPEN, not correctly explained"
    },
    "foreign_lines": {
     "in_file": 8,
-    "falsely_adopted": 0,
+    "falsely_adopted": 1,
     "note": "no analogue exists in the frozen set, whose bank statement is a bijection with the batch list"
    },
    "premise_sharing": {
@@ -651,7 +623,7 @@
  {
   "dataset": "datasets/A20_B75_Cmax",
   "family": "datasets",
-  "seconds": 66.68,
+  "seconds": 70.54,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -683,12 +655,8 @@
     "planted": 1,
     "reported": 2,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 15,
@@ -744,7 +712,7 @@
  {
   "dataset": "datasets/A20_Bnone_Cmax",
   "family": "datasets",
-  "seconds": 76.05,
+  "seconds": 89.73,
   "passed": false,
   "violations_by_gate": {
    "G3": 9,
@@ -753,14 +721,14 @@
   "violations": [
    "G3   bank[5]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[7]    the truth is absent from a candidate set of 200 (enumeration incomplete)",
-   "G3   bank[9]    the truth is absent from a candidate set of 9 (enumeration incomplete)",
+   "G3   bank[9]    the truth is absent from a candidate set of 14 (enumeration incomplete)",
    "G3   bank[10]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[12]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[14]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[15]   the truth is absent from a candidate set of 10 (enumeration incomplete)",
-   "G3   bank[16]   the truth is absent from a candidate set of 60 (enumeration incomplete)",
-   "G3   bank[17]   the truth is absent from a candidate set of 177 (enumeration incomplete)",
-   "G8   bank[1]    Ambiguous(178) on an instance with exactly one closing subset -- unattested, but exactly one subset closes and it closes nothing else in the window",
+   "G3   bank[16]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[17]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G8   bank[1]    Ambiguous(76) on an instance with exactly one closing subset -- unattested, but exactly one subset closes and it closes nothing else in the window",
    "G8   bank[5]    Unresolved(enumeration_truncated) on a determined instance -- unattested, but exactly one subset closes and it closes nothing else in the window",
    "G8   bank[7]    Unresolved(enumeration_truncated) on a determined instance -- unattested, but exactly one subset closes and it closes nothing else in the window"
   ],
@@ -773,8 +741,8 @@
     "unresolved": 17,
     "proven_unmatched": 17,
     "open_breaks": 294,
-    "mean_candidate_set_size": 89.5,
-    "max_candidate_set_size": 178,
+    "mean_candidate_set_size": 38.5,
+    "max_candidate_set_size": 76,
     "incomplete_enumerations": 0,
     "verified_non_decisive": 0
    },
@@ -792,12 +760,8 @@
     "planted": 0,
     "reported": 1,
     "correctly_identified": 0,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -855,7 +819,7 @@
  {
   "dataset": "datasets/A30_B100_Cmax",
   "family": "datasets",
-  "seconds": 38.69,
+  "seconds": 44.4,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -887,12 +851,8 @@
     "planted": 1,
     "reported": 1,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 0,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 0,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 25,
@@ -948,7 +908,7 @@
  {
   "dataset": "datasets/A40_B100_Cfifo",
   "family": "datasets",
-  "seconds": 47.29,
+  "seconds": 42.51,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -980,12 +940,8 @@
     "planted": 1,
     "reported": 2,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 32,
@@ -1041,7 +997,7 @@
  {
   "dataset": "datasets/A40_B100_Cmax",
   "family": "datasets",
-  "seconds": 53.92,
+  "seconds": 79.05,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1073,12 +1029,8 @@
     "planted": 1,
     "reported": 2,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 34,
@@ -1134,7 +1086,7 @@
  {
   "dataset": "datasets/A40_B100_Crandom",
   "family": "datasets",
-  "seconds": 48.28,
+  "seconds": 41.55,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1166,12 +1118,8 @@
     "planted": 1,
     "reported": 1,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 0,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 0,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 34,
@@ -1227,7 +1175,7 @@
  {
   "dataset": "datasets/A40_B50_Cmax",
   "family": "datasets",
-  "seconds": 43.12,
+  "seconds": 35.06,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1259,12 +1207,8 @@
     "planted": 1,
     "reported": 2,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 32,
@@ -1320,7 +1264,7 @@
  {
   "dataset": "datasets/A40_Bnone_Cmax",
   "family": "datasets",
-  "seconds": 79.07,
+  "seconds": 76.02,
   "passed": false,
   "violations_by_gate": {
    "G3": 11,
@@ -1368,12 +1312,8 @@
     "planted": 0,
     "reported": 1,
     "correctly_identified": 0,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 32,
@@ -1428,7 +1368,7 @@
  {
   "dataset": "datasets/A60_B100_Cmax",
   "family": "datasets",
-  "seconds": 52.58,
+  "seconds": 54.13,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1460,12 +1400,8 @@
     "planted": 1,
     "reported": 2,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 51,
@@ -1521,7 +1457,7 @@
  {
   "dataset": "datasets_v2/A10_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 33.07,
+  "seconds": 29.82,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1553,12 +1489,8 @@
     "planted": 2,
     "reported": 3,
     "correctly_identified": 2,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 9,
@@ -1614,7 +1546,7 @@
  {
   "dataset": "datasets_v2/A20_B0_Cmax",
   "family": "datasets_v2",
-  "seconds": 39.61,
+  "seconds": 37.01,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1630,7 +1562,7 @@
     "mean_candidate_set_size": 1.0,
     "max_candidate_set_size": 1,
     "incomplete_enumerations": 0,
-    "verified_non_decisive": 10
+    "verified_non_decisive": 9
    },
    "unresolved_by_reason": {
     "enumeration_truncated": 4,
@@ -1646,12 +1578,8 @@
     "planted": 0,
     "reported": 1,
     "correctly_identified": 0,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -1706,7 +1634,7 @@
  {
   "dataset": "datasets_v2/A20_B100_Cfifo",
   "family": "datasets_v2",
-  "seconds": 16.52,
+  "seconds": 16.51,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1738,12 +1666,8 @@
     "planted": 2,
     "reported": 3,
     "correctly_identified": 2,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -1799,7 +1723,7 @@
  {
   "dataset": "datasets_v2/A20_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 26.52,
+  "seconds": 31.58,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1812,8 +1736,8 @@
     "unresolved": 7,
     "proven_unmatched": 13,
     "open_breaks": 101,
-    "mean_candidate_set_size": 2.0,
-    "max_candidate_set_size": 11,
+    "mean_candidate_set_size": 1.3,
+    "max_candidate_set_size": 4,
     "incomplete_enumerations": 0,
     "verified_non_decisive": 6
    },
@@ -1831,12 +1755,8 @@
     "planted": 2,
     "reported": 3,
     "correctly_identified": 2,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 13,
@@ -1892,7 +1812,7 @@
  {
   "dataset": "datasets_v2/A20_B100_Crandom",
   "family": "datasets_v2",
-  "seconds": 50.27,
+  "seconds": 54.14,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1924,12 +1844,8 @@
     "planted": 2,
     "reported": 2,
     "correctly_identified": 2,
-    "true_finding_of_another_kind": 0,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 0,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -1985,7 +1901,7 @@
  {
   "dataset": "datasets_v2/A20_B100_Crandom0",
   "family": "datasets_v2",
-  "seconds": 61.72,
+  "seconds": 59.85,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2017,12 +1933,8 @@
     "planted": 2,
     "reported": 3,
     "correctly_identified": 2,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 13,
@@ -2078,7 +1990,7 @@
  {
   "dataset": "datasets_v2/A20_B50_Cmax",
   "family": "datasets_v2",
-  "seconds": 24.3,
+  "seconds": 19.54,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2110,12 +2022,8 @@
     "planted": 2,
     "reported": 2,
     "correctly_identified": 2,
-    "true_finding_of_another_kind": 0,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 0,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -2170,7 +2078,7 @@
  {
   "dataset": "datasets_v2/A20_B75_Cmax",
   "family": "datasets_v2",
-  "seconds": 33.71,
+  "seconds": 34.4,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2202,12 +2110,8 @@
     "planted": 2,
     "reported": 3,
     "correctly_identified": 2,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -2263,7 +2167,7 @@
  {
   "dataset": "datasets_v2/A30_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 60.82,
+  "seconds": 44.76,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2295,12 +2199,8 @@
     "planted": 2,
     "reported": 3,
     "correctly_identified": 2,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 25,
@@ -2356,7 +2256,7 @@
  {
   "dataset": "datasets_v2/A40_B100_Cfifo",
   "family": "datasets_v2",
-  "seconds": 47.42,
+  "seconds": 43.02,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2365,11 +2265,11 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 2,
-    "unresolved": 6,
+    "ambiguous": 1,
+    "unresolved": 7,
     "proven_unmatched": 30,
     "open_breaks": 127,
-    "mean_candidate_set_size": 1.3333333333333333,
+    "mean_candidate_set_size": 1.2727272727272727,
     "max_candidate_set_size": 4,
     "incomplete_enumerations": 0,
     "verified_non_decisive": 10
@@ -2377,7 +2277,7 @@
    "unresolved_by_reason": {
     "not_our_credit": 3,
     "other": 1,
-    "enumeration_truncated": 2
+    "enumeration_truncated": 3
    },
    "reconstructed_accuracy": {
     "correct": 0,
@@ -2388,14 +2288,8 @@
     "planted": 2,
     "reported": 2,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [
-     "setl_igkKlAiC79ERI6"
-    ],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 30,
@@ -2451,7 +2345,7 @@
  {
   "dataset": "datasets_v2/A40_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 42.47,
+  "seconds": 70.41,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2483,12 +2377,8 @@
     "planted": 2,
     "reported": 3,
     "correctly_identified": 2,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 32,
@@ -2544,7 +2434,7 @@
  {
   "dataset": "datasets_v2/A40_B100_Crandom",
   "family": "datasets_v2",
-  "seconds": 83.0,
+  "seconds": 79.98,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2576,14 +2466,8 @@
     "planted": 2,
     "reported": 2,
     "correctly_identified": 1,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [
-     "setl_97AhUNQc71f0nz"
-    ],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 32,
@@ -2639,7 +2523,7 @@
  {
   "dataset": "datasets_v2/A40_B50_Cmax",
   "family": "datasets_v2",
-  "seconds": 45.62,
+  "seconds": 46.45,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2671,12 +2555,8 @@
     "planted": 2,
     "reported": 3,
     "correctly_identified": 2,
-    "true_finding_of_another_kind": 1,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 34,
@@ -2732,7 +2612,7 @@
  {
   "dataset": "datasets_v2/A60_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 43.05,
+  "seconds": 44.67,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2764,12 +2644,8 @@
     "planted": 2,
     "reported": 2,
     "correctly_identified": 2,
-    "true_finding_of_another_kind": 0,
-    "genuinely_false": 0,
-    "genuinely_false_detail": [],
-    "planted_but_missed": [],
     "false_findings": 0,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "the highest-value output the contract defines, and the one the old engine structurally could not produce"
    },
    "proven_unmatched": {
     "rows": 49,

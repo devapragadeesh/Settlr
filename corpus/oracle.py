@@ -421,12 +421,46 @@ def _measure(output, truth, by_line, bank_truth, determined,
         expected = by_line.get(outcome.bank_index)
         if expected and expected["settlement_id"] in wrong_attested:
             true_positive += 1
+    # FOUR-WAY, not two-way. "reported minus planted" reads as a false-alarm
+    # rate to anyone skimming, and it is not one: a bank debit revoking an
+    # earlier credit IS a cross-party contradiction, it is simply not one the
+    # corpus planted. The corpus records reversals as `reversal_debit` bank
+    # lines naming their settlement, so this is CHECKED rather than asserted.
+    reversed_settlements = {line["true_settlement_id"]
+                            for line in truth["bank_lines"]
+                            if line["kind"] == "reversal_debit"
+                            and line["true_settlement_id"]}
+    other_kind = genuinely_false = 0
+    false_detail: list[str] = []
+    for outcome in detected:
+        expected = by_line.get(outcome.bank_index)
+        settlement = expected["settlement_id"] if expected else None
+        if settlement in wrong_attested:
+            continue
+        kind = outcome.contradiction.kind.value
+        corroborated = (kind == "credit_reversed"
+                        and settlement in reversed_settlements)
+        if corroborated:
+            other_kind += 1
+        else:
+            genuinely_false += 1
+            false_detail.append(f"bank[{outcome.bank_index}] {kind}")
+    missed = sorted(wrong_attested - {
+        by_line[o.bank_index]["settlement_id"] for o in detected
+        if by_line.get(o.bank_index)})
     measured["attestation_discrepancy"] = {
         "planted": planted, "reported": len(detected),
         "correctly_identified": true_positive,
+        "true_finding_of_another_kind": other_kind,
+        "genuinely_false": genuinely_false,
+        "genuinely_false_detail": false_detail,
+        "planted_but_missed": missed,
         "false_findings": len(detected) - true_positive,
-        "note": "the highest-value output the contract defines, and the one "
-                "the old engine structurally could not produce"}
+        "note": "FOUR-WAY. `false_findings` is retained for continuity and is "
+                "MISLEADING on its own: it is reported minus planted, and a "
+                "reversal corroborated by a reversal_debit line in the answer "
+                "key is a true finding of a kind the corpus did not plant. "
+                "`genuinely_false` is the false-alarm count"}
 
     # --- G9: a ProvenUnmatched row that actually settled ------------------
     # Contract 4.7.1. Until this gate existed, "0 wrong answers" in every

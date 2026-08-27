@@ -448,6 +448,39 @@ leak itself would assume the answer the audit is meant to find.
 
 ## 8. What is NOT covered
 
+### 8.0 DEFECT (2026-08-27): the closure register is scoped to a pool no resolver can see
+
+`corpus/generator/build.py:853` builds each batch's closure register over
+**the exact pool the simulator drew from**, and says so: *"a register built
+over a RECONSTRUCTED pool measures the reconstruction, not the truth."* That
+is correct for the register's own purpose.
+
+`corpus/oracle.py`'s `ReconstructibleInstance` then promotes
+`closure.count == 1` into the premise of **gate G8** — abstaining here is a
+defect — while the resolver under test searches a pool it derived itself:
+
+| dataset | line | true pool | resolver pool | ratio |
+|---|---:|---:|---:|---:|
+| `A20_Bnone_Cmax` | 16 | 15 | 213 | 14.2× |
+| `A20_Bnone_Cmax` | 18 | 23 | 265 | 11.5× |
+| `A40_Bnone_Cmax` | 15 | 38 | 414 | 10.9× |
+
+Uniqueness in 2¹⁵ is not evidence of uniqueness in 2²¹³. All 18 reconstructible
+instances at the absence points, and all 15 G8 failures, rest on this.
+
+**The gate is not loosened** — see `DECISIONS.md` §46. Every statement of a G8
+result now carries its pool scope inline instead.
+
+**The measurement that would settle it, named and not taken:** closure count
+over the *derived* pool at those 18 lines. Unmeasured. It is new apparatus.
+
+This is `CHECKPOINT.md` §12.4 from the other end: contract §2.4 gives
+consumption to `Verified` alone, nothing attests at PSP absence, so the pool
+grows monotonically to ~10× the true pool. The gate and the open consumption
+problem are one problem.
+
+
+
 Silence reads as ignorance. Everything below was considered and decided.
 
 ### The corpus's most important finding about itself

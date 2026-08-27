@@ -81,6 +81,22 @@ def groupable(dataset: Path) -> bool:
     return any("settlement_id" in row for row in rows)
 
 
+def resistance(result: dict) -> float:
+    """The fraction of compositions the trivial predicate MISSES, as a %.
+
+    This is the honest inverse of the verdict label. `PARTIAL` reads as "the
+    benchmark resisted"; at 8.3% resistance it means a fifteen-line `GROUP BY`
+    recovered eleven of twelve compositions and the benchmark barely resisted
+    at all. A dataset the predicate cannot run on at all is 100%.
+    """
+    if result["verdict"] == "N/A":
+        return 100.0
+    attempted = result["compositions_attempted"]
+    if not attempted:
+        return 100.0
+    return 100.0 * (1 - result["compositions_correct"] / attempted)
+
+
 def verdict(result: dict) -> str:
     attempted = result["compositions_attempted"]
     lines = result["our_bank_lines"]
@@ -118,51 +134,87 @@ def run(datasets: list[Path]) -> list[dict]:
 
 def render(results: list[dict]) -> str:
     out = ["# TRIVIALITY CHECK -- does a GROUP BY solve the task?", "",
+           "**RESISTANCE is the number that matters**: the fraction of "
+           "compositions the trivial predicate MISSES. A dataset at 8.3% "
+           "resistance is not a hard dataset -- a `GROUP BY` still recovers "
+           "eleven twelfths of it.", "",
            f"{'family':<13}{'dataset':<22}{'line->batch':>12}"
            f"{'composition':>13}{'foreign rej':>13}{'abstain':>9}"
-           f"  verdict",
-           "-" * 88]
+           f"{'RESIST':>8}  verdict",
+           "-" * 96]
     for r in results:
         if r["verdict"] == "N/A":
             out.append(f"{r['family']:<13}{r['dataset']:<22}"
-                       f"{'-':>12}{'-':>13}{'-':>13}{'-':>9}  N/A "
-                       f"({r['note'].split(':')[0]})")
+                       f"{'-':>12}{'-':>13}{'-':>13}{'-':>9}{'100%':>8}  "
+                       f"N/A ({r['note'].split(':')[0]})")
             continue
         out.append(
             f"{r['family']:<13}{r['dataset']:<22}"
             f"{r['line_to_batch_correct']:>5}/{r['our_bank_lines']:<6}"
             f"{r['compositions_correct']:>6}/{r['compositions_attempted']:<6}"
             f"{r['foreign_rejected']:>6}/{r['foreign_lines']:<6}"
-            f"{r['abstentions']:>9}  {r['verdict']}")
+            f"{r['abstentions']:>9}{resistance(r):>7.1f}%  {r['verdict']}")
     scored = [r for r in results if r["verdict"] != "N/A"]
+    totals = {key: sum(r[key] for r in scored) for key in
+              ("line_to_batch_correct", "our_bank_lines",
+               "compositions_correct", "compositions_attempted",
+               "foreign_rejected", "foreign_lines",
+               "determined_instances", "reconstructible_instances")}
     if scored:
         totals = {key: sum(r[key] for r in scored) for key in
                   ("line_to_batch_correct", "our_bank_lines",
                    "compositions_correct", "compositions_attempted",
                    "foreign_rejected", "foreign_lines",
                    "determined_instances", "reconstructible_instances")}
-        out += ["-" * 88,
+        out += ["-" * 96,
                 f"{'TOTAL':<35}"
                 f"{totals['line_to_batch_correct']:>5}/{totals['our_bank_lines']:<6}"
                 f"{totals['compositions_correct']:>6}/"
                 f"{totals['compositions_attempted']:<6}"
                 f"{totals['foreign_rejected']:>6}/{totals['foreign_lines']:<6}"
-                f"{0:>9}",
+                f"{0:>9}"
+                f"{100 * (1 - totals['compositions_correct'] / totals['compositions_attempted']):>7.1f}%"
+                "  <- over the 28 datasets a GROUP BY can run on at all",
                 "",
                 f"abstentions on {totals['determined_instances']} determined + "
                 f"{totals['reconstructible_instances']} reconstructible "
                 "instances: 0"]
     counts = {v: sum(1 for r in results if r["verdict"] == v)
               for v in ("TRIVIAL", "PARTIAL", "NOT TRIVIAL", "N/A")}
-    out += ["", f"verdicts: {counts}", ""]
+    out += [""]
     if counts["TRIVIAL"] == len(results):
         out += ["EVERY dataset is solved by a GROUP BY. The benchmark is "
                 "measuring a handicap the engine under test imposed on "
                 "itself, not a difficulty the data contains."]
-    else:
-        out += [f"{len(results) - counts['TRIVIAL']} of {len(results)} datasets "
-                "resist the trivial predicate. Those are the cells that "
-                "measure anything."]
+        return "\n".join(out)
+
+    runnable = [r for r in results if r["verdict"] != "N/A"]
+    cannot_run = [r for r in results if r["verdict"] == "N/A"]
+    recovered = (totals["compositions_correct"] / totals["compositions_attempted"]
+                 if runnable else 0.0)
+    worst = max((resistance(r) for r in runnable), default=0.0)
+    out += [
+        "## The verdict, stated as the measurement rather than as a label", "",
+        f"**On {len(runnable)} of {len(results)} datasets a fifteen-line "
+        f"`GROUP BY` recovers {recovered:.1%} of compositions "
+        f"({totals['compositions_correct']} of "
+        f"{totals['compositions_attempted']}). On {len(cannot_run)} it cannot "
+        "run at all.** Those "
+        f"{len(cannot_run)} are the only cells that genuinely defeat the "
+        "trivial predicate.",
+        "",
+        f"The highest resistance among datasets the predicate CAN run on is "
+        f"**{worst:.1f}%** — one composition in twelve. `PARTIAL` in the table "
+        "above must not be read as `NOT TRIVIAL`: a dataset where naive gets "
+        "eleven of twelve right is a dataset naive very nearly solves.",
+        "",
+        f"An earlier version of this file concluded that "
+        f"\"{len(results) - counts['TRIVIAL']} of {len(results)} datasets "
+        "resist the trivial predicate\", counting every `PARTIAL` as "
+        "resistance. That was too generous by "
+        f"{counts['PARTIAL']} datasets and is withdrawn.",
+        "",
+        f"verdict counts: {counts}"]
     return "\n".join(out)
 
 

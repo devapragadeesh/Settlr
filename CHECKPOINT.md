@@ -428,7 +428,10 @@ embedding it on 9 of 12 and posting lag 0 days always. That is a real defect in
 real-shaped data, measured, and every recon vendor has some version of it. It
 does not depend on any corpus design choice.
 
-**Runner-up: 56 unrepresentable claims against 0 wrong answers**, 45 of them via
+**Runner-up: 56 unrepresentable claims against 0 wrong answers** — "wrong
+answers" here means *wrong `Determinate` compositions by the frozen cascade on
+the corpus*, and nothing wider; see §13.1 for what that phrase concealed
+elsewhere in this repository. 45 of the 56 arrive via
 `certain_rows`. D3 is not an edge case in that engine — it is its *main*
 assignment path once ambiguity dominates. The defect is not that the answers are
 wrong; it is that most confident ones are claims nothing in the record supports,
@@ -816,3 +819,113 @@ The consumption/reconstruction conflict (§12.4) is untouched: contract §2.4
 still gives consumption to `Verified` alone, and the two absence datasets still
 fail G3 and G8 for that reason. This phase deliberately built no apparatus for
 it.
+
+---
+
+## 14. The reference-frame sweep, F1, and the reporting-honesty pass (2026-08-27)
+
+### 14.1 The defect class has five instances, and the sweep found two of them
+
+`DECISIONS.md` §44 names the class: **a predicate reading the wrong reference
+frame** — wrong clock, wrong horizon, wrong quantity, wrong pool — while
+looking locally correct at every call site.
+
+It was named after three (§39, §41, D13). A directed sweep of **20 predicates**
+across `resolver/` and `corpus/oracle.py` found two more, and the more serious
+of the two is in the **oracle**.
+
+The sweep was run by someone who had just catalogued three instances and was
+explicitly hunting a fourth. That it found two is the finding: **this class is
+not eliminable by care, only by mechanism**, and the mechanism §44 asks for —
+frames named in code — is weaker than a checker that verifies them. No such
+checker exists. Named gap, not a solved problem.
+
+A mixed-frame computation also survives **one line above** the fix that removed
+it (`enumerate_closures.py:98` against `:119`). It is label-only and is
+retained deliberately with a comment, because tidying it destroys the evidence
+for how these hide.
+
+### 14.2 F1 — fixed, and it removed the resolver's only wrong answer
+
+`resolver/eligibility.py` dropped a row from the pool for carrying `on_hold`, a
+current-state snapshot, while building the pool as at a past `value_date`.
+**0 rows were affected across 30 datasets** — it was correct here by a property
+of the generated data rather than of the rule, which is D2's shape exactly, and
+is why it was fixed rather than left.
+
+Prediction committed in `427aea6` before the fix existed; fix in `4b65764`;
+scored once.
+
+| | predicted | actual |
+|---|---|---:|
+| G3 | 20–24, equal or worse | **20** |
+| G8 | 15–18, equal or worse | **15** |
+| G9 | 0 exactly | **0** |
+| newly FAILING datasets | 0 | **0** |
+| `ProvenUnmatched` | **699 exactly** | **701** ❌ |
+| `OpenBreak` | 4,295 or higher | **4,308** |
+| `Reconstructed` wrong | not predicted | **1 → 0** |
+
+**The prediction was wrong in one line.** It argued `ProvenUnmatched` could not
+move because rows returning from a destroyed `Reconstructed` "settled, so they
+cannot become `ProvenUnmatched`" — assuming the assignment being destroyed was
+a *true* one. It was the false one.
+
+**Unpredicted, and the interesting result:** restoring the held rows gave
+`datasets/A20_B50_Cmax` a rival closing subset, and the resolver's only wrong
+answer fell from `Reconstructed` to `Ambiguous`. **A pool that is too small
+hides rivals, and a hidden rival is indistinguishable from no rival.** One
+instance, one line, one dataset — and `Reconstructed` occurs once in the whole
+corpus, so it is a count, not a rate.
+
+### 14.3 Reporting, rewritten where it flattered
+
+Three framings were measurably too generous and now read worse:
+
+* **Triviality.** "15 of 30 datasets resist the trivial predicate" counted
+  every `PARTIAL` as resistance. Withdrawn. Measured: **on 28 of 30 a `GROUP
+  BY` recovers 96.1% of compositions (322 of 335); on 2 it cannot run at all.**
+  A RESISTANCE column now reports what the predicate *misses*; the worst
+  runnable dataset is 9.1%.
+* **Coverage.** "143/144" against "168/168" were never comparable. Every totals
+  table now leads with **attempted / settlement lines**: naive **168/168
+  (100%)**, frozen **56/168 (33%)**, resolver **143/168 (85%)** — and at PSP
+  absence the resolver attempts **1 of 24 (4%)**.
+* **G8's premise.** "the benchmark proves have exactly one explanation" was
+  **false as written** and is rescoped everywhere (`DECISIONS.md` §46).
+
+One framing was too *harsh* and is promoted: the `AttestationDiscrepancy`
+false-alarm rate is **zero**. Of 62 reported, 37 are planted-and-found, **25
+are corroborated reversals — a class of record error the benchmark did not know
+to plant** — and 0 are genuinely false. Each non-planted finding is checked
+against a `reversal_debit` line in the answer key rather than argued.
+
+### 14.4 `CLAIMS.md`
+
+Every quantitative claim with its denominator, scope, producing artefact and
+reproducing command — generated, so it cannot drift — plus the claims that
+**cannot** be regenerated, flagged as such.
+
+Writing it caught a live error **in itself**: the first draft reported 14
+abstentions on determined instances by computing `instances − resolved`. Those
+14 are `AttestationDiscrepancy` — findings, not silences — and the true
+abstention count is the gate's, **0**. The ledger made the exact mistake it
+exists to prevent, on its first run.
+
+### 14.5 Running defect log
+
+* **D13** — open, and bounded by the API rather than by this implementation.
+  The Razorpay dispute entity publishes no resolution timestamp of any kind, so
+  *"the hold was released before the horizon"* is not computable by **any**
+  resolver consuming this feed (`DECISIONS.md` §44.5).
+* **D14** — **closed.** `test_the_resolver_horizon_is_never_earlier_than_the_
+  answer_keys` fails if the horizon ordering that makes `TIMING_DIFFERENCE`
+  sound ever inverts. Watched to fail across all 30 datasets.
+* **D15 (new, open)** — the closure register is scoped to a pool no resolver
+  can see. G8's premise is uniqueness over the simulator's pool (3–42 rows)
+  while the resolver searches its own (7–414 rows, up to 14× larger). All 15 G8
+  failures rest on this. The gate is **not** loosened; the claim is rescoped.
+  The settling measurement — closure count over the derived pool at those 18
+  lines — is **named and not taken** (`DECISIONS.md` §46, `CORPUS_SPEC.md`
+  §8.0). This is §12.4 seen from the other end: the gate and the open
+  consumption problem are one problem.

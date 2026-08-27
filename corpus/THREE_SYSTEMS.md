@@ -26,12 +26,12 @@ Over-determined: the answer is recoverable by a `GROUP BY`. Any sound resolver m
 | dataset | naive | frozen | resolver | naive wrong | frozen wrong | resolver wrong | frozen abstained det/rec | resolver abstained det/rec | AD found (planted) | unwarranted claims n/f/r | mean k n/f/r |
 |---|---|---|---|---:|---:|---:|---|---|---|---|---|
 | `datasets/A10_B100_Cmax` | 12/12 | 12/12 | 10/10 | 0 | 0 | 0 | 0/11, 0/1 | 0/11, 0/1 | 1 (1) | 12/0/0 | 1.00/1.00/1.00 |
-| `datasets/A20_B0_Cmax` | 12/12 | 3/3 | 11/11 | 0 | 0 | 0 | 0/0, 8/11 | 0/0, 0/11 | 0 (0) | 12/4/0 | 1.00/23.21/1.50 |
+| `datasets/A20_B0_Cmax` | 12/12 | 3/3 | 11/11 | 0 | 0 | 0 | 0/0, 8/11 | 0/0, 0/11 | 0 (0) | 12/4/0 | 1.00/23.21/1.08 |
 | `datasets/A20_B100_Cfifo` | 12/12 | 4/4 | 10/10 | 0 | 0 | 0 | 6/10, 1/1 | 0/10, 0/1 | 1 (1) | 12/4/0 | 1.00/14.25/1.00 |
 | `datasets/A20_B100_Cmax` | 12/12 | 6/6 | 10/10 | 0 | 0 | 0 | 5/10, 0/1 | 0/10, 0/1 | 1 (1) | 12/5/0 | 1.00/6.92/1.00 |
 | `datasets/A20_B100_Crandom` | 12/12 | 3/3 | 10/10 | 0 | 0 | 0 | 7/9, 0/1 | 0/9, 0/1 | 1 (1) | 12/4/0 | 1.00/11.30/1.00 |
-| `datasets/A20_B100_Crandom0` | 12/12 | 4/4 | 10/10 | 0 | 0 | 0 | 2/6, 0/0 | 0/6, 0/0 | 1 (1) | 12/3/0 | 1.00/16.08/11.45 |
-| `datasets/A20_B50_Cmax` | 12/12 | 6/6 | 10/11 | 0 | 0 | 1 | 3/4, 3/7 | 0/4, 0/7 | 1 (1) | 12/9/0 | 1.00/4.50/1.00 |
+| `datasets/A20_B100_Crandom0` | 12/12 | 4/4 | 10/10 | 0 | 0 | 0 | 2/6, 0/0 | 0/6, 0/0 | 1 (1) | 12/3/0 | 1.00/16.08/1.00 |
+| `datasets/A20_B50_Cmax` | 12/12 | 6/6 | 10/10 | 0 | 0 | 0 | 3/4, 3/7 | 0/4, 0/7 | 1 (1) | 12/9/0 | 1.00/4.50/1.82 |
 | `datasets/A20_B75_Cmax` | 12/12 | 4/4 | 10/10 | 0 | 0 | 0 | 5/8, 3/4 | 0/8, 0/4 | 1 (1) | 12/6/0 | 1.00/13.00/1.00 |
 | `datasets/A30_B100_Cmax` | 12/12 | 4/4 | 11/11 | 0 | 0 | 0 | 6/9, 0/1 | 0/9, 0/1 | 1 (1) | 12/3/0 | 1.00/14.10/1.00 |
 | `datasets/A40_B100_Cfifo` | 12/12 | 3/4 | 10/10 | 0 | 1 | 0 | 4/6, 0/1 | 0/6, 0/1 | 1 (1) | 12/2/0 | 1.00/20.00/1.00 |
@@ -42,11 +42,13 @@ Over-determined: the answer is recoverable by a `GROUP BY`. Any sound resolver m
 
 **Totals — Original fourteen**
 
-| system | ran | compositions correct | wrong answers | abstained on determined | abstained on reconstructible | `AttestationDiscrepancy` found (planted) | unwarranted claims | mean k | runtime |
-|---|---|---|---:|---|---|---|---:|---:|---:|
-| **naive GROUP BY** | 14/14 | 168/168 | 0 | 0/88 | 0/31 | 0 (13) | 168 | 1.00 | 0s |
-| **frozen cascade** | 14/14 | 55/56 | 1 | 50/88 | 16/31 | 0 (13) | 54 | 15.22 | 2313s |
-| **new resolver** | 14/14 | 143/144 | 1 | 0/88 | 0/31 | 13 (13) | 0 | 1.78 | 721s |
+| system | ran | **coverage** (attempted / settlement lines) | compositions correct | wrong answers | abstained on determined | abstained on reconstructible | `AttestationDiscrepancy` found (planted) | unwarranted claims | mean k | runtime |
+|---|---|---|---|---:|---|---|---|---:|---:|---:|
+| **naive GROUP BY** | 14/14 | **168/168 (100%)** | 168/168 | 0 | 0/88 | 0/31 | 0 (13) | 168 | 1.00 | 0s |
+| **frozen cascade** | 14/14 | **56/168 (33%)** | 55/56 | 1 | 50/88 | 16/31 | 0 (13) | 54 | 15.22 | 2313s |
+| **new resolver** | 14/14 | **143/168 (85%)** | 143/143 | 0 | 0/88 | 0/31 | 13 (13) | 0 | 1.06 | 672s |
+
+**Coverage is stated because "correct out of attempted" hides it.** The resolver attempted 143 of 168 settlement lines here; the other **25** are lines it declined — `AttestationDiscrepancy`, where it found a contradiction and so makes no composition claim, and `Unresolved`, where it could not build one. Those 25 cost nothing on G7 or G8, because they fall outside both gated subpopulations. They are still lines another system answered and this one did not.
 
 ## PSP absence — nothing to group on
 
@@ -54,16 +56,18 @@ The recon feed carries no settlement fields and there is no settlement report. T
 
 | dataset | naive | frozen | resolver | naive wrong | frozen wrong | resolver wrong | frozen abstained det/rec | resolver abstained det/rec | AD found (planted) | unwarranted claims n/f/r | mean k n/f/r |
 |---|---|---|---|---:|---:|---:|---|---|---|---|---|
-| `datasets/A20_Bnone_Cmax` | **cannot run** | **cannot run** | 1/1 | - | - | 0 | -/0, -/11 | 0/0, 9/11 | 0 (0) | -/-/0 | 0.00/0.00/38.50 |
+| `datasets/A20_Bnone_Cmax` | **cannot run** | **cannot run** | 1/1 | - | - | 0 | -/0, -/11 | 0/0, 9/11 | 0 (0) | -/-/0 | 0.00/0.00/89.50 |
 | `datasets/A40_Bnone_Cmax` | **cannot run** | **cannot run** | 0/0 | - | - | 0 | -/0, -/7 | 0/0, 6/7 | 0 (0) | -/-/0 | 0.00/0.00/0.00 |
 
 **Totals — PSP absence**
 
-| system | ran | compositions correct | wrong answers | abstained on determined | abstained on reconstructible | `AttestationDiscrepancy` found (planted) | unwarranted claims | mean k | runtime |
-|---|---|---|---:|---|---|---|---:|---:|---:|
-| **naive GROUP BY** | 0/2 | 0/0 | 0 | 0/0 | 0/0 | 0 (0) | 0 | 0.00 | 0s |
-| **frozen cascade** | 0/2 | 0/0 | 0 | 0/0 | 0/0 | 0 (0) | 0 | 0.00 | 0s |
-| **new resolver** | 2/2 | 1/1 | 0 | 0/0 | 15/18 | 0 (0) | 0 | 19.25 | 166s |
+| system | ran | **coverage** (attempted / settlement lines) | compositions correct | wrong answers | abstained on determined | abstained on reconstructible | `AttestationDiscrepancy` found (planted) | unwarranted claims | mean k | runtime |
+|---|---|---|---|---:|---|---|---|---:|---:|---:|
+| **naive GROUP BY** | 0/2 | **0/24 (0%)** | 0/0 | 0 | 0/0 | 0/0 | 0 (0) | 0 | 0.00 | 0s |
+| **frozen cascade** | 0/2 | **0/24 (0%)** | 0/0 | 0 | 0/0 | 0/0 | 0 (0) | 0 | 0.00 | 0s |
+| **new resolver** | 2/2 | **1/24 (4%)** | 1/1 | 0 | 0/0 | 15/18 | 0 (0) | 0 | 44.75 | 155s |
+
+**Coverage is stated because "correct out of attempted" hides it.** The resolver attempted 1 of 24 settlement lines here; the other **23** are lines it declined — `AttestationDiscrepancy`, where it found a contradiction and so makes no composition claim, and `Unresolved`, where it could not build one. Those 23 cost nothing on G7 or G8, because they fall outside both gated subpopulations. They are still lines another system answered and this one did not.
 
 ## datasets_v2 — one FALSE `settlement_id` per dataset
 
@@ -74,13 +78,13 @@ A restatement: one batch's attested membership names rows that are not its compo
 | `datasets_v2/A10_B100_Cmax` | 11/12 | 11/11 | 9/9 | 1 | 0 | 0 | 1/10, 0/2 | 0/10, 0/2 | 2 (2) | 12/1/0 | 1.00/1.08/1.00 |
 | `datasets_v2/A20_B0_Cmax` | 12/12 | 4/4 | 11/11 | 0 | 0 | 0 | 0/0, 7/11 | 0/0, 0/11 | 0 (0) | 12/5/0 | 1.00/20.54/1.00 |
 | `datasets_v2/A20_B100_Cfifo` | 11/12 | 3/4 | 9/9 | 1 | 1 | 0 | 6/10, 2/2 | 0/10, 0/2 | 2 (2) | 12/5/0 | 1.00/16.00/1.00 |
-| `datasets_v2/A20_B100_Cmax` | 11/12 | 8/8 | 9/9 | 1 | 0 | 0 | 2/9, 1/2 | 0/9, 0/2 | 2 (2) | 12/3/0 | 1.00/1.45/1.30 |
+| `datasets_v2/A20_B100_Cmax` | 11/12 | 8/8 | 9/9 | 1 | 0 | 0 | 2/9, 1/2 | 0/9, 0/2 | 2 (2) | 12/3/0 | 1.00/1.45/2.00 |
 | `datasets_v2/A20_B100_Crandom` | 11/12 | 3/3 | 10/10 | 1 | 0 | 0 | 6/7, 1/2 | 0/7, 0/2 | 2 (2) | 12/3/0 | 1.00/19.00/1.00 |
 | `datasets_v2/A20_B100_Crandom0` | 11/12 | 2/2 | 9/9 | 1 | 0 | 0 | 3/5, 2/2 | 0/5, 0/2 | 2 (2) | 12/4/0 | 1.00/19.00/1.00 |
 | `datasets_v2/A20_B50_Cmax` | 11/12 | 4/4 | 10/10 | 1 | 0 | 0 | 2/4, 5/7 | 0/4, 0/7 | 2 (2) | 12/4/0 | 1.00/15.27/1.00 |
 | `datasets_v2/A20_B75_Cmax` | 11/12 | 4/4 | 9/9 | 1 | 0 | 0 | 5/6, 2/5 | 0/6, 0/5 | 2 (2) | 12/6/0 | 1.00/12.08/1.00 |
 | `datasets_v2/A30_B100_Cmax` | 11/12 | 3/3 | 9/9 | 1 | 0 | 0 | 4/7, 2/2 | 0/7, 0/2 | 2 (2) | 12/3/0 | 1.00/16.73/1.00 |
-| `datasets_v2/A40_B100_Cfifo` | 11/12 | 2/3 | 10/10 | 1 | 1 | 0 | 3/5, 2/2 | 0/5, 0/2 | 1 (2) | 12/6/0 | 1.00/18.00/1.27 |
+| `datasets_v2/A40_B100_Cfifo` | 11/12 | 2/3 | 10/10 | 1 | 1 | 0 | 3/5, 2/2 | 0/5, 0/2 | 1 (2) | 12/6/0 | 1.00/18.00/1.33 |
 | `datasets_v2/A40_B100_Cmax` | 11/12 | 2/2 | 9/9 | 1 | 0 | 0 | 4/6, 1/1 | 0/6, 0/1 | 2 (2) | 12/2/0 | 1.00/23.64/1.00 |
 | `datasets_v2/A40_B100_Crandom` | 10/11 | 0/0 | 9/9 | 1 | 0 | 0 | 3/3, 1/1 | 0/3, 0/1 | 1 (2) | 11/2/0 | 1.00/27.20/1.00 |
 | `datasets_v2/A40_B50_Cmax` | 11/12 | 1/1 | 9/9 | 1 | 0 | 0 | 0/0, 3/4 | 0/0, 0/4 | 2 (2) | 12/1/0 | 1.00/29.79/1.00 |
@@ -88,11 +92,13 @@ A restatement: one batch's attested membership names rows that are not its compo
 
 **Totals — datasets_v2**
 
-| system | ran | compositions correct | wrong answers | abstained on determined | abstained on reconstructible | `AttestationDiscrepancy` found (planted) | unwarranted claims | mean k | runtime |
-|---|---|---|---:|---|---|---|---:|---:|---:|
-| **naive GROUP BY** | 14/14 | 154/167 | 13 | 0/76 | 0/43 | 0 (26) | 167 | 1.00 | 0s |
-| **frozen cascade** | 14/14 | 48/50 | 2 | 42/76 | 29/43 | 0 (26) | 47 | 17.53 | 2825s |
-| **new resolver** | 14/14 | 132/132 | 0 | 0/76 | 0/43 | 24 (26) | 0 | 1.04 | 612s |
+| system | ran | **coverage** (attempted / settlement lines) | compositions correct | wrong answers | abstained on determined | abstained on reconstructible | `AttestationDiscrepancy` found (planted) | unwarranted claims | mean k | runtime |
+|---|---|---|---|---:|---|---|---|---:|---:|---:|
+| **naive GROUP BY** | 14/14 | **167/167 (100%)** | 154/167 | 13 | 0/76 | 0/43 | 0 (26) | 167 | 1.00 | 0s |
+| **frozen cascade** | 14/14 | **50/167 (30%)** | 48/50 | 2 | 42/76 | 29/43 | 0 (26) | 47 | 17.53 | 2825s |
+| **new resolver** | 14/14 | **132/167 (79%)** | 132/132 | 0 | 0/76 | 0/43 | 24 (26) | 0 | 1.10 | 608s |
+
+**Coverage is stated because "correct out of attempted" hides it.** The resolver attempted 132 of 167 settlement lines here; the other **35** are lines it declined — `AttestationDiscrepancy`, where it found a contradiction and so makes no composition claim, and `Unresolved`, where it could not build one. Those 35 cost nothing on G7 or G8, because they fall outside both gated subpopulations. They are still lines another system answered and this one did not.
 ---
 
 ## What the new resolver gets wrong
@@ -103,29 +109,62 @@ It **FAILS the oracle on 2 of 30 datasets**: `datasets/A20_Bnone_Cmax`, `dataset
 |---|---:|
 | `Verified` assignments that are wrong (G1) | **0** |
 | `Verified` in total | 275 |
-| … of which **non-decisive** — a rival composition would have passed the same check | **238** |
-| `Reconstructed` correct / wrong | 1 / **1** |
-| foreign bank lines adopted, of 240 | 1 |
+| … of which **non-decisive** — a rival composition would have passed the same check | **239** |
+| `Reconstructed` correct / wrong | 1 / **0** |
+| foreign bank lines adopted, of 240 | 0 |
 | planted false `settlement_id` caught | 13 / 13 |
 | `AttestationDiscrepancy` correctly identified / planted | 37 / 39 |
 | `AttestationDiscrepancy` reported in total | 62 |
 | `ProvenUnmatched` rows that actually settled (G9) | **0** |
-| `ProvenUnmatched` rows in total | 699 |
-| `OpenBreak` rows in total — these assert nothing | 4295 |
-| `OpenBreak` by reason | {'timing_difference': 950, 'unexpected_change': 303, 'unexplained': 1469, 'upstream_unresolved': 1573} |
-| `OpenBreak` clustered under a causing line / distinct causes | 1573 / 54 |
-| `Unresolved` by reason | {'not_our_credit': 90, 'enumeration_truncated': 134, 'other': 31} |
-| mean candidate set size, max over datasets | 116 |
+| `ProvenUnmatched` rows in total | 701 |
+| `OpenBreak` rows in total — these assert nothing | 4308 |
+| `OpenBreak` by reason | {'timing_difference': 950, 'unexpected_change': 304, 'unexplained': 1472, 'upstream_unresolved': 1582} |
+| `OpenBreak` clustered under a causing line / distinct causes | 1582 / 54 |
+| `Unresolved` by reason | {'not_our_credit': 90, 'enumeration_truncated': 135, 'other': 30} |
+| mean candidate set size, max over datasets | 178 |
 
 Read in order:
 
-1. **238 of 275 `Verified` are non-decisive.** The composition claim was corroborated by a consequence that a rival composition would also have satisfied. That is not a bug — contract §3.3 says decisiveness is reported, never required, because demanding it would make `Verified` unreachable on exactly the large pools worth exploring — but anyone quoting the `Verified` count without this number is quoting half of it.
-2. **1 wrong `Reconstructed`.** It is an adoption of a bank line that is not a settlement of ours at all, at `datasets/A20_B50_Cmax`. `Reconstructed` errors are measured rather than gated because the claim is weaker than `Verified` — but it is still a wrong answer, and it is the resolver's only one.
-3. **4295 rows are `OpenBreak` against 699 `ProvenUnmatched`** — a 14% proven rate, and that is the intended shape rather than a shortfall. The outcome these replace asserted that 4,994 rows correctly had no bank credit and was **45.7% accurate**; 2,469 of them had settled. A small proven set behind a zero-tolerance gate, plus a large classified and aged break queue, is what production reconciliation actually ships, and it is the more credible artefact. See contract §4.7 and `investigation/DERIVED_BRANCH_AUDIT.md`.
-3b. **1469 rows the resolver could not classify at all**, and that number is reported rather than absorbed. 758 of them are at the two PSP-absence points, where no attestation exists, so no causing line is nameable and the honest answer is that the resolver cannot say why it failed. Widening another reason to absorb these is exactly how `ROLLED_FORWARD` — right 17 times out of 2,397 — came to exist.
+1. **239 of 275 `Verified` are non-decisive.** The composition claim was corroborated by a consequence that a rival composition would also have satisfied. That is not a bug — contract §3.3 says decisiveness is reported, never required, because demanding it would make `Verified` unreachable on exactly the large pools worth exploring — but anyone quoting the `Verified` count without this number is quoting half of it.
+2. **0 wrong `Reconstructed`.** It is an adoption of a bank line that is not a settlement of ours at all, at `datasets/A20_B50_Cmax`. `Reconstructed` errors are measured rather than gated because the claim is weaker than `Verified` — but it is still a wrong answer, and it is the resolver's only one.
+3. **4308 rows are `OpenBreak` against 701 `ProvenUnmatched`** — a 14% proven rate, and that is the intended shape rather than a shortfall. The outcome these replace asserted that 4,994 rows correctly had no bank credit and was **45.7% accurate**; 2,469 of them had settled. A small proven set behind a zero-tolerance gate, plus a large classified and aged break queue, is what production reconciliation actually ships, and it is the more credible artefact. See contract §4.7 and `investigation/DERIVED_BRANCH_AUDIT.md`.
+3b. **1472 rows the resolver could not classify at all**, and that number is reported rather than absorbed. 758 of them are at the two PSP-absence points, where no attestation exists, so no causing line is nameable and the honest answer is that the resolver cannot say why it failed. Widening another reason to absorb these is exactly how `ROLLED_FORWARD` — right 17 times out of 2,397 — came to exist.
 4. **25 `AttestationDiscrepancy` findings the oracle counts as false.** Most are reversed credits: a bank debit revoking an earlier credit is a genuine cross-party contradiction, but the oracle's numerator is `planted wrong attestations`, so a true finding of a different kind scores as a false one. The metric is narrower than the outcome. Two genuine misses remain, both at pool 40 where the bank blanked its own reference: the line falls to tier B, which matches on the amount from the recon rows, and the recon rows are correct — so the corrupted scalar in `settlement_report.csv` is never read.
 5. **The premise-sharing statistic still cannot be computed.** Contract §6.2 needs instances where the corpus's independent enumerator found *k ≥ 2* complete closing subsets AND the resolver exposed a ranking. Exactly **1** instance qualifies across all 30 datasets. The frozen cascade could not supply one because it filters before enumerating; this resolver ranks everything it enumerates but mostly does not need to enumerate, because the attestation resolves the line first. Same unmeasurable, different reason.
 
+---
+
+## Appendix: the F1 fix, before and after
+
+`resolver/eligibility.py` excluded a row from the candidate pool for carrying `on_hold` — a **current-state snapshot**, taken when the feed was exported — while building the pool **as at a past `value_date`**. A row held now but not held then was silently dropped, breaking the superset invariant the module promises. `DECISIONS.md` §44, instance F1.
+
+It bit **nothing**: 0 rows carrying `on_hold` appear in any true composition across 30 datasets, so the filter was correct here by a property of the generated data rather than of the rule. It was fixed for that reason, not despite it — that is defect D2's shape exactly.
+
+The prediction was committed **before the fix existed** and one line of it was **wrong**; see `investigation/F1_PREDICTION.md`.
+
+| quantity | before | after | change |
+|---|---:|---:|---:|
+| G3 | 20 | 20 | — |
+| G8 | 15 | 15 | — |
+| G9 | 0 | 0 | — |
+| G1 | 0 | 0 | — |
+| datasets FAILING | 2 | 2 | — |
+| ProvenUnmatched | 699 | 701 | +2 |
+| OpenBreak | 4295 | 4308 | +13 |
+| Verified | 275 | 275 | — |
+| … non-decisive | 238 | 239 | +1 |
+| Reconstructed — correct | 1 | 1 | — |
+| **Reconstructed — wrong** | 1 | 0 | -1 |
+| Ambiguous | 5 | 6 | +1 |
+| Unresolved | 255 | 255 | — |
+| AttestationDiscrepancy | 62 | 62 | — |
+| OpenBreak rows clustered | 1573 | 1582 | +9 |
+
+**The fix eliminated the resolver's only wrong answer.** The `Reconstructed` at `datasets/A20_B50_Cmax` had adopted a bank line that is not a settlement of ours. With the held rows restored to the pool that line acquired a **rival closing subset**, and the outcome fell to `Ambiguous` — *here are the candidates* rather than *here is the answer*. A pool that is too small hides rivals, and a hidden rival is indistinguishable from no rival.
+
+This was not predicted and is not claimed as a design intention. It is one instance, on one line, in one dataset — and `Reconstructed` occurs **once** in the whole corpus, so neither '0 wrong out of 1' nor the previous run's '1 wrong out of 2' says anything about a rate. Both are counts.
+
+No gate moved. No dataset changed verdict. The enumeration absorbed a mean **+1.7%** pool growth (max +2.8%, 1,544 row-slots across all pools) without a single new truncation.
 ---
 
 ## Appendix: the two oracle runs, and the delta this fix accounts for

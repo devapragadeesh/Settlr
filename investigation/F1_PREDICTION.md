@@ -67,3 +67,89 @@ If either figure moves, the reasoning above is wrong and that is the finding.
 If G8 or G3 degrade by more than a few violations, the honest conclusion is
 that the *superset* discipline costs measurable accuracy at PSP absence, and
 that trade is reported rather than reversed. **No tuning after the score.**
+
+---
+
+# Result — run 2 (before) against run 3 (after)
+
+Written after the oracle ran once against the fix committed in `4b65764`.
+The prediction above was committed in `427aea6`, before the fix existed.
+
+## Misses first: one prediction was wrong
+
+**`ProvenUnmatched` was predicted at "699 exactly" and came in at 701.**
+
+The reasoning behind that "exactly" is quoted from above:
+
+> Even in the worst case where both reconstructions are destroyed, their rows
+> return to the unmatched population — and those rows **settled**, so they
+> cannot become `ProvenUnmatched`.
+
+The clause "those rows settled" is an **unexamined assumption that the
+assignment being destroyed was a true one**. One of the two `Reconstructed`
+was the resolver's only wrong answer — an adoption of a foreign bank line at
+`datasets/A20_B50_Cmax` — so its rows had never settled at all, and two of
+them are entailed `NOT_CAPTURED` / `NETTED_OUT`. G9 stayed at 0, which
+confirms they genuinely never settled.
+
+Predicting a population by reasoning about what it excludes requires knowing
+whether the excluding claim was *correct*, and the prediction did not check.
+
+## What the fix did
+
+| gate / quantity | run 2 (before) | run 3 (after) | predicted | verdict |
+|---|---:|---:|---|---|
+| **G3** truth absent from candidate set | 20 | **20** | 20–24, equal or worse | ✅ |
+| **G8** abstention on reconstructible | 15 | **15** | 15–18, equal or worse | ✅ |
+| **G9** proven rows that settled | 0 | **0** | 0 exactly | ✅ |
+| G1, G2, G4, G6 | 0 | **0** | — | ✅ |
+| datasets FAILING | 2 | **2** | 0 newly failing | ✅ |
+| `ProvenUnmatched` | 699 | **701** | **699 exactly** | ❌ **wrong** |
+| `OpenBreak` | 4,295 | **4,308** | 4,295 or higher | ✅ |
+| `Verified` | 275 | 275 | — | unchanged |
+| … non-decisive | 238 | 239 | — | +1 |
+| **`Reconstructed` wrong** | **1** | **0** | not predicted | see below |
+| `Reconstructed` correct | 1 | 1 | — | unchanged |
+| `Ambiguous` | 5 | 6 | — | +1 |
+| `Unresolved` | 255 | 255 | — | unchanged |
+| `AttestationDiscrepancy` | 62 | 62 | — | unchanged |
+| clustered rows / distinct causes | 1,573 / 54 | 1,582 / 54 | — | +9 rows |
+
+`OpenBreak` by reason: `upstream_unresolved` 1,573 → 1,582, `unexplained`
+1,469 → 1,472, `unexpected_change` 303 → 304, `timing_difference` unchanged.
+
+## The unpredicted result, which is the interesting one
+
+**The fix eliminated the resolver's only wrong answer.**
+
+`datasets/A20_B50_Cmax` held a `Reconstructed` that adopted a bank line which
+is not a settlement of ours. With the held rows restored to the pool, that
+line acquired a **rival closing subset** and the outcome fell to `Ambiguous` —
+*here are the candidates* rather than *here is the answer*.
+
+That is the mechanism the superset invariant exists for, working in the
+direction the docstring predicts: a pool that is too small hides rivals, and a
+hidden rival is indistinguishable from no rival. The wrong answer was not
+caused by bad arithmetic; it was caused by **not being shown the alternative**.
+
+This was not predicted and is not claimed as a design intention. It is one
+instance, on one line, in one dataset.
+
+## What it cost
+
+Nothing measurable. No gate moved, no dataset changed verdict, `Verified` and
+`Unresolved` are identical, and the enumeration absorbed a mean +1.7% pool
+growth without a single new truncation.
+
+The prediction allowed for G3 and G8 to degrade and said that trade would be
+reported rather than reversed. It did not arise.
+
+## Honest scope of "0 wrong answers" after this run
+
+Across 30 datasets: **G1 = 0** (no wrong `Verified`), **G9 = 0** (no
+`ProvenUnmatched` row settled), and `Reconstructed` wrong = 0.
+
+That last figure is over a population of **one**. `Reconstructed` occurs once
+in the entire corpus, so "0 wrong out of 1" carries no information about a
+rate, and the previous run's "1 wrong out of 2" carried none either. Both are
+reported as counts, and neither should be read as accuracy.

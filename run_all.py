@@ -9,6 +9,7 @@ Runs, in this order:
     2. corpus/baseline_old_engine.py   the frozen cascade over every dataset
     3. corpus/score_resolver.py        the new resolver, scored by the oracle
     4. corpus/three_systems.py         the comparison table
+    5. corpus/claims_ledger.py         CLAIMS.md, the claims ledger
 
 and writes `corpus/TRIVIALITY_CHECK.md`, `corpus/baseline_results.json`,
 `corpus/ORACLE_RESULTS.md`, `corpus/oracle_results.json` and
@@ -48,6 +49,8 @@ STEPS = [
       "--json", "corpus/oracle_results.json"]),
     ("three-system comparison",
      [sys.executable, "corpus/three_systems.py"]),
+    ("the claims ledger -- every number, its denominator and its scope",
+     [sys.executable, "corpus/claims_ledger.py"]),
 ]
 
 

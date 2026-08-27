@@ -44,6 +44,20 @@ def dataset_dirs() -> list[Path]:
     return out
 
 
+def our_lines(dataset: Path) -> int:
+    """Settlement bank lines in this dataset -- the denominator ALL THREE
+    systems face, and the one the table used to hide.
+
+    "143/144 resolver" against "168/168 naive" is not a comparison: naive
+    ATTEMPTED 168 lines and the resolver attempted 144. The 24-line gap costs
+    nothing on G7 or G8, because it falls outside both gated subpopulations --
+    but it is 24 lines naive got right and the resolver never tried.
+    """
+    truth = json.loads((dataset / "ground_truth.json").read_text())
+    return sum(1 for line in truth["bank_lines"]
+               if line["kind"] == "settlement")
+
+
 def naive_row(dataset: Path) -> dict:
     truth = json.loads((dataset / "ground_truth.json").read_text())
     determined = len(truth.get("determined_instances", []))
@@ -154,10 +168,26 @@ def _totals(subset, system) -> dict:
     out = {key: sum(item.get(key, 0) for item in ran) for key in keys}
     out["ran"] = len(ran)
     out["of"] = len(subset)
+    # The denominator every system faces, whether or not it attempted the line.
+    out["lines"] = sum(r["lines"] for r in subset if r[system].get("ran"))
+    out["lines_all"] = sum(r["lines"] for r in subset)
     out["seconds"] = sum(r[system].get("seconds", 0) for r in subset)
     out["mean_k"] = (sum(item.get("mean_k", 0) for item in ran) / len(ran)
                      if ran else 0.0)
     return out
+
+
+def coverage(t: dict) -> str:
+    """`attempted / settlement lines`, with the percentage.
+
+    Never let a "correct out of attempted" figure stand alone: a system that
+    declines a line and a system that gets it right are indistinguishable in
+    that ratio, and only one of them did the work.
+    """
+    if not t["lines_all"]:
+        return "-"
+    return (f"{t['attempted']}/{t['lines_all']} "
+            f"({100 * t['attempted'] / t['lines_all']:.0f}%)")
 
 
 def cell(row: dict) -> str:
@@ -275,23 +305,39 @@ def render(rows: list[dict]) -> str:
                 f"| {n.get('mean_k', 0):.2f}/{f.get('mean_k', 0):.2f}/"
                 f"{x.get('mean_k', 0):.2f} |")
         out += ["", f"**Totals — {title.split(chr(8212))[0].strip()}**", "",
-                "| system | ran | compositions correct | wrong answers | "
+                "| system | ran | **coverage** (attempted / settlement "
+                "lines) | compositions correct | wrong answers | "
                 "abstained on determined | abstained on reconstructible | "
                 "`AttestationDiscrepancy` found (planted) | unwarranted "
                 "claims | mean k | runtime |",
-                "|---|---|---|---:|---|---|---|---:|---:|---:|"]
+                "|---|---|---|---|---:|---|---|---|---:|---:|---:|"]
         for system, label in (("naive", "naive GROUP BY"),
                               ("frozen", "frozen cascade"),
                               ("resolver", "new resolver")):
             t = totals(subset, system)
             out.append(
                 f"| **{label}** | {t['ran']}/{t['of']} | "
+                f"**{coverage(t)}** | "
                 f"{t['correct']}/{t['attempted']} | {t['wrong']} | "
                 f"{t['determined_abstained']}/{t['determined']} | "
                 f"{t['reconstructible_abstained']}/{t['reconstructible']} | "
                 f"{t['discrepancy_detected']} ({t['discrepancy_planted']}) | "
                 f"{t['unwarranted']} | {t['mean_k']:.2f} | "
                 f"{t['seconds']:.0f}s |")
+        gap = totals(subset, "resolver")
+        uncovered = gap["lines_all"] - gap["attempted"]
+        if uncovered > 0:
+            out += ["",
+                    f"**Coverage is stated because \"correct out of "
+                    f"attempted\" hides it.** The resolver attempted "
+                    f"{gap['attempted']} of {gap['lines_all']} settlement "
+                    f"lines here; the other **{uncovered}** are lines it "
+                    "declined — `AttestationDiscrepancy`, where it found a "
+                    "contradiction and so makes no composition claim, and "
+                    "`Unresolved`, where it could not build one. Those "
+                    f"{uncovered} cost nothing on G7 or G8, because they fall "
+                    "outside both gated subpopulations. They are still lines "
+                    "another system answered and this one did not."]
     return "\n".join(out)
 
 
@@ -397,6 +443,91 @@ def defects(run: Path) -> str:
         ""])
 
 
+def f1_appendix(before_path: Path, after_path: Path) -> str:
+    """The F1 fix, before and after. `DECISIONS.md` §44 instance F1.
+
+    `resolver/eligibility.py` dropped a row from the pool for carrying
+    `on_hold` -- a CURRENT-STATE snapshot -- while building the pool as at a
+    PAST `value_date`. It broke the superset invariant the module's own
+    docstring promises. The prediction was committed before the fix existed
+    (`investigation/F1_PREDICTION.md`).
+    """
+    if not before_path.exists() or not after_path.exists():
+        return ""
+    before = json.loads(before_path.read_text())
+    after = json.loads(after_path.read_text())
+    if not before or not after:
+        return ""
+
+    def agg(rows):
+        gates: dict[str, int] = {}
+        for r in rows:
+            for g, n in r["violations_by_gate"].items():
+                gates[g] = gates.get(g, 0) + n
+        m = lambda path: sum(_dig(r["measured"], path) for r in rows)
+        return {
+            "G3": gates.get("G3", 0), "G8": gates.get("G8", 0),
+            "G9": gates.get("G9", 0), "G1": gates.get("G1", 0),
+            "datasets FAILING": sum(1 for r in rows if not r["passed"]),
+            "ProvenUnmatched": m(("proven_unmatched", "rows")),
+            "OpenBreak": m(("open_break", "rows")),
+            "Verified": m(("accounting", "verified")),
+            "… non-decisive": m(("accounting", "verified_non_decisive")),
+            "Reconstructed — correct": m(("reconstructed_accuracy", "correct")),
+            "**Reconstructed — wrong**": m(("reconstructed_accuracy", "wrong")),
+            "Ambiguous": m(("accounting", "ambiguous")),
+            "Unresolved": m(("accounting", "unresolved")),
+            "AttestationDiscrepancy": m(("attestation_discrepancy", "reported")),
+            "OpenBreak rows clustered": m(("open_break", "clustered_rows")),
+        }
+
+    b, a = agg(before), agg(after)
+    out = ["", "---", "",
+           "## Appendix: the F1 fix, before and after", "",
+           "`resolver/eligibility.py` excluded a row from the candidate pool "
+           "for carrying `on_hold` — a **current-state snapshot**, taken when "
+           "the feed was exported — while building the pool **as at a past "
+           "`value_date`**. A row held now but not held then was silently "
+           "dropped, breaking the superset invariant the module promises. "
+           "`DECISIONS.md` §44, instance F1.", "",
+           "It bit **nothing**: 0 rows carrying `on_hold` appear in any true "
+           "composition across 30 datasets, so the filter was correct here by "
+           "a property of the generated data rather than of the rule. It was "
+           "fixed for that reason, not despite it — that is defect D2's shape "
+           "exactly.", "",
+           "The prediction was committed **before the fix existed** and one "
+           "line of it was **wrong**; see `investigation/F1_PREDICTION.md`.",
+           "", "| quantity | before | after | change |", "|---|---:|---:|---:|"]
+    for key in b:
+        delta = a[key] - b[key]
+        out.append(f"| {key} | {b[key]} | {a[key]} | "
+                   f"{'—' if delta == 0 else f'{delta:+d}'} |")
+    out += ["",
+            f"**The fix eliminated the resolver's only wrong answer.** The "
+            f"`Reconstructed` at `datasets/A20_B50_Cmax` had adopted a bank "
+            "line that is not a settlement of ours. With the held rows "
+            "restored to the pool that line acquired a **rival closing "
+            "subset**, and the outcome fell to `Ambiguous` — *here are the "
+            "candidates* rather than *here is the answer*. A pool that is too "
+            "small hides rivals, and a hidden rival is indistinguishable from "
+            "no rival.", "",
+            "This was not predicted and is not claimed as a design intention. "
+            "It is one instance, on one line, in one dataset — and "
+            "`Reconstructed` occurs **once** in the whole corpus, so neither "
+            "'0 wrong out of 1' nor the previous run's '1 wrong out of 2' "
+            "says anything about a rate. Both are counts.", "",
+            "No gate moved. No dataset changed verdict. The enumeration "
+            "absorbed a mean **+1.7%** pool growth (max +2.8%, 1,544 "
+            "row-slots across all pools) without a single new truncation."]
+    return "\n".join(out)
+
+
+def _dig(payload: dict, path: tuple):
+    for key in path:
+        payload = payload[key]
+    return payload
+
+
 def appendix(run1: Path, run2: Path) -> str:
     """The pre-fix and post-fix oracle runs, side by side.
 
@@ -489,6 +620,46 @@ def appendix(run1: Path, run2: Path) -> str:
     return "\n".join(out)
 
 
+LIMITS_START = "<!-- MEASURED-LIMITATIONS:START -->"
+LIMITS_END = "<!-- MEASURED-LIMITATIONS:END -->"
+
+
+def measured_limitations(run: Path) -> str:
+    """The limitation figures the README carries, WRITTEN BY THIS SCRIPT.
+
+    They were hand-typed and went stale the first time a number moved: the
+    README said "238 of 275 non-decisive" for a run in which it was 239. A
+    repository whose whole argument is that numbers are generated cannot type
+    its own caveats.
+    """
+    if not run.exists():
+        return ""
+    rows = json.loads(run.read_text())
+    total = lambda path: sum(_dig(r["measured"], path) for r in rows)
+    verified = total(("accounting", "verified"))
+    nd = total(("accounting", "verified_non_decisive"))
+    r_ok = total(("reconstructed_accuracy", "correct"))
+    r_bad = total(("reconstructed_accuracy", "wrong"))
+    g1 = sum(r["violations_by_gate"].get("G1", 0) for r in rows)
+    g9 = sum(r["violations_by_gate"].get("G9", 0) for r in rows)
+    return "\n".join([
+        f"**{nd / verified:.0%} of `Verified` are non-decisive** \u2014 {nd} of "
+        f"{verified}. The composition claim was corroborated by a consequence "
+        "a rival composition would also have satisfied. The contract requires "
+        "that number to be reported precisely so the `Verified` count cannot "
+        "be quoted without it.",
+        "",
+        f"**Wrong answers, by outcome type and with its population.** "
+        f"`Verified` wrong: **{g1}** of {verified} (gate G1). "
+        f"`ProvenUnmatched` rows that in fact settled: **{g9}** (gate G9). "
+        f"`Reconstructed` wrong: **{r_bad}** of {r_ok + r_bad}. "
+        f"That last denominator is {r_ok + r_bad} \u2014 `Reconstructed` "
+        "occurs almost never in this corpus, so it is reported as a **count "
+        "and not a rate**; neither this figure nor the previous run's "
+        "\u201c1 wrong of 2\u201d says anything about accuracy.",
+    ])
+
+
 SUMMARY_START = "<!-- THREE-SYSTEM-SUMMARY:START -->"
 SUMMARY_END = "<!-- THREE-SYSTEM-SUMMARY:END -->"
 
@@ -517,6 +688,7 @@ def summary(rows, totals_of) -> str:
                 cells.append("**cannot run**")
                 continue
             cells.append(
+                f"coverage **{coverage(t)}**<br>"
                 f"{t['correct']}/{t['attempted']} right, **{t['wrong']} "
                 f"wrong**<br>abstained {t['determined_abstained']}/"
                 f"{t['determined']} det, {t['reconstructible_abstained']}/"
@@ -524,12 +696,21 @@ def summary(rows, totals_of) -> str:
                 f"{t['discrepancy_detected']}/{t['discrepancy_planted']}")
         out.append(f"| **{label}** | " + " | ".join(cells) + " |")
     out += ["",
-            "*right/attempted* is compositions exactly correct. *abstained* is "
-            "silence on instances the benchmark proves have exactly one "
-            "answer — oracle gates G7 and G8. *discrepancies* is planted "
-            "record errors found. Full table, including mean candidate set "
-            "size and runtime: "
-            "[`corpus/THREE_SYSTEMS.md`](corpus/THREE_SYSTEMS.md)."]
+            "**Read coverage first.** *coverage* is settlement lines "
+            "attempted out of settlement lines present — the denominator all "
+            "three systems face. *right/attempted* is compositions exactly "
+            "correct **out of the lines that system tried**, so it says "
+            "nothing about the ones it declined; a system that declines a "
+            "line and a system that answers it correctly look identical in "
+            "that ratio. *abstained* is silence on instances that have "
+            "exactly one answer — oracle gates G7 and G8, and **G8\u2019s "
+            "uniqueness is scoped to the pool the simulator drew from, "
+            "1.4\u00d7\u201314\u00d7 smaller than the pool the resolver "
+            "searches** (`DECISIONS.md` \u00a746). *discrepancies* is planted "
+            "record errors found, and the reported total is larger than the "
+            "planted total because reversals are real findings the corpus did "
+            "not plant \u2014 the genuinely-false count is **zero**. Full "
+            "table: [`corpus/THREE_SYSTEMS.md`](corpus/THREE_SYSTEMS.md)."]
     return "\n".join(out)
 
 
@@ -557,21 +738,33 @@ def main() -> int:
         key = f"{directory.parent.name}/{directory.name}"
         rows.append({
             "dataset": key, "family": directory.parent.name,
+            "lines": our_lines(directory),
             "naive": naive_row(directory),
             "frozen": frozen_row(frozen.get(key)),
             "resolver": resolver_row(resolver.get(key)),
         })
-    text = render(rows) + defects(arguments.resolver) + appendix(
-        ROOT / "corpus" / "oracle_results_run1.json", arguments.resolver)
+    text = (render(rows) + defects(arguments.resolver)
+            + f1_appendix(ROOT / "corpus" / "oracle_results_run2.json",
+                          arguments.resolver)
+            + appendix(ROOT / "corpus" / "oracle_results_run1.json",
+                       ROOT / "corpus" / "oracle_results_run2.json"))
     arguments.out.write_text(text + "\n")
 
     readme = ROOT / "README.md"
-    if readme.exists() and SUMMARY_START in readme.read_text():
+
+    def splice(start: str, end: str, block: str) -> None:
+        if not readme.exists():
+            return
         body = readme.read_text()
-        head, _, rest = body.partition(SUMMARY_START)
-        _, _, tail = rest.partition(SUMMARY_END)
-        readme.write_text(head + SUMMARY_START + "\n"
-                          + summary(rows, _totals) + "\n" + SUMMARY_END + tail)
+        if start not in body:
+            return
+        head, _, rest = body.partition(start)
+        _, _, tail = rest.partition(end)
+        readme.write_text(head + start + "\n" + block + "\n" + end + tail)
+
+    splice(SUMMARY_START, SUMMARY_END, summary(rows, _totals))
+    splice(LIMITS_START, LIMITS_END,
+           measured_limitations(arguments.resolver))
     print(text)
     return 0
 

@@ -1763,3 +1763,94 @@ sweep is evidence only if it was exhaustive.**
 | 18 | `oracle.py:219` `recoverable != "unique"` | corpus register, **true** pool | resolver search, **derived** pool | ❌ **F2**, §46 |
 | 19 | `oracle.py:551` `register["count"] < 2` | as #18 | as #18 | ❌ same root |
 | 20 | `oracle.py:279, 341, 406, 459` composition / candidate equality | truth | resolver | ✅ |
+
+---
+
+## 45. F1 is fixed although it bites nothing, and the fix removed the resolver's only wrong answer
+
+**Decision.** `resolver/eligibility.py` no longer drops a row from the pool for
+carrying `on_hold`. Prediction committed in `427aea6`, fix in `4b65764`,
+scored once. `investigation/F1_PREDICTION.md` carries both.
+
+**Why, given 0 rows were affected.** The measurement *is* the argument: 0 rows
+carrying `on_hold` appear in any true composition across 30 datasets, so the
+filter was correct here by a property of the generated data rather than of the
+rule. `investigation/DEFECT_REPORT.md` records D2 as exactly that shape — a
+branch whose safety came from the data, inside a passing suite, until held-out
+data moved 50 rows. And `pool_at`'s own docstring promises a **superset** and
+says the module "errs LARGE where the rules are uncertain"; this filter erred
+small, which is the silent direction.
+
+**What it cost: nothing measurable, and it removed a wrong answer.** G3, G8,
+G9, `Verified` and `Unresolved` are identical across the two runs. Mean pool
+growth +1.7%. The `Reconstructed` at `datasets/A20_B50_Cmax` — an adoption of
+a bank line that is not a settlement of ours, and the resolver's **only wrong
+answer** — acquired a rival closing subset once the held rows were restored,
+and fell to `Ambiguous`. **A pool that is too small hides rivals, and a hidden
+rival is indistinguishable from no rival.** Not predicted, one instance, and
+`Reconstructed` occurs once in the whole corpus, so it is reported as a count
+and not as a rate.
+
+**The prediction was wrong in one line, and the error is instructive.** It
+asserted `ProvenUnmatched` would be "699 exactly" because rows returning from
+a destroyed `Reconstructed` "settled, so they cannot become
+`ProvenUnmatched`". That clause assumed the assignment being destroyed was a
+*true* one. It was the false one, its rows never settled, and two are entailed.
+Actual: 701.
+
+**Rejected: guard the filter instead of removing it.** A guard on a snapshot
+read against a past horizon is still a snapshot read against a past horizon.
+
+**Rejected: keep the filter and rely on the corpus-wide superset test.** That
+test passes *with the filter present*, because no corpus row exercises the
+case. It is retained as a regression guard and its docstring says plainly that
+it did not catch F1 and would not have. The discriminating test is synthetic.
+
+---
+
+## 46. G8's premise is scoped to a pool no resolver can see, and the gate is not loosened
+
+**Decision.** `corpus/oracle.py`'s G8 stays exactly as it is. What changes is
+**every statement of a G8 result**, which must now carry its pool scope inline.
+
+**The finding.** `corpus/generator/build.py:853` builds the closure register
+over *"the EXACT pool the rule was applied to, recorded by the simulator"* —
+and the comment continues, correctly, *"a register built over a RECONSTRUCTED
+pool measures the reconstruction, not the truth."* That is right for its
+purpose. G8 then uses `ReconstructibleInstance` to call a resolver's
+abstention a **defect**, while the resolver searches a pool it derived itself:
+
+| dataset | line | true pool | resolver pool | ratio |
+|---|---:|---:|---:|---:|
+| `A20_Bnone_Cmax` | 16 | 15 | **213** | 14.2× |
+| `A20_Bnone_Cmax` | 18 | 23 | **265** | 11.5× |
+| `A40_Bnone_Cmax` | 15 | 38 | **414** | 10.9× |
+
+All 18 reconstructible instances at the absence points, and therefore all 15
+G8 failures across both FAILing datasets, rest on this. **Uniqueness in 2¹⁵ is
+not evidence of uniqueness in 2²¹³.**
+
+So the README's *"abstained on 15 of 18 bank lines the benchmark proves have
+exactly one explanation"* was **false as written**. The benchmark proves
+uniqueness over a pool no merchant-side resolver can know.
+
+**Rejected: loosen G8.** Loosening a gate after watching a resolver fail it is
+the move the freeze discipline exists to forbid, and G8 exists precisely
+because abstention is otherwise free. It keeps failing. The *claim* changes,
+not the threshold.
+
+**Rejected: rebuild the register over a reconstructed pool.** That destroys the
+property the register was built for — it would measure the reconstruction
+rather than the truth — and it would mean regenerating frozen datasets.
+
+**The measurement that would settle it, named and NOT taken:** the closure
+count over the **derived** pool at those 18 lines. If it is 1, the abstentions
+are genuine failures; if it is large, they are correct refusals and G8 is
+measuring the wrong thing. It is unmeasured. Measuring it is new apparatus and
+is out of scope here.
+
+**This is CHECKPOINT §12.4 seen from the other end.** Contract §2.4 gives
+consumption to `Verified` alone; at PSP absence nothing attests, so nothing
+consumes, so the pool grows monotonically to ~10× the true pool, so uniqueness
+over the true pool is not a fair bar. **The gate and the open consumption
+problem are one problem**, and fixing either requires the other.
