@@ -976,3 +976,99 @@ Ranked by what a reader should worry about first.
 
 7. **The wrong-bank-side class, the remaining grid cells, and the GST axis.**
    Unbuilt, and the GST leg is disclosed as unearned wherever it is mentioned.
+
+---
+
+## 15. D15 measured: the abstentions are correct refusals (2026-08-27)
+
+Diagnostic task. Nothing fixed, no gate changed, `resolver/`,
+`resolver_contract/` and `corpus/oracle.py` untouched.
+
+### 15.1 The D15 verdict
+
+`DECISIONS.md` §46 named the measurement that would settle whether the 15 G8
+failures are genuine abstention failures or correct refusals, and deliberately
+did not take it. Taken now:
+
+| verdict over the 18 reconstructible instances | count |
+|---|---:|
+| **correct refusal — ≥2 closing subsets PROVEN over the derived pool** | **15** |
+| genuine failure — unique *and* complete over the derived pool | **0** |
+| honestly unknown | **0** |
+| not an abstention (`Reconstructed` ×1, `AttestationDiscrepancy` ×2) | 3 |
+
+It cost one resolver run on two datasets, because of an asymmetry worth
+stating: **proving a closure unique needs a complete enumeration (§39);
+proving it NOT unique needs only two closing subsets, and truncation is
+irrelevant to that.** Fourteen of the fifteen were settled by counts the
+committed run already contained.
+
+The cleanest instance needs no caveat at all — `A20_Bnone_Cmax` bank[1], whose
+enumeration **completed**:
+
+```
+answer key : 1   closing subset  over the simulator's pool of 22 rows
+resolver   : 178 closing subsets over its derived pool of 31 rows, OPTIMAL
+```
+
+Nine rows the resolver cannot rule out turn one answer into 178. It did not
+fail to find the answer; **there are 178 answers.**
+
+**Both FAILING datasets therefore fail on a premise, not on behaviour.** §46's
+standing decision — the gate is not loosened, the claim is rescoped — is
+confirmed by measurement rather than by argument. D15 stays open as a
+*benchmark* defect; there is nothing in the engine to fix.
+
+### 15.2 Worse than expected: the coverage metric I added is itself scoped wrong
+
+`coverage = (Verified + Reconstructed) / settlement lines` counts a line as
+"not attempted" when the resolver returned `AttestationDiscrepancy` — i.e.
+when it found a genuine record contradiction and correctly refused to assert a
+composition.
+
+On the 28 non-absence datasets **all 60 unattempted lines are exactly that**,
+and all 62 `AttestationDiscrepancy` findings in the corpus are correct (0
+genuinely false). Restated on lines where a composition claim is the
+appropriate answer, non-absence coverage is **275/275 = 100%**.
+
+So the metric **declines as detection improves**: `datasets_v2` plants one
+false attestation per dataset, the resolver catches 13 of 13, and its coverage
+drops from 85% to 79% *because it caught them*.
+
+This was introduced by the reporting-honesty pass that was supposed to remove
+exactly this class of error (§14.3). Recorded, not fixed — a metric change is
+a reporting cycle of its own.
+
+### 15.3 Coverage, four scopes
+
+| scope | attempted / settlement lines |
+|---|---|
+| all 30 datasets | 276 / 359 (76.9%) |
+| the 28 non-absence datasets | 275 / 335 (82.1%) |
+| … on lines where a composition claim is appropriate | **275 / 275 (100%)** |
+| the 2 absence datasets alone | 1 / 24 (4.2%) |
+| *the original 14 — the figure `THREE_SYSTEMS.md` publishes* | *143 / 168 (85.1%)* |
+
+**Stragglers outside the absence datasets: zero.** The task expected ~2 as the
+place a cheap real fix might hide. There is no such place.
+
+### 15.4 Small artefact
+
+`corpus/score_resolver.py:77` writes `report.violations[:12]` to
+`oracle_results.json`, so the stored `violations` list is a **sample** and
+nothing says so. `violations_by_gate` is authoritative and every published
+gate figure derives from it, so no number is affected. Recorded because a
+truncated field that does not announce its truncation is §44's shape again.
+
+### 15.5 New artefacts
+
+* `investigation/D15_MEASUREMENT.md` — the full diagnostic.
+* `SCORECARD.md` — generated, the five-minute read, every figure with its
+  denominator and scope inline.
+
+### 15.6 Nothing is recommended for the engine
+
+No genuine failure was found. The 15 abstentions are correct, the 60
+unattempted non-absence lines are correct findings, and no pool, cap or budget
+change is recommended — §45 established that no pool change is local, and there
+is no failure here for one to fix.

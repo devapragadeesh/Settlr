@@ -51,6 +51,8 @@ STEPS = [
      [sys.executable, "corpus/three_systems.py"]),
     ("the claims ledger -- every number, its denominator and its scope",
      [sys.executable, "corpus/claims_ledger.py"]),
+    ("the scorecard -- the five-minute read",
+     [sys.executable, "corpus/scorecard.py"]),
 ]
 
 

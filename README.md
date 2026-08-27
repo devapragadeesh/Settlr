@@ -32,6 +32,11 @@ follows from taking that seriously.
 
 ---
 
+## The five-minute read
+
+**[`SCORECARD.md`](SCORECARD.md)** — every headline figure with its
+denominator and scope inline, generated. Start there.
+
 ## What was evaluated and not built
 
 **[`corpus/TECHNIQUES.md`](corpus/TECHNIQUES.md)** assesses five industry and

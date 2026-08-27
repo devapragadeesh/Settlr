@@ -28,6 +28,7 @@ REPORTING = [
     ROOT / "resolver" / "run.py",
     ROOT / "run_all.py",
     ROOT / "corpus" / "claims_ledger.py",
+    ROOT / "corpus" / "scorecard.py",
 ]
 
 PROVEN = {"proven_unmatched", "proven", "ProvenUnmatched"}
@@ -108,7 +109,8 @@ def test_the_generated_reports_do_not_print_the_combined_total():
                    ROOT / "corpus" / "THREE_SYSTEMS.md",
                    ROOT / "README.md",
                    ROOT / "CHECKPOINT.md",
-                   ROOT / "CLAIMS.md"):
+                   ROOT / "CLAIMS.md",
+                   ROOT / "SCORECARD.md"):
         if not report.exists():
             continue
         for number, line in enumerate(report.read_text().splitlines(), 1):
