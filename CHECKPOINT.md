@@ -929,3 +929,50 @@ exists to prevent, on its first run.
   lines — is **named and not taken** (`DECISIONS.md` §46, `CORPUS_SPEC.md`
   §8.0). This is §12.4 seen from the other end: the gate and the open
   consumption problem are one problem.
+
+### 14.6 Standing gaps — D15 is now the largest open item
+
+Ranked by what a reader should worry about first.
+
+1. **D15 — G8's premise is a pool the resolver cannot see.** *(new, open, and
+   arguably now the biggest.)* `ReconstructibleInstance` declares uniqueness
+   over the simulator's pool, 3–42 rows; the resolver searches its own, 7–414
+   rows, up to **14× larger**. **Both remaining oracle failures rest entirely
+   on this** — all 15 G8 violations and, through the same mechanism, the 20 G3
+   violations at the same two datasets. The gate is deliberately **not**
+   loosened (`DECISIONS.md` §46); every claim built on it is rescoped instead.
+   The measurement that would settle whether those abstentions are failures or
+   correct refusals — closure count over the *derived* pool at those 18 lines —
+   is **named and not taken**. It is new apparatus.
+
+2. **The consumption/reconstruction conflict** (§12.4), which is D15 from the
+   other end. Contract §2.4 gives consumption to `Verified` alone; at PSP
+   absence nothing attests, so nothing consumes, so the pool grows
+   monotonically to ~10× the true pool. **The gate and the consumption problem
+   are one problem**, and neither can be fixed without the other. A tractable
+   global formulation would address both — assessed, not built, in
+   `corpus/TECHNIQUES.md` §1.
+
+3. **D13 — `on_hold` is a snapshot read against a past horizon.** Open, and
+   **bounded by the API rather than by this implementation**: the Razorpay
+   dispute entity publishes no resolution timestamp of any kind, so *"the hold
+   was released before the horizon"* is not computable by **any** resolver
+   consuming this feed (`DECISIONS.md` §44.5). That is a statement about the
+   problem, not about this repository.
+
+4. **No checker verifies that a predicate names its frame.** §44's rule is a
+   convention enforced by review, and §44.4 records that review is exactly what
+   this class defeats — a directed sweep by an informed searcher found two
+   instances it was hunting for. Care is not the mechanism.
+
+5. **No claim of uniqueness states the size of the space it is unique over**
+   (§44.8). Every one of them states how *thoroughly* the space was searched;
+   none states how *large* it was. Completeness was treated as the whole of the
+   question and it is half. Recorded as findings; nothing changed.
+
+6. **A pool-based cause pointer for `UPSTREAM_UNRESOLVED`** (§43). 758 rows at
+   the absence points fall to `UNEXPLAINED` because no attestation exists to
+   name a cause. Named, not built.
+
+7. **The wrong-bank-side class, the remaining grid cells, and the GST axis.**
+   Unbuilt, and the GST leg is disclosed as unearned wherever it is mentioned.

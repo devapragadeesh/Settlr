@@ -195,6 +195,24 @@ def render() -> str:
            "artefacts.** No value below is typed by hand. If a number here "
            "disagrees with a number elsewhere in the repository, this file is "
            "right and the other one has gone stale.", "",
+           "## Why this file exists, demonstrated on its first run", "",
+           "This table caught a live error **in itself, on its first "
+           "execution**, in the file built to prevent exactly that class of "
+           "error.", "",
+           "The first draft reported **14 abstentions on determined "
+           "instances**, computed as `determined_instances \u2212 "
+           "determined_resolved`. That subtraction is wrong. Those 14 lines "
+           "are `AttestationDiscrepancy` \u2014 the resolver found a "
+           "contradiction and reported a **finding**, which is not a silence "
+           "\u2014 and the gate's abstention count is **0**. Writing the "
+           "denominator and the scope down beside the number was what exposed "
+           "it; nothing else in the repository had.", "",
+           "That is the argument for this artefact, and it is deliberately not "
+           "the argument that the author was careful. **A mechanism caught "
+           "what care did not.** The same conclusion `DECISIONS.md` \u00a744.4 "
+           "reaches about the reference-frame sweep, and `CHECKPOINT.md` "
+           "\u00a70 reaches about the leak audit: in this project, the "
+           "informed searcher is not the control.", "",
            "| claim | value | denominator | scope | produced by | reproduce with |",
            "|---|---:|---|---|---|---|"]
     for row in rows():

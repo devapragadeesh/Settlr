@@ -32,6 +32,16 @@ follows from taking that seriously.
 
 ---
 
+## What was evaluated and not built
+
+**[`corpus/TECHNIQUES.md`](corpus/TECHNIQUES.md)** assesses five industry and
+literature techniques against what this engine needs. **Two are refuted by
+measurements taken for that document** — date-window partitioning excludes the
+true composition on 20.3% of batches at 30 days, and Fellegi-Sunter's
+independence assumption fails structurally here because `settlement_id` and
+`settled_at` determine each other at 1.000. Both refutations are results about
+the domain, not notes about this implementation.
+
 ## Every number in one place
 
 **[`CLAIMS.md`](CLAIMS.md)** lists every quantitative claim this repository

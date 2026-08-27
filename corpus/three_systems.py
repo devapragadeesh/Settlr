@@ -244,14 +244,22 @@ def render(rows: list[dict]) -> str:
         f"**Where the PSP artefact is absent, neither of the other two systems "
         f"runs at all.** The naive baseline has nothing to group on; the frozen "
         f"cascade raises `KeyError: 'settlement_id'` in its Stage-1 join. The "
-        f"new resolver runs and gets "
-        f"{resolver_absence['correct']}/{resolver_absence['attempted']} right "
-        f"with {resolver_absence['wrong']} wrong, while abstaining on "
+        f"new resolver runs — and **attempts "
+        f"{resolver_absence['attempted']} of {resolver_absence['lines_all']} "
+        f"settlement lines**, which is "
+        f"{100 * resolver_absence['attempted'] / max(resolver_absence['lines_all'], 1):.0f}% "
+        f"COVERAGE, not accuracy. Of the {resolver_absence['attempted']} it "
+        f"attempted, {resolver_absence['correct']} "
+        f"{'was' if resolver_absence['correct'] == 1 else 'were'} right and "
+        f"{resolver_absence['wrong']} wrong. It abstains on "
         f"{resolver_absence['reconstructible_abstained']} of "
-        f"{resolver_absence['reconstructible']} lines the benchmark proves have "
-        "exactly one answer. Those abstentions are **oracle gate G8 failures** "
-        "and the run is marked FAIL because of them. Running where nothing else "
-        "runs is worth something; declining most of the work is not a pass.", "",
+        f"{resolver_absence['reconstructible']} lines that have exactly one "
+        "answer **over the pool the simulator drew from** — 3 to 42 rows, "
+        "against the 7 to 414 rows the resolver must search, up to 14\u00d7 "
+        "larger (`DECISIONS.md` \u00a746, defect D15). Those abstentions are "
+        "**oracle gate G8 failures** and the run is marked FAIL because of "
+        "them. Running where nothing else runs is worth something; attempting "
+        "one line in twenty-four is not a pass.", "",
         f"**Where one attestation is false, the naive baseline is confidently "
         f"wrong {naive_v2['wrong']} times and the new resolver is wrong "
         f"{resolver_v2['wrong']}**, catching "
@@ -327,17 +335,30 @@ def render(rows: list[dict]) -> str:
         gap = totals(subset, "resolver")
         uncovered = gap["lines_all"] - gap["attempted"]
         if uncovered > 0:
+            attested = any(r["resolver"].get("discrepancy_detected")
+                           for r in subset)
+            declined = ("`AttestationDiscrepancy`, where it found a "
+                        "contradiction and so makes no composition claim, and "
+                        "`Unresolved`, where it could not build one"
+                        if attested else
+                        "`Unresolved` and `Ambiguous` — with no attestation "
+                        "there is nothing to contradict, so every declined "
+                        "line here is a reconstruction the resolver could not "
+                        "complete or could not make unique")
             out += ["",
-                    f"**Coverage is stated because \"correct out of "
-                    f"attempted\" hides it.** The resolver attempted "
-                    f"{gap['attempted']} of {gap['lines_all']} settlement "
-                    f"lines here; the other **{uncovered}** are lines it "
-                    "declined — `AttestationDiscrepancy`, where it found a "
-                    "contradiction and so makes no composition claim, and "
-                    "`Unresolved`, where it could not build one. Those "
-                    f"{uncovered} cost nothing on G7 or G8, because they fall "
-                    "outside both gated subpopulations. They are still lines "
-                    "another system answered and this one did not."]
+                    f"**Coverage is not accuracy.** The resolver **attempted "
+                    f"{gap['attempted']} of {gap['lines_all']}** settlement "
+                    f"lines here — that is the {100 * gap['attempted'] / gap['lines_all']:.0f}% "
+                    f"figure — and of the {gap['attempted']} it attempted, "
+                    f"**{gap['correct']} "
+                    f"{'was' if gap['correct'] == 1 else 'were'} exactly right "
+                    f"and {gap['wrong']} wrong**. The two numbers answer different "
+                    "questions and neither substitutes for the other.", "",
+                    f"The other **{uncovered}** lines are ones it declined: "
+                    + declined + f". Those {uncovered} cost nothing on G7 or "
+                    "G8, because they fall outside both gated "
+                    "subpopulations. They are still lines another system "
+                    "answered and this one did not."]
     return "\n".join(out)
 
 

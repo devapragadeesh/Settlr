@@ -1735,7 +1735,54 @@ of this entry.
 **Rejected: treat "five instances found, class understood" as closure.** The
 count is the argument in the other direction. See §44.4.
 
-### 44.7 Appendix — the full 20-predicate inventory
+### 44.8 A narrower class inside this one: uniqueness is relative to a search space
+
+Three of the five instances above are a **sharper** class than §44's, and the
+F1 result named it without generalising it:
+
+| | the uniqueness claim | the space it was actually true over |
+|---|---|---|
+| §39 | "this enumeration is complete, so the closure is unique" | a space CP-SAT **had not finished searching** |
+| F1 | `Reconstructed` — exactly one closing subset | a pool **missing every held row** |
+| F2 | `ReconstructibleInstance` — exactly one closing subset | the **simulator's** pool, 1.4×–14× smaller than the resolver's |
+
+F1 is the clearest statement of it, and it generalises the other two:
+
+> **A pool that is too small hides rivals, and a hidden rival is
+> indistinguishable from no rival.**
+
+`datasets/A20_B50_Cmax` is the demonstration. Its wrong `Reconstructed` was
+not produced by bad arithmetic — the arithmetic was exact and the closure
+genuinely was unique *over the pool it was given*. Restoring the held rows
+produced a rival that had been there all along, and the outcome fell to
+`Ambiguous`. Nothing about the world changed; the search space did.
+
+**Therefore: uniqueness is only meaningful relative to a stated search space,
+and every claim of uniqueness must name the space it is unique over.**
+
+This is not a new decision. It is what §44's rule already requires — a
+predicate must name its frame — applied to the particular frame that is a
+*set of candidates* rather than a clock or a quantity. It is written down
+separately because "which pool" is much easier to leave unstated than "which
+clock", and three of five instances went that way.
+
+#### Where each uniqueness claim in this repository states its space
+
+Recorded as findings. **None of these is changed in this task.**
+
+| claim | space it is unique over | stated? |
+|---|---|---|
+| `Verified.rival_closure_count` | "closing subsets of **the pool at this line**" (`types.py`) | **partially.** It names *a* pool but not *whose*: the resolver's derived pool, not the simulator's. `rival_count_is_lower_bound` correctly covers the truncation case (§39), so only the pool-identity half is missing |
+| `Reconstructed` | contract §4.3 requires the **window** for cross-line exclusivity to be stated on the evidence's `detail` | **the window is required; the POOL is not.** §4.3 says "the pool admitted exactly one closing subset" without saying which pool, and after F1 that is precisely the gap that mattered |
+| `Ambiguous` / `CandidateSet` | carries `complete` and `enumeration_cap` | **the completeness of the search is stated; the extent of the pool is not** |
+| `DeterminedInstance` | "exactly one subset of **the pool** closes to the credit" — the **simulator's** pool | **not stated as the simulator's.** The reader cannot tell it is not the resolver's |
+| `ReconstructibleInstance` | same — the simulator's pool | **not stated.** This is D15, and it is why both remaining oracle failures rest on a premise the resolver cannot be held to (§46) |
+
+The pattern in that table is the finding: **every one of these states how
+thoroughly the space was searched, and none of them states how large the space
+was.** Completeness was treated as the whole of the question. It is half.
+
+### 44.9 Appendix — the full 20-predicate inventory
 
 Every predicate comparing two quantities in `resolver/` and
 `corpus/oracle.py`. Reported in full, failures and passes alike: **a clean
@@ -1746,7 +1793,7 @@ sweep is evidence only if it was exhaustive.**
 | 1 | `breaks.py:81` `Σrefund.debit == row["amount"]` | PSP gross | PSP gross | ✅ (§41 fix) |
 | 2 | `breaks.py:82` `refund.created_at <= eligible_at` | PSP ledger | PSP-derived | ✅ |
 | 3 | `breaks.py:90` `row["credit"] == 0` | PSP | literal | ✅ |
-| 4 | `breaks.py:155` `first_reconcilable > end_of_day(horizon)` | PSP-derived | **bank** | ⚠️ D14 — sound in one direction only, guarded by `test_horizon_ordering` |
+| 4 | `breaks.py:155` `first_reconcilable > end_of_day(horizon)` | PSP-derived | **bank** | ⚠️ D14 — sound in one direction only, guarded by the horizon test in `resolver/tests/test_pool_frame.py` |
 | 5 | `breaks.py:160` `dispute is not None or on_hold` | snapshot | — | ⚠️ **safe by construction** — feeds `OpenBreak`, which asserts nothing (§40) |
 | 6 | `eligibility.py:73` `row.get("on_hold")` | **snapshot** | **as-at past `value_date`** | ❌ **F1**, fixed in §45 |
 | 7 | `eligibility.py:75, 80` `created_at / eligible_at > ceiling` | PSP | bank end-of-day | ⚠️ errs LARGE, stated in the docstring |
@@ -1854,3 +1901,54 @@ consumption to `Verified` alone; at PSP absence nothing attests, so nothing
 consumes, so the pool grows monotonically to ~10× the true pool, so uniqueness
 over the true pool is not a fair bar. **The gate and the open consumption
 problem are one problem**, and fixing either requires the other.
+
+---
+
+## 47. Inference from an unverified premise: a claim already written down is still a premise
+
+**The class.** An inference whose soundness silently depends on a premise
+**nobody checked**, where the premise looked sound because it was *already
+written down in this repository*. Being recorded is not evidence. Two
+instances, both previously logged, neither previously connected.
+
+**§31 — a theorem asserted, gated on, never measured.** Contract §6.3 asserted
+that at 0% attestation coverage `Verified` is provably empty, and gate G5
+enforced it. The theorem was false on the corpus's own data. The prediction
+"`|Verified| = 0`" came true for a different reason, so nothing was learned
+from its coming true, and G5 would have rejected correct answers. Both §6.3
+and G5 are withdrawn.
+
+**§45 — a prediction that inherited a false claim's correctness.** The F1
+prediction argued `ProvenUnmatched` could not move, because rows returning
+from a destroyed `Reconstructed` "settled, so they cannot become
+`ProvenUnmatched`". The clause assumed the assignment being destroyed was a
+**true** one. It was the resolver's only *wrong* answer; its rows had never
+settled and two are entailed. Predicted 699, actual 701.
+
+**The rule.**
+
+> When a prediction, a gate, or an argument rests on an existing claim in this
+> repository, that claim is a **premise to be checked**, not a fact to be
+> cited. Write down which claim you are leaning on and how you verified it —
+> or state that you did not, and treat the conclusion as conditional.
+
+**Why it is worth naming at two instances.** The failure mode is invisible in
+review, because the citation is *correct*: §6.3 really did say that, and the
+`Reconstructed` really did exist. What is missing is the step where somebody
+asks whether the thing being cited is true. This repository generates its
+numbers precisely so that claims can be re-derived rather than remembered —
+and both instances are cases of leaning on a claim without re-deriving it, in
+a project whose entire discipline is not doing that.
+
+**Related but distinct from §44.** §44 is about a predicate comparing two
+things measured in different frames. This is about an argument resting on a
+conclusion nobody re-checked. They share a symptom — a claim stronger than the
+evidence supports — and differ in mechanism.
+
+**Rejected: adding a checklist step to the prediction protocol.** The
+prediction protocol already works; §45's prediction was wrong in one line out
+of six and the error was visible *immediately* on scoring, which is what the
+protocol is for. A checklist would not have caught it, because the author
+believed the premise. What catches it is committing the prediction with its
+reasoning **written out**, so the false step is legible afterwards — which is
+what happened, and why §45 could name the exact clause that failed.
