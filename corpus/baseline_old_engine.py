@@ -225,10 +225,25 @@ def measure(dataset: Path) -> dict:
         "unrepresentable_claims": len(unrepresentable),
         "mean_candidate_set_size": (sum(candidate_sizes) / len(candidate_sizes)
                                     if candidate_sizes else 0.0),
-        "detail": {"wrong": wrong_confident[:8],
-                   "foreign": foreign_adopted[:8],
-                   "unrepresentable": unrepresentable[:8]},
+        # A SAMPLE, and it says so. The counts above are complete; these
+        # lists are illustrative and capped. `DECISIONS.md` 44: a truncated
+        # collection that does not announce its truncation is the same shape
+        # as an enumeration that reports itself exhaustive when it is not.
+        "detail": {"wrong": wrong_confident[:DETAIL_SAMPLE],
+                   "foreign": foreign_adopted[:DETAIL_SAMPLE],
+                   "unrepresentable": unrepresentable[:DETAIL_SAMPLE]},
+        "detail_truncated": any(
+            len(items) > DETAIL_SAMPLE
+            for items in (wrong_confident, foreign_adopted, unrepresentable)),
+        "detail_total": {"wrong": len(wrong_confident),
+                         "foreign": len(foreign_adopted),
+                         "unrepresentable": len(unrepresentable)},
     }
+
+
+#: Illustrative rows kept per category in `detail`. The COUNTS beside them are
+#: complete; only these lists are capped.
+DETAIL_SAMPLE = 8
 
 
 def main() -> int:

@@ -17,9 +17,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# Run as `python3 corpus/scorecard.py` the repo root is not on sys.path, and
+# these modules import `corpus.coverage` so the split is computed once.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 
 def _dig(payload, path):
@@ -134,6 +139,25 @@ def rows() -> list[dict]:
             value=len(ran), denom=f"{len(baseline)} datasets",
             scope="raises `KeyError: 'settlement_id'` at the PSP-absence points",
             artefact="`corpus/baseline_old_engine.py`", how=BASE))
+
+    from corpus.coverage import split as cover_split
+    for scope in ("all", "non_absence", "absence", "original_14"):
+        c = cover_split(oracle, scope)
+        if not c["settlement_lines"]:
+            continue
+        out.append(dict(
+            claim=f"coverage on determinable lines — {c['scope_label']}",
+            value=(f"{c['answered']}/{c['determinable']}"
+                   f" ({c['on_determinable_pct']:.1f}%)"
+                   if c["determinable"] else "—"),
+            denom=f"{c['determinable']} determinable settlement lines "
+                  f"({c['settlement_lines']} total minus "
+                  f"{c['record_contradicted']} whose record contradicts itself)",
+            scope="**A line the resolver MUST NOT answer is not a line it "
+                  "failed to answer.** The single-figure version counted them "
+                  "identically and so fell as detection improved "
+                  "(`DECISIONS.md` §48)",
+            artefact="`corpus/coverage.py`", how=ORACLE))
 
     triv = ROOT / "corpus" / "TRIVIALITY_CHECK.md"
     if triv.exists():

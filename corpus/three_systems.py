@@ -125,10 +125,15 @@ def resolver_row(entry: dict | None) -> dict:
     gates = entry["violations_by_gate"]
     attempted = accounting["verified"] + accounting["reconstructed"]
     wrong = gates.get("G1", 0) + measured["reconstructed_accuracy"]["wrong"]
+    cover = entry.get("coverage") or {}
     return {
         "ran": True,
         "correct": attempted - wrong,
         "attempted": attempted,
+        # `AttestationDiscrepancy` on a settlement line: the resolver found the
+        # record self-contradicting and contract 4.2 forbids a composition.
+        # A FINDING, not a coverage miss (DECISIONS.md 48).
+        "contradicted": cover.get("record_contradicted", 0),
         "wrong": wrong,
         "determined": determined["determined_instances"],
         # ABSTENTION is `Unresolved` or `Ambiguous` on an instance the corpus
@@ -171,6 +176,9 @@ def _totals(subset, system) -> dict:
     # The denominator every system faces, whether or not it attempted the line.
     out["lines"] = sum(r["lines"] for r in subset if r[system].get("ran"))
     out["lines_all"] = sum(r["lines"] for r in subset)
+    # Only the resolver has an outcome meaning "the sources disagree"; for the
+    # other two systems this is 0 BY CONSTRUCTION, not by measurement.
+    out["contradicted"] = sum(r[system].get("contradicted", 0) for r in ran)
     out["seconds"] = sum(r[system].get("seconds", 0) for r in subset)
     out["mean_k"] = (sum(item.get("mean_k", 0) for item in ran) / len(ran)
                      if ran else 0.0)
@@ -178,6 +186,27 @@ def _totals(subset, system) -> dict:
 
 
 def coverage(t: dict) -> str:
+    """`answered / determinable`, with the three-way split beside it.
+
+    `DECISIONS.md` sec 48. The single figure this replaces counted a line the
+    resolver MUST NOT answer -- because the record contradicts itself -- the
+    same as a line it COULD NOT answer, and so fell as detection improved.
+
+    Only the resolver can produce `record_contradicted`: neither the naive
+    baseline nor the frozen cascade has an outcome that expresses "the sources
+    disagree", which is itself the comparison worth seeing.
+    """
+    if not t["lines_all"]:
+        return "-"
+    contradicted = t.get("contradicted", 0)
+    determinable = t["lines_all"] - contradicted
+    pct = f"{100 * t['attempted'] / determinable:.0f}%" if determinable else "-"
+    tail = (f", {contradicted} record-contradicted"
+            if contradicted else "")
+    return (f"{t['attempted']}/{determinable} ({pct}){tail}")
+
+
+def _old_coverage_unused(t: dict) -> str:
     """`attempted / settlement lines`, with the percentage.
 
     Never let a "correct out of attempted" figure stand alone: a system that
@@ -641,6 +670,44 @@ def appendix(run1: Path, run2: Path) -> str:
     return "\n".join(out)
 
 
+SPLIT_START = "<!-- SPLIT-FIGURES:START -->"
+SPLIT_END = "<!-- SPLIT-FIGURES:END -->"
+
+
+def split_figures(run: Path) -> str:
+    """The ProvenUnmatched / OpenBreak figures the README carries.
+
+    Hand-typed once, and stale within one commit: the README said 699 and
+    4,295 for a run in which they were 701 and 4,308. `DECISIONS.md` 48 is the
+    same lesson about coverage. Generated now.
+    """
+    if not run.exists():
+        return ""
+    rows = json.loads(run.read_text())
+    total = lambda path: sum(_dig(r["measured"], path) for r in rows)
+    proven = total(("proven_unmatched", "rows"))
+    breaks = total(("open_break", "rows"))
+    unexplained = sum(r["measured"]["open_break"]["by_reason"].get("unexplained", 0)
+                      for r in rows)
+    absent = sum(v for r in rows if "Bnone" in r["dataset"]
+                 for k, v in r["measured"]["open_break"]["by_reason"].items()
+                 if k == "unexplained")
+    g9 = sum(r["violations_by_gate"].get("G9", 0) for r in rows)
+    return "\n".join([
+        f"**{proven} rows are `ProvenUnmatched`** \u2014 the ledger entails "
+        f"no bank credit exists \u2014 with **{g9}** of them found to have "
+        "settled (gate G9). **"
+        f"{breaks} rows are `OpenBreak`**, which assert nothing and are never "
+        "gated on correctness. The two are never summed (`DECISIONS.md` "
+        "\u00a740).",
+        "",
+        f"**{unexplained} `OpenBreak` rows are `unexplained`**, {absent} of "
+        "them at the two PSP-absence datasets, where no attestation exists so "
+        "no causing line can be named and the resolver cannot say why it "
+        "failed.",
+    ])
+
+
 LIMITS_START = "<!-- MEASURED-LIMITATIONS:START -->"
 LIMITS_END = "<!-- MEASURED-LIMITATIONS:END -->"
 
@@ -786,6 +853,7 @@ def main() -> int:
     splice(SUMMARY_START, SUMMARY_END, summary(rows, _totals))
     splice(LIMITS_START, LIMITS_END,
            measured_limitations(arguments.resolver))
+    splice(SPLIT_START, SPLIT_END, split_figures(arguments.resolver))
     print(text)
     return 0
 

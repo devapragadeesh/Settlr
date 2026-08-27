@@ -9,9 +9,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# Run as `python3 corpus/scorecard.py` the repo root is not on sys.path, and
+# these modules import `corpus.coverage` so the split is computed once.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 #: The D15 verdict, measured in `investigation/D15_MEASUREMENT.md`. Held here
 #: as data rather than prose so the scorecard states it without re-deriving a
 #: 40-minute enumeration on every run.
@@ -34,26 +39,15 @@ def main() -> int:
     total = lambda p: sum(dig(r["measured"], p) for r in oracle)
     gate = lambda g: sum(r["violations_by_gate"].get(g, 0) for r in oracle)
 
-    lines_of, attempted_of = {}, {}
-    for r in oracle:
-        truth = json.loads(
-            (ROOT / "corpus" / r["dataset"] / "ground_truth.json").read_text())
-        lines_of[r["dataset"]] = sum(1 for l in truth["bank_lines"]
-                                     if l["kind"] == "settlement")
-        acc = r["measured"]["accounting"]
-        attempted_of[r["dataset"]] = acc["verified"] + acc["reconstructed"]
+    # The three-way split, computed once in `corpus/coverage.py` so the
+    # scorecard, THREE_SYSTEMS.md and CLAIMS.md cannot drift apart.
+    from corpus.coverage import split
 
-    def cover(pred):
-        names = [r["dataset"] for r in oracle if pred(r["dataset"])]
-        lines = sum(lines_of[n] for n in names)
-        att = sum(attempted_of[n] for n in names)
-        return att, lines, (100 * att / lines if lines else 0.0)
+    all_ds = split(oracle, "all")
+    non_abs = split(oracle, "non_absence")
+    abs_only = split(oracle, "absence")
+    orig = split(oracle, "original_14")
 
-    absence = lambda n: "Bnone" in n
-    all_ds, non_abs, abs_only = (cover(lambda n: True),
-                                 cover(lambda n: not absence(n)),
-                                 cover(absence))
-    orig = cover(lambda n: n.startswith("datasets/") and not absence(n))
     ad = lambda k: total(("attestation_discrepancy", k))
     verified = total(("accounting", "verified"))
     seconds = sum(r.get("seconds", 0) for r in oracle)
@@ -71,24 +65,35 @@ def main() -> int:
         ("`ProvenUnmatched` rows that in fact settled (G9)", f"**{gate('G9')}**",
          f"of {total(('proven_unmatched', 'rows'))} proven rows, 30 datasets"),
         ("", "", ""),
-        ("**Coverage — settlement lines attempted, three scopes**", "", ""),
-        ("all 30 datasets", f"{all_ds[0]}/{all_ds[1]} ({all_ds[2]:.1f}%)",
-         "attempted = `Verified` + `Reconstructed`"),
-        ("the 28 non-absence datasets",
-         f"**{non_abs[0]}/{non_abs[1]} ({non_abs[2]:.1f}%)**",
-         "**every one of the "
-         f"{non_abs[1] - non_abs[0]} not attempted is an "
-         "`AttestationDiscrepancy` — a correct finding, not a shortfall**"),
-        ("… restated on lines where a composition claim is appropriate",
-         f"**{non_abs[0]}/{non_abs[0]} (100%)**",
-         "excludes lines the record contradicts"),
-        ("the 2 PSP-absence datasets alone",
-         f"{abs_only[0]}/{abs_only[1]} ({abs_only[2]:.1f}%)",
-         "coverage, **not** accuracy — of the "
-         f"{abs_only[0]} attempted, {abs_only[0]} correct"),
-        ("*(the original 14, the figure `THREE_SYSTEMS.md` publishes)*",
-         f"*{orig[0]}/{orig[1]} ({orig[2]:.1f}%)*", "*one scope of four*"),
-        ("", "", ""),
+        ("**Coverage — three-way, because a line the resolver MUST NOT "
+          "answer is not a line it failed to answer**", "", ""),
+        ("all 30 datasets — answered / not determinable / record contradicted",
+         f"{all_ds['answered']} / {all_ds['not_determinable']} / "
+         f"{all_ds['record_contradicted']}",
+         f"of {all_ds['settlement_lines']} settlement lines"),
+        ("… coverage on lines where a composition claim is the appropriate answer",
+         f"**{all_ds['answered']}/{all_ds['determinable']} "
+         f"({all_ds['on_determinable_pct']:.1f}%)**",
+         "excludes the lines whose record contradicts itself"),
+        ("the 28 datasets carrying a PSP artefact",
+         f"{non_abs['answered']} / {non_abs['not_determinable']} / "
+         f"{non_abs['record_contradicted']}",
+         f"of {non_abs['settlement_lines']} settlement lines — "
+         f"**{non_abs['not_determinable']} not determinable**"),
+        ("… coverage on determinable lines",
+         f"**{non_abs['answered']}/{non_abs['determinable']} "
+         f"({non_abs['on_determinable_pct']:.1f}%)**",
+         "the 28 non-absence datasets"),
+        ("the 2 PSP-absence datasets",
+         f"{abs_only['answered']} / {abs_only['not_determinable']} / "
+         f"{abs_only['record_contradicted']}",
+         f"of {abs_only['settlement_lines']} settlement lines. **Coverage, "
+         f"not accuracy** — of the {abs_only['answered']} answered, "
+         f"{abs_only['answered']} correct"),
+        ("*the original 14 — the scope `THREE_SYSTEMS.md` publishes*",
+         f"*{orig['answered']} / {orig['not_determinable']} / "
+         f"{orig['record_contradicted']}*",
+         f"*of {orig['settlement_lines']} settlement lines; one scope of four*"),
         ("**Record errors — the output the previous engine could not express**",
          "", ""),
         ("`AttestationDiscrepancy` reported", f"{ad('reported')}",
@@ -164,13 +169,14 @@ def main() -> int:
             f"{ad('genuinely_false')} are false**, including "
             f"{ad('true_finding_of_another_kind')} real errors the benchmark "
             "did not know to plant. On the 28 datasets where a PSP artefact "
-            f"exists it attempts **{non_abs[0]} of {non_abs[1]}** settlement "
-            f"lines, and **all {non_abs[1] - non_abs[0]} it does not attempt "
-            "are lines whose record it found to be self-contradicting** — so "
-            "on lines where a composition claim is the appropriate answer, "
-            "coverage is complete. On the 2 datasets with no PSP artefact it "
-            f"attempts **{abs_only[0]} of {abs_only[1]}** and fails the "
-            "oracle; that failure has now been measured and **all 15 "
+            f"exists it answers **{non_abs['answered']} of "
+            f"{non_abs['determinable']}** settlement lines where a composition "
+            "claim is the appropriate answer, and separately reports "
+            f"**{non_abs['record_contradicted']}** lines whose record it found "
+            "to be self-contradicting — findings, not coverage misses. On the "
+            "2 datasets with no PSP artefact it answers "
+            f"**{abs_only['answered']} of {abs_only['settlement_lines']}** and "
+            "fails the oracle; that failure has now been measured and **all 15 "
             "abstentions are correct refusals**, because the resolver proved "
             "two or more closing subsets exist over the pool it can actually "
             "see. Nothing found here is worth fixing in the engine.", ""]

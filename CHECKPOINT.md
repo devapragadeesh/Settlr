@@ -708,7 +708,8 @@ New, from this phase:
   AND here is what actually happened"*;
 - **the undetectable false attestation is named, not planted** — see
   `DECISIONS.md` §34 for why, including the reading it invites;
-- **238 of 275 `Verified` are non-decisive**, and the oracle's
+- **238 of 275 `Verified` are non-decisive** *(as measured at the time of this
+  section; the F1 fix later moved it to 239 of 275 — see §14.2)*, and the oracle's
   `AttestationDiscrepancy` precision metric counts a true reversal finding as a
   false one because its numerator is *planted wrong attestations*. Both are
   reported in `corpus/THREE_SYSTEMS.md` under *"What the new resolver gets
@@ -889,7 +890,9 @@ Three framings were measurably too generous and now read worse:
   runnable dataset is 9.1%.
 * **Coverage.** "143/144" against "168/168" were never comparable. Every totals
   table now leads with **attempted / settlement lines**: naive **168/168
-  (100%)**, frozen **56/168 (33%)**, resolver **143/168 (85%)** — and at PSP
+  (100%)**, frozen **56/168 (33%)**, resolver **143/168 (85%)** *(the collapsed
+  figure; `DECISIONS.md` §48 later split it — the resolver answers 143 of 143
+  determinable lines and separately reports 25 record contradictions)* — and at PSP
   absence the resolver attempts **1 of 24 (4%)**.
 * **G8's premise.** "the benchmark proves have exactly one explanation" was
   **false as written** and is rescoped everywhere (`DECISIONS.md` §46).
@@ -1044,7 +1047,7 @@ a reporting cycle of its own.
 | scope | attempted / settlement lines |
 |---|---|
 | all 30 datasets | 276 / 359 (76.9%) |
-| the 28 non-absence datasets | 275 / 335 (82.1%) |
+| the 28 non-absence datasets | 275 / 335 (82.1%) *— the collapsed single figure; superseded by §48's three-way split, under which it is 275 answered / 0 not determinable / 60 record contradicted* |
 | … on lines where a composition claim is appropriate | **275 / 275 (100%)** |
 | the 2 absence datasets alone | 1 / 24 (4.2%) |
 | *the original 14 — the figure `THREE_SYSTEMS.md` publishes* | *143 / 168 (85.1%)* |

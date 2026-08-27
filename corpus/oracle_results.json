@@ -2,10 +2,20 @@
  {
   "dataset": "datasets/A10_B100_Cmax",
   "family": "datasets",
-  "seconds": 28.9,
+  "seconds": 28.91,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,
@@ -95,10 +105,20 @@
  {
   "dataset": "datasets/A20_B0_Cmax",
   "family": "datasets",
-  "seconds": 46.82,
+  "seconds": 46.88,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 11,
+   "not_determinable": 0,
+   "record_contradicted": 1,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 11,
@@ -187,10 +207,20 @@
  {
   "dataset": "datasets/A20_B100_Cfifo",
   "family": "datasets",
-  "seconds": 38.55,
+  "seconds": 38.51,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,
@@ -280,10 +310,20 @@
  {
   "dataset": "datasets/A20_B100_Cmax",
   "family": "datasets",
-  "seconds": 59.21,
+  "seconds": 59.26,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,
@@ -373,10 +413,20 @@
  {
   "dataset": "datasets/A20_B100_Crandom",
   "family": "datasets",
-  "seconds": 61.39,
+  "seconds": 61.17,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,
@@ -466,10 +516,20 @@
  {
   "dataset": "datasets/A20_B100_Crandom0",
   "family": "datasets",
-  "seconds": 62.45,
+  "seconds": 62.38,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,
@@ -558,10 +618,20 @@
  {
   "dataset": "datasets/A20_B50_Cmax",
   "family": "datasets",
-  "seconds": 23.83,
+  "seconds": 23.84,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,
@@ -651,10 +721,20 @@
  {
   "dataset": "datasets/A20_B75_Cmax",
   "family": "datasets",
-  "seconds": 66.68,
+  "seconds": 66.87,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,
@@ -744,7 +824,7 @@
  {
   "dataset": "datasets/A20_Bnone_Cmax",
   "family": "datasets",
-  "seconds": 76.05,
+  "seconds": 86.43,
   "passed": false,
   "violations_by_gate": {
    "G3": 9,
@@ -758,12 +838,22 @@
    "G3   bank[12]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[14]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[15]   the truth is absent from a candidate set of 10 (enumeration incomplete)",
-   "G3   bank[16]   the truth is absent from a candidate set of 60 (enumeration incomplete)",
-   "G3   bank[17]   the truth is absent from a candidate set of 177 (enumeration incomplete)",
+   "G3   bank[16]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
+   "G3   bank[17]   the truth is absent from a candidate set of 191 (enumeration incomplete)",
    "G8   bank[1]    Ambiguous(178) on an instance with exactly one closing subset -- unattested, but exactly one subset closes and it closes nothing else in the window",
    "G8   bank[5]    Unresolved(enumeration_truncated) on a determined instance -- unattested, but exactly one subset closes and it closes nothing else in the window",
    "G8   bank[7]    Unresolved(enumeration_truncated) on a determined instance -- unattested, but exactly one subset closes and it closes nothing else in the window"
   ],
+  "violations_total": 18,
+  "violations_truncated": true,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 1,
+   "not_determinable": 10,
+   "record_contradicted": 1,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 0,
@@ -855,10 +945,20 @@
  {
   "dataset": "datasets/A30_B100_Cmax",
   "family": "datasets",
-  "seconds": 38.69,
+  "seconds": 40.73,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 11,
+   "not_determinable": 0,
+   "record_contradicted": 1,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 11,
@@ -948,10 +1048,20 @@
  {
   "dataset": "datasets/A40_B100_Cfifo",
   "family": "datasets",
-  "seconds": 47.29,
+  "seconds": 52.58,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,
@@ -1041,10 +1151,20 @@
  {
   "dataset": "datasets/A40_B100_Cmax",
   "family": "datasets",
-  "seconds": 53.92,
+  "seconds": 64.23,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,
@@ -1134,10 +1254,20 @@
  {
   "dataset": "datasets/A40_B100_Crandom",
   "family": "datasets",
-  "seconds": 48.28,
+  "seconds": 40.22,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 11,
+   "not_determinable": 0,
+   "record_contradicted": 1,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 11,
@@ -1227,10 +1357,20 @@
  {
   "dataset": "datasets/A40_B50_Cmax",
   "family": "datasets",
-  "seconds": 43.12,
+  "seconds": 38.73,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,
@@ -1320,7 +1460,7 @@
  {
   "dataset": "datasets/A40_Bnone_Cmax",
   "family": "datasets",
-  "seconds": 79.07,
+  "seconds": 79.21,
   "passed": false,
   "violations_by_gate": {
    "G3": 11,
@@ -1340,6 +1480,16 @@
    "G3   bank[19]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G8   bank[2]    Unresolved(enumeration_truncated) on a determined instance -- unattested, but exactly one subset closes and it closes nothing else in the window"
   ],
+  "violations_total": 17,
+  "violations_truncated": true,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 0,
+   "not_determinable": 11,
+   "record_contradicted": 1,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 0,
@@ -1428,10 +1578,20 @@
  {
   "dataset": "datasets/A60_B100_Cmax",
   "family": "datasets",
-  "seconds": 52.58,
+  "seconds": 52.7,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,
@@ -1521,10 +1681,20 @@
  {
   "dataset": "datasets_v2/A10_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 33.07,
+  "seconds": 32.92,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 9,
+   "not_determinable": 0,
+   "record_contradicted": 3,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 9,
@@ -1614,10 +1784,20 @@
  {
   "dataset": "datasets_v2/A20_B0_Cmax",
   "family": "datasets_v2",
-  "seconds": 39.61,
+  "seconds": 39.51,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 11,
+   "not_determinable": 0,
+   "record_contradicted": 1,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 11,
@@ -1706,10 +1886,20 @@
  {
   "dataset": "datasets_v2/A20_B100_Cfifo",
   "family": "datasets_v2",
-  "seconds": 16.52,
+  "seconds": 16.44,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 9,
+   "not_determinable": 0,
+   "record_contradicted": 3,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 9,
@@ -1799,10 +1989,20 @@
  {
   "dataset": "datasets_v2/A20_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 26.52,
+  "seconds": 25.98,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 9,
+   "not_determinable": 0,
+   "record_contradicted": 3,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 9,
@@ -1892,10 +2092,20 @@
  {
   "dataset": "datasets_v2/A20_B100_Crandom",
   "family": "datasets_v2",
-  "seconds": 50.27,
+  "seconds": 50.1,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,
@@ -1985,10 +2195,20 @@
  {
   "dataset": "datasets_v2/A20_B100_Crandom0",
   "family": "datasets_v2",
-  "seconds": 61.72,
+  "seconds": 61.44,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 9,
+   "not_determinable": 0,
+   "record_contradicted": 3,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 9,
@@ -2078,10 +2298,20 @@
  {
   "dataset": "datasets_v2/A20_B50_Cmax",
   "family": "datasets_v2",
-  "seconds": 24.3,
+  "seconds": 23.91,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,
@@ -2170,10 +2400,20 @@
  {
   "dataset": "datasets_v2/A20_B75_Cmax",
   "family": "datasets_v2",
-  "seconds": 33.71,
+  "seconds": 33.51,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 9,
+   "not_determinable": 0,
+   "record_contradicted": 3,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 9,
@@ -2263,10 +2503,20 @@
  {
   "dataset": "datasets_v2/A30_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 60.82,
+  "seconds": 60.39,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 9,
+   "not_determinable": 0,
+   "record_contradicted": 3,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 9,
@@ -2356,10 +2606,20 @@
  {
   "dataset": "datasets_v2/A40_B100_Cfifo",
   "family": "datasets_v2",
-  "seconds": 47.42,
+  "seconds": 46.9,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,
@@ -2451,10 +2711,20 @@
  {
   "dataset": "datasets_v2/A40_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 42.47,
+  "seconds": 42.52,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 9,
+   "not_determinable": 0,
+   "record_contradicted": 3,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 9,
@@ -2544,10 +2814,20 @@
  {
   "dataset": "datasets_v2/A40_B100_Crandom",
   "family": "datasets_v2",
-  "seconds": 83.0,
+  "seconds": 82.25,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 11,
+   "answered": 9,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 9,
@@ -2639,10 +2919,20 @@
  {
   "dataset": "datasets_v2/A40_B50_Cmax",
   "family": "datasets_v2",
-  "seconds": 45.62,
+  "seconds": 45.17,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 9,
+   "not_determinable": 0,
+   "record_contradicted": 3,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 9,
@@ -2732,10 +3022,20 @@
  {
   "dataset": "datasets_v2/A60_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 43.05,
+  "seconds": 42.56,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
+  "violations_total": 0,
+  "violations_truncated": false,
+  "coverage": {
+   "settlement_lines": 12,
+   "answered": 10,
+   "not_determinable": 0,
+   "record_contradicted": 2,
+   "no_outcome": 0,
+   "note": "record_contradicted is a FINDING, not a shortfall: contract 4.2 forbids asserting a composition the record contradicts. Only `not_determinable` is a coverage shortfall"
+  },
   "measured": {
    "accounting": {
     "verified": 10,

@@ -68,13 +68,56 @@ def score_one(directory: Path, *, cap: int, time_budget: float) -> dict:
                 type(outcome).__name__ == "AttestationDiscrepancy":
             caught += 1
 
+    # --- the three-way coverage split, computed per SETTLEMENT LINE --------
+    # `(Verified + Reconstructed) / settlement lines` collapsed three
+    # different things into one and so DECLINED AS DETECTION IMPROVED: a line
+    # the resolver must not answer, because the record contradicts itself,
+    # counted identically to one it could not answer. `DECISIONS.md` 48.
+    settlement_lines = {int(line["line_index"]) for line in truth["bank_lines"]
+                        if line["kind"] == "settlement"}
+    outcome_by_line = {o.bank_index: type(o).__name__
+                       for o in output.line_outcomes}
+    answered = contradicted = not_determinable = no_outcome = 0
+    for index in settlement_lines:
+        kind = outcome_by_line.get(index)
+        if kind in ("Verified", "Reconstructed"):
+            answered += 1
+        elif kind == "AttestationDiscrepancy":
+            contradicted += 1
+        elif kind in ("Ambiguous", "Unresolved"):
+            not_determinable += 1
+        else:
+            no_outcome += 1
+    coverage = {
+        "settlement_lines": len(settlement_lines),
+        "answered": answered,
+        "not_determinable": not_determinable,
+        "record_contradicted": contradicted,
+        "no_outcome": no_outcome,
+        "note": "record_contradicted is a FINDING, not a shortfall: contract "
+                "4.2 forbids asserting a composition the record contradicts. "
+                "Only `not_determinable` is a coverage shortfall",
+    }
+
+    # A truncated collection must announce its own truncation. The previous
+    # version wrote `violations[:12]` with nothing saying so, and at
+    # A20_Bnone_Cmax that stored 3 G8 entries while `violations_by_gate`
+    # correctly recorded 9. No published figure derived from it -- every gate
+    # number comes from `violations_by_gate` -- but a sample that does not
+    # announce itself is the shape of `DECISIONS.md` 39.
+    VIOLATION_SAMPLE = 12
+    all_violations = [v.line().strip() for v in report.violations]
+
     return {
         "dataset": f"{directory.parent.name}/{directory.name}",
         "family": directory.parent.name,
         "seconds": round(seconds, 2),
         "passed": report.passed,
         "violations_by_gate": report.by_gate(),
-        "violations": [v.line().strip() for v in report.violations[:12]],
+        "violations": all_violations[:VIOLATION_SAMPLE],
+        "violations_total": len(all_violations),
+        "violations_truncated": len(all_violations) > VIOLATION_SAMPLE,
+        "coverage": coverage,
         "measured": report.measured,
         "false_settlement_id_planted": len(false_ids),
         "false_settlement_id_caught": caught,

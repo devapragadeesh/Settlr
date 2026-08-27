@@ -1699,6 +1699,57 @@ The mechanism the rule in this entry asks for — frames named in code — is
 weaker than a checker that verifies them, and no such checker exists here.
 That is a named gap, not a solved problem.
 
+#### Three times, now, the project has committed the error it had just catalogued
+
+This is no longer a coincidence and is recorded as a count:
+
+1. **§39 — the `complete` flag.** A claim of a stronger epistemic state than
+   was measured, *inside the resolver written to prevent exactly that*.
+2. **`CLAIMS.md`'s own denominator error.** The ledger built to make every
+   number carry its denominator reported 14 abstentions on determined
+   instances by computing `instances − resolved`; those 14 are
+   `AttestationDiscrepancy` — findings, not silences — and the gate's count is
+   0. It failed on its **first execution**.
+3. **§48 — the coverage metric.** Introduced *by the reporting-honesty pass
+   whose entire purpose was to remove this class of error*, and it fell as
+   detection improved.
+
+Each was written by someone who had just finished cataloguing the previous
+one. The pattern is not carelessness and cannot be fixed by more care: **the
+author of a rule is the worst available auditor of their own compliance with
+it**, because the same misunderstanding that produced the error also produces
+the check for it. What caught all three was a *mechanism* — a gate, a
+generated table, a diagnostic that recomputed a number from a different
+direction — and in each case the mechanism was built for a different purpose
+and caught this as a side effect.
+
+The honest implication is uncomfortable and is stated rather than softened:
+**there is no reason to believe there is not a fourth.** The controls that
+exist are the ones that found these three, and none of them was designed to.
+
+#### 44.10 A truncated field that did not announce its truncation
+
+`corpus/score_resolver.py` wrote `report.violations[:12]` into
+`oracle_results.json` with nothing recording that the list was a sample. At
+`datasets/A20_Bnone_Cmax` it stored 3 `G8` entries while `violations_by_gate`
+correctly recorded 9.
+
+**No published figure was affected.** Every gate number in this repository
+derives from `violations_by_gate`, which was always complete, and
+`test_the_gate_counts_are_complete_even_when_the_sample_is_not` now asserts
+that. This is a reporting truncation, not a soundness defect, and describing
+it as anything more would cost the same credibility as hiding it.
+
+Fixed anyway: the field now carries `violations_total` and
+`violations_truncated`. Found while reconciling two fields that disagreed —
+not by looking for it.
+
+**A second instance surfaced the moment a static guard existed for the
+first:** `corpus/baseline_old_engine.py` capped three `detail` lists at 8 with
+no flag. Same class, same absence of impact — the counts beside them were
+always complete — and it was found by a test written for a different file, one
+minute after that test existed.
+
 ### 44.5 D13's ceiling is the API, not the algorithm
 
 Razorpay's dispute entity publishes `id`, `entity`, `payment_id`, `amount`,
@@ -1952,3 +2003,55 @@ protocol is for. A checklist would not have caught it, because the author
 believed the premise. What catches it is committing the prediction with its
 reasoning **written out**, so the false step is legible afterwards — which is
 what happened, and why §45 could name the exact clause that failed.
+
+---
+
+## 48. Coverage is reported three ways, because a line the resolver MUST NOT answer is not a line it failed to answer
+
+**Decision.** The single figure `coverage = (Verified + Reconstructed) /
+settlement lines` is replaced everywhere by a three-way split plus one derived
+rate, computed once in `corpus/coverage.py` and shared by every report:
+
+| | |
+|---|---|
+| **answered** | `Verified` / `Reconstructed` — a composition claim was made |
+| **not determinable** | `Unresolved` / `Ambiguous` — the resolver could not |
+| **record contradicted** | `AttestationDiscrepancy` — the resolver **must not**; contract §4.2 forbids asserting a composition the record contradicts |
+| **coverage on determinable lines** | `answered / (answered + not determinable)` |
+
+Every published figure names one of the four scopes in `coverage.SCOPES`.
+
+**The defect.** The single figure collapsed the second and third categories,
+so it **fell as detection improved**. Measured: `datasets_v2` plants one false
+`settlement_id` per dataset, the resolver catches **13 of 13**, and its
+coverage drops from 85% to 79% *because it caught them*. On the 28 datasets
+carrying a PSP artefact, **all 60 unattempted lines are `record contradicted`,
+and all 62 discrepancy findings in the corpus are correct — 0 genuinely
+false** (`investigation/D15_MEASUREMENT.md` §1).
+
+A metric that penalises a reconciliation engine for detecting record errors is
+not a conservative metric. It is a wrong one, and it happens to point in the
+flattering direction *for the benchmark* rather than for the engine, which is
+why nobody caught it by reading.
+
+**Rejected: keep one number and explain it in prose.** This is the option that
+was in effect, and it failed. The caveat existed — `THREE_SYSTEMS.md` carried a
+sentence about declined lines — and a reader skimming the table saw "85%" and
+"79%" and drew the obvious wrong inference. **Prose does not survive a skim**,
+and the entire purpose of the reporting pass (§14.3) was to stop relying on it.
+
+**Rejected: report only `answered / determinable` and drop the rest.** It reads
+as 100% on the non-absence datasets, which is true and would be quoted without
+the fact that 60 lines were excluded from the denominator. A rate whose
+denominator excludes something interesting must show what it excluded.
+
+**Rejected: count `record contradicted` as answered.** It is the opposite
+error. The resolver made no composition claim on those lines, deliberately,
+and counting a refusal as an answer is how `Determinate` came to mean four
+different things.
+
+**How it was found.** Not by review. The D15 diagnostic decomposed coverage in
+order to locate 25 unattempted lines, and the decomposition showed that 60 of
+60 on the non-absence datasets were correct findings. The metric was introduced
+by the pass that existed to remove this class of error; see §44.4, where it is
+recorded as the third such instance.

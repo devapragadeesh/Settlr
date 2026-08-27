@@ -13,13 +13,13 @@ Full provenance for each number, including the command that reproduces it: [`CLA
 | evidence provenance the corpus contradicts (G6) | **0** | all evidence, 30 datasets |
 | `ProvenUnmatched` rows that in fact settled (G9) | **0** | of 701 proven rows, 30 datasets |
 | | | |
-| **Coverage — settlement lines attempted, three scopes** |  |  |
-| all 30 datasets | 276/359 (76.9%) | attempted = `Verified` + `Reconstructed` |
-| the 28 non-absence datasets | **275/335 (82.1%)** | **every one of the 60 not attempted is an `AttestationDiscrepancy` — a correct finding, not a shortfall** |
-| … restated on lines where a composition claim is appropriate | **275/275 (100%)** | excludes lines the record contradicts |
-| the 2 PSP-absence datasets alone | 1/24 (4.2%) | coverage, **not** accuracy — of the 1 attempted, 1 correct |
-| *(the original 14, the figure `THREE_SYSTEMS.md` publishes)* | *143/168 (85.1%)* | *one scope of four* |
-| | | |
+| **Coverage — three-way, because a line the resolver MUST NOT answer is not a line it failed to answer** |  |  |
+| all 30 datasets — answered / not determinable / record contradicted | 276 / 21 / 62 | of 359 settlement lines |
+| … coverage on lines where a composition claim is the appropriate answer | **276/297 (92.9%)** | excludes the lines whose record contradicts itself |
+| the 28 datasets carrying a PSP artefact | 275 / 0 / 60 | of 335 settlement lines — **0 not determinable** |
+| … coverage on determinable lines | **275/275 (100.0%)** | the 28 non-absence datasets |
+| the 2 PSP-absence datasets | 1 / 21 / 2 | of 24 settlement lines. **Coverage, not accuracy** — of the 1 answered, 1 correct |
+| *the original 14 — the scope `THREE_SYSTEMS.md` publishes* | *143 / 0 / 25* | *of 168 settlement lines; one scope of four* |
 | **Record errors — the output the previous engine could not express** |  |  |
 | `AttestationDiscrepancy` reported | 62 | 30 datasets |
 | … planted by the benchmark and found | 37 | of 39 planted |
@@ -42,9 +42,9 @@ Full provenance for each number, including the command that reproduces it: [`CLA
 | datasets passing every gate | **28/30** | the 2 failures are both PSP-absence points, on G3 and G8 |
 | `Verified` that are non-decisive | 239 | of 275 — a rival composition would have passed the same check |
 | `Reconstructed` wrong | 0 | of 1 — **a count, not a rate**; the population is too small for one |
-| resolver runtime, 30 datasets | 1435s | one full scoring run |
+| resolver runtime, 30 datasets | 1446s | one full scoring run |
 
 ## The one-paragraph version
 
-Across 30 datasets the resolver makes **0 wrong `Verified` assignments and 0 wrong `ProvenUnmatched` claims**, the two outcome types that assert something and are gated at zero. It reports **62 record contradictions of which 0 are false**, including 25 real errors the benchmark did not know to plant. On the 28 datasets where a PSP artefact exists it attempts **275 of 335** settlement lines, and **all 60 it does not attempt are lines whose record it found to be self-contradicting** — so on lines where a composition claim is the appropriate answer, coverage is complete. On the 2 datasets with no PSP artefact it attempts **1 of 24** and fails the oracle; that failure has now been measured and **all 15 abstentions are correct refusals**, because the resolver proved two or more closing subsets exist over the pool it can actually see. Nothing found here is worth fixing in the engine.
+Across 30 datasets the resolver makes **0 wrong `Verified` assignments and 0 wrong `ProvenUnmatched` claims**, the two outcome types that assert something and are gated at zero. It reports **62 record contradictions of which 0 are false**, including 25 real errors the benchmark did not know to plant. On the 28 datasets where a PSP artefact exists it answers **275 of 275** settlement lines where a composition claim is the appropriate answer, and separately reports **60** lines whose record it found to be self-contradicting — findings, not coverage misses. On the 2 datasets with no PSP artefact it answers **1 of 24** and fails the oracle; that failure has now been measured and **all 15 abstentions are correct refusals**, because the resolver proved two or more closing subsets exist over the pool it can actually see. Nothing found here is worth fixing in the engine.
 

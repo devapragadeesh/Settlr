@@ -78,6 +78,24 @@ python3 corpus/triviality_check.py --all                   # is the task trivial
 python3 corpus/leakage_audit.py --all                      # is the data leaking?
 ```
 
+**Verify the frozen data has not been altered.** The primary dataset and every
+corpus dataset ship SHA-256 manifests:
+
+```bash
+# the frozen primary dataset
+shasum -a 256 -c <(sed 's|^\([0-9a-f]*\) |\1  |' engine/DATASET_HASHES.txt)
+
+# every corpus dataset (208 files)
+for f in corpus/datasets*/*/DATASET_HASHES.txt; do
+  (cd "$(dirname "$f")" && shasum -a 256 -c DATASET_HASHES.txt)
+done
+```
+
+The first command prints `WARNING: 1 line is improperly formatted`. **That is
+expected and is not a failure** — `engine/DATASET_HASHES.txt` ends with a blank
+line, and `engine/` is frozen so the file is not edited to silence it. Every
+data line reports `OK`. The corpus manifests need no `sed` and emit no warning.
+
 ---
 
 ## The three systems
@@ -292,21 +310,19 @@ rows it said had no bank credit had settled**. One of its six reasons,
 `rolled_forward`, was right **17 times out of 2,397**; it was defined in the
 contract as *"eligible, not selected"* — a residual — four lines below a
 requirement that every reason be derived. It is now split into
-`ProvenUnmatched` (699 rows, gated at zero by G9, **0 failures**) and
-`OpenBreak` (4,295 rows, which assert nothing). Full audit:
+`ProvenUnmatched`, gated at zero by G9, and `OpenBreak`, which asserts
+nothing. Full audit:
 [`investigation/DERIVED_BRANCH_AUDIT.md`](investigation/DERIVED_BRANCH_AUDIT.md).
 
-**The proven rate is 14%, and that is the intended shape.** A small set with a
-genuine entailment claim behind a zero-tolerance gate, plus a large classified
-and aged break queue, is what production reconciliation ships. A system
-claiming to have positively explained all 4,994 rows would be the less
-credible artefact — that is precisely what the old outcome claimed.
+<!-- SPLIT-FIGURES:START -->
+<!-- SPLIT-FIGURES:END -->
 
-**1,469 `OpenBreak` rows are `unexplained`**, 758 of them at the two
-PSP-absence datasets, where no attestation exists so no causing line can be
-named and the resolver cannot say why it failed. The category is reported
-rather than absorbed into a neighbouring one, because absorbing it is exactly
-how `rolled_forward` came to exist.
+A small proven set behind a zero-tolerance gate, plus a large classified and
+aged break queue, is what production reconciliation ships. A system claiming to
+have positively explained all 4,994 rows would be the less credible artefact —
+that is precisely what the old outcome claimed. The `unexplained` category is
+reported rather than absorbed into a neighbouring one, because absorbing it is
+exactly how `rolled_forward` came to exist.
 
 <!-- MEASURED-LIMITATIONS:START -->
 **87% of `Verified` are non-decisive** — 239 of 275. The composition claim was corroborated by a consequence a rival composition would also have satisfied. The contract requires that number to be reported precisely so the `Verified` count cannot be quoted without it.
