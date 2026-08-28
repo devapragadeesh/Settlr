@@ -62,8 +62,28 @@ ENUMERATION_CAP = 32
 #: bounds which rows are candidates, never which candidate is chosen.
 ELIGIBILITY_WORKING_DAYS = 2
 
-#: Wall-clock ceiling per bank credit. Exceeding it is reported, not silently
-#: swapped for an approximate method.
+#: Deterministic-time ceiling per bank credit, in CP-SAT's own units --
+#: NOT wall-clock seconds. Exceeding it is reported, not silently swapped for
+#: an approximate method.
+#:
+#: This was `max_time_in_seconds`, a WALL-CLOCK budget, until DECISIONS.md
+#: sec 49. `num_workers = 1` below makes the search ORDER reproducible, but a
+#: wall-clock budget still cuts that same, reproducible order off at a
+#: different POINT depending on what else the machine was doing -- the exact
+#: defect sec 39 fixed on the resolver side of this project, found here by
+#: accident during an unrelated verification pass. Two runs of this frozen
+#: module against identical frozen input produced different
+#: Determinate/Ambiguous/Unresolved outcomes on 10 of 30 corpus datasets
+#: before this fix. `max_deterministic_time` is measured in CP-SAT's own
+#: internal step count, so identical search orders now reach identical
+#: stopping points regardless of machine load.
+#:
+#: The numeric value (30.0) is carried over unchanged from the wall-clock
+#: figure it replaces. OR-Tools does not publish a fixed conversion between
+#: deterministic-time units and wall-clock seconds -- that the two happen to
+#: share a number is not a claim that they represent an equivalent amount of
+#: search. Verified empirically, not assumed:
+#: `investigation/nondeterminism_evidence/`.
 SOLVER_TIME_LIMIT_SECONDS = 30.0
 
 
@@ -131,7 +151,7 @@ def find_zero_net_groups(rows: list[dict]) -> list[ZeroNetGroup]:
 
 def enumerate_decompositions(
     pool: list[dict], target: int, cap: int = ENUMERATION_CAP
-) -> tuple[list[tuple[str, ...]], bool, int, float]:
+) -> tuple[list[tuple[str, ...]], bool, int, float, bool]:
     """Every minimum-deferral subset of `pool` whose net contribution is `target`.
 
     ## The objective, and what it is not
@@ -152,12 +172,12 @@ def enumerate_decompositions(
     batches to 3, 2 and 3 candidates -- spurious ambiguity produced by
     combinations no settlement process could generate.
 
-    Returns `(subsets, truncated, deferred_count, seconds)`.
+    Returns `(subsets, truncated, deferred_count, seconds, over_time_budget)`.
     """
     began = time.perf_counter()
     ordered = sorted(pool, key=lambda r: r["entity_id"])
     if not ordered:
-        return ([] if target != 0 else [()]), False, 0, time.perf_counter() - began
+        return ([] if target != 0 else [()]), False, 0, time.perf_counter() - began, False
 
     debit_side = [index for index, row in enumerate(ordered)
                   if row["type"] != "payment"]
@@ -174,10 +194,10 @@ def enumerate_decompositions(
         model.Maximize(sum(variables[i] for i in debit_side))
     solver = cp_model.CpSolver()
     solver.parameters.num_workers = 1          # determinism
-    solver.parameters.max_time_in_seconds = SOLVER_TIME_LIMIT_SECONDS
+    solver.parameters.max_deterministic_time = SOLVER_TIME_LIMIT_SECONDS
     status = solver.Solve(model)
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        return [], False, 0, time.perf_counter() - began
+        return [], False, 0, time.perf_counter() - began, status == cp_model.UNKNOWN
     applied = int(solver.ObjectiveValue()) if debit_side else 0
 
     model, variables = build()
@@ -200,11 +220,32 @@ def enumerate_decompositions(
     enumerator = cp_model.CpSolver()
     enumerator.parameters.enumerate_all_solutions = True
     enumerator.parameters.num_workers = 1      # determinism
-    enumerator.parameters.max_time_in_seconds = SOLVER_TIME_LIMIT_SECONDS
-    enumerator.Solve(model, collector)
+    enumerator.parameters.max_deterministic_time = SOLVER_TIME_LIMIT_SECONDS
+    enum_status = enumerator.Solve(model, collector)
 
-    return (sorted(collector.subsets), len(collector.subsets) >= cap,
-            len(debit_side) - applied, time.perf_counter() - began)
+    hit_cap = len(collector.subsets) >= cap
+    # `over_time_budget` used to be `seconds > SOLVER_TIME_LIMIT_SECONDS` --
+    # comparing a WALL-CLOCK measurement against what is now a
+    # DETERMINISTIC-TIME budget, a unit mismatch this same change would have
+    # introduced if left alone. Derived from the enumerator's own status
+    # instead, matching `DECISIONS.md` sec 39's precedent: `status ==
+    # OPTIMAL` means the enumeration genuinely exhausted the search space;
+    # any other status means it did not, and if that was not because the cap
+    # was reached, it was the deterministic-time budget.
+    #
+    # NOTE, not fixed here: `truncated` (returned below) is `hit_cap` alone
+    # and does not independently reflect `enum_status`, so an enumeration
+    # that exhausts its deterministic-time budget BEFORE reaching the cap is
+    # still reported as `truncated=False` -- the same "weaker state reported
+    # as stronger" pattern sec 39 fixed on the resolver side, one level
+    # deeper in this same function. Out of scope for this change, which is
+    # the wall-clock -> deterministic-time swap and nothing else; recorded in
+    # `investigation/nondeterminism_evidence/` as a follow-on finding.
+    over_time_budget = enum_status != cp_model.OPTIMAL and not hit_cap
+
+    return (sorted(collector.subsets), hit_cap,
+            len(debit_side) - applied, time.perf_counter() - began,
+            over_time_budget)
 
 
 @dataclass
@@ -288,8 +329,8 @@ def run(
 
     for line in sorted(dataset.bank, key=lambda b: (b.value_date, b.index)):
         pool = build_pool(dataset, line.value_date, consumed, excluded)
-        subsets, truncated, deferred, seconds = enumerate_decompositions(
-            pool, line.amount, cap)
+        subsets, truncated, deferred, seconds, over_budget = (
+            enumerate_decompositions(pool, line.amount, cap))
         candidates = [Decomposition.build(rows_by_id, subset) for subset in subsets]
         resolution = resolve_from_candidates(
             candidates, bank_amount=line.amount, truncated=truncated,
@@ -301,7 +342,7 @@ def run(
             bank_date=line.value_date,
             pool_ids=tuple(sorted(row["entity_id"] for row in pool)),
             resolution=resolution, deferred_debits=deferred, seconds=seconds,
-            over_time_budget=seconds > SOLVER_TIME_LIMIT_SECONDS))
+            over_time_budget=over_budget))
 
         if isinstance(resolution, Determinate):
             for row_id in resolution.decomposition.row_ids:

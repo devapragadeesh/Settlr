@@ -128,7 +128,7 @@ def replay(dataset: Dataset, bank_to_batch: dict, truth: dict,
 
     for line in sorted(dataset.bank, key=lambda b: (b.value_date, b.index)):
         pool = build_pool(dataset, line.value_date, consumed, excluded)
-        subsets, truncated, deferred, _ = enumerate_decompositions(
+        subsets, truncated, deferred, _, _ = enumerate_decompositions(
             pool, line.amount, ENUMERATION_CAP)
         candidates = [Decomposition.build(rows_by_id, s) for s in subsets]
         resolution = resolve_from_candidates(

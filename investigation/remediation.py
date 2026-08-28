@@ -64,7 +64,7 @@ def policy_run(dataset, bank_to_batch, *,
                 pool, line.amount, cap=ENUMERATION_CAP)
             truncated = len(subsets) >= ENUMERATION_CAP
         else:
-            subsets, truncated, _, _ = enumerate_decompositions(
+            subsets, truncated, _, _, _ = enumerate_decompositions(
                 pool, line.amount, ENUMERATION_CAP)
 
         candidates = [Decomposition.build(rows_by_id, s) for s in subsets]
