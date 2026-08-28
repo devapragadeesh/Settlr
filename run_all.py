@@ -10,10 +10,14 @@ Runs, in this order:
     3. corpus/score_resolver.py        the new resolver, scored by the oracle
     4. corpus/three_systems.py         the comparison table
     5. corpus/claims_ledger.py         CLAIMS.md, the claims ledger
+    6. corpus/scorecard.py             SCORECARD.md, the five-minute read
+    7. corpus/export_dashboard.py      dashboard/data.json, the ONLY file the
+                                        dashboard UI is allowed to read
 
 and writes `corpus/TRIVIALITY_CHECK.md`, `corpus/baseline_results.json`,
-`corpus/ORACLE_RESULTS.md`, `corpus/oracle_results.json` and
-`corpus/THREE_SYSTEMS.md`.
+`corpus/ORACLE_RESULTS.md`, `corpus/oracle_results.json`,
+`corpus/THREE_SYSTEMS.md`, `CLAIMS.md`, `SCORECARD.md` and
+`dashboard/data.json`.
 
 Expect roughly an hour; measured end to end in a clean checkout at 63m42s
 (baseline 2557s, resolver 1265s) -- treat that as one data point, not a
@@ -58,6 +62,8 @@ STEPS = [
      [sys.executable, "corpus/claims_ledger.py"]),
     ("the scorecard -- the five-minute read",
      [sys.executable, "corpus/scorecard.py"]),
+    ("the dashboard export -- the ONE file the dashboard UI reads",
+     [sys.executable, "corpus/export_dashboard.py"]),
 ]
 
 
