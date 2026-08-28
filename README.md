@@ -62,7 +62,8 @@ stale.
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-python3 run_all.py            # all three systems, every dataset (30-60 min)
+python3 run_all.py            # all three systems, every dataset (~an hour;
+                               # varies with the machine -- see run_all.py)
 ```
 
 `run_all.py` runs three systems over every dataset and writes

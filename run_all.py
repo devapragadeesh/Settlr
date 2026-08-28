@@ -15,14 +15,19 @@ and writes `corpus/TRIVIALITY_CHECK.md`, `corpus/baseline_results.json`,
 `corpus/ORACLE_RESULTS.md`, `corpus/oracle_results.json` and
 `corpus/THREE_SYSTEMS.md`.
 
-Expect 30-60 minutes. The cost is enumeration: the resolver counts rival
-closing subsets under NO objective on every line it certifies, because a
-consequence confirmed when 400 rival compositions predict the same consequence
-is weak corroboration of the one claimed, and contract §3.3 makes that count
-mandatory rather than optional. `--quick` lowers the enumeration cap and time
-budget for a smoke run; the numbers it produces are NOT the reported ones,
-because a lower cap means more truncation and truncation is the abstention
-loophole.
+Expect roughly an hour; measured end to end in a clean checkout at 63m42s
+(baseline 2557s, resolver 1265s) -- treat that as one data point, not a
+guarantee. The cost is enumeration: the resolver counts rival closing
+subsets under NO objective on every line it certifies, because a consequence
+confirmed when 400 rival compositions predict the same consequence is weak
+corroboration of the one claimed, and contract §3.3 makes that count
+mandatory rather than optional. The frozen cascade's own step is bounded by
+CP-SAT deterministic time (`DECISIONS.md` §49), not wall-clock time, so its
+WALL-CLOCK duration varies with the machine's actual speed even though its
+OUTCOME does not -- do not read a faster or slower run as a sign that
+something changed. `--quick` lowers the enumeration cap and time budget for
+a smoke run; the numbers it produces are NOT the reported ones, because a
+lower cap means more truncation and truncation is the abstention loophole.
 """
 
 from __future__ import annotations
