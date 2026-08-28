@@ -1028,7 +1028,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 12,
      "mean_k": 1.0,
-     "seconds": 0.0
+     "seconds": 0.01
     },
     "frozen": {
      "ran": true,
@@ -1801,10 +1801,26 @@
   "instances": 18,
   "source": "corpus/scorecard.py's D15 constant -- a committed measurement (investigation/D15_MEASUREMENT.md), held as data rather than re-derived on every export"
  },
- "hashes": null,
+ "hashes": {
+  "primary_dataset": {
+   "passed": true,
+   "detail": [
+    "engine/data/recon_combined.json: OK",
+    "engine/data/disputes.json: OK",
+    "engine/data/bank_statement.csv: OK",
+    "engine/data/erp_orders.csv: OK",
+    "engine/data/gstr2b.csv: OK",
+    "engine/ground_truth/ground_truth.json: OK"
+   ]
+  },
+  "corpus_datasets": {
+   "passed": 30,
+   "of": 30
+  }
+ },
  "commit_ordering": {
   "available": true,
-  "count": 39,
+  "count": 40,
   "first_ten": [
    {
     "sha": "2ce40f95e1",
@@ -1859,11 +1875,6 @@
   ],
   "last_ten": [
    {
-    "sha": "d0ad9d2357",
-    "date": "2026-08-27 15:49:09 +0530",
-    "subject": "44.8 + 47 + TECHNIQUES: two techniques refuted by measurement"
-   },
-   {
     "sha": "d17f0b841b",
     "date": "2026-08-27 16:58:48 +0530",
     "subject": "D15 MEASURED: all 15 abstentions are correct refusals; nothing to fix"
@@ -1907,6 +1918,11 @@
     "sha": "43309070a5",
     "date": "2026-08-28 16:29:54 +0530",
     "subject": "Step 3.3/3.4 complete: run_all.py timed in a clean clone; FINAL_GATE.md regenerated whole"
+   },
+   {
+    "sha": "5a9598c068",
+    "date": "2026-08-28 20:08:52 +0530",
+    "subject": "Step 4: dashboard export layer -- one file, every figure re-used not recomputed"
    }
   ]
  },

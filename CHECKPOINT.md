@@ -1101,7 +1101,7 @@ is no failure here for one to fix.
 
 ---
 
-## 16. `max_deterministic_time`: the frozen baseline was not reproducible (2026-08-28)
+## 16. `max_deterministic_time`: the frozen baseline was not reproducible, and a second defect in the same function overstated its soundness (2026-08-28)
 
 Found while closing out a final correctness pass, not while looking for it.
 `corpus/baseline_old_engine.py --all` — the frozen cascade, `81c04e0`, run
@@ -1141,24 +1141,49 @@ file was last regenerated — had never successfully rendered. Its arrival in
 this diff is coincidental to the determinism fix, not caused by it; both are
 disentangled in `RECONCILIATION.md`.
 
-A second, adjacent defect in the same function this fix touched —
-`truncated` computed from the enumeration cap alone, never from CP-SAT's own
-status, so a budget-exhausted-but-under-cap search is misreported as
-exhaustive — was found, deliberately left unfixed in this pass, and given its
-own cycle. `DECISIONS.md` §50 once filed.
+### 16.2 §50 — the second, adjacent defect, completed in the same phase
 
-### 16.2 Standing gaps, updated
+A second, adjacent defect in the same function §49 touched — `truncated`
+computed from the enumeration cap alone, never from CP-SAT's own status, so a
+budget-exhausted-but-under-cap search was misreported as exhaustive — was
+found while fixing §49, deliberately left unfixed in that pass, and given its
+own cycle. **That cycle is complete**: `DECISIONS.md` §50 records its own
+committed prediction, its own fix (`truncated = enum_status != OPTIMAL`), its
+own watched-to-fail test, and its own before/after pair
+(`corpus/baseline_results_pretruncationfix.json` against the current
+`corpus/baseline_results.json`).
+
+**This is the more serious of the two findings in this section, and it is
+stated plainly, not softened.** §50's committed prediction (0–5 enumerations
+flip, no `Determinate` count decreases) **missed badly**: at least 26
+enumerations flipped — a measured lower bound, since a flip on an
+`Unresolved` outcome leaves no trace in the field used to count it — and
+**three previously-published `Determinate` results in the frozen-cascade
+baseline were never actually proven unique**: `datasets_v2/A20_B100_Cfifo`
+(4→3), `datasets_v2/A40_B100_Cfifo` (3→2), `datasets_v2/A40_B100_Cmax`
+(3→2). The enumeration reporting itself "exhaustive" on those lines had in
+fact stopped on a solver-budget timeout, not on genuine completion. This
+repository's own `corpus/THREE_SYSTEMS.md` therefore carried an overstated
+soundness claim about the frozen cascade's comparison baseline for the
+period between the §49 fix landing and the §50 fix landing — both in the
+same phase, and that period is now closed. Full accounting:
+`investigation/nondeterminism_evidence/TRUNCATED_RESULTS.md`.
+
+### 16.3 Standing gaps, updated
 
 Item 4 of `§14.6` above — "no checker verifies that a predicate names its
-frame" — is now evidenced a fourth time, and by an instance none of this
-project's own review passes could have found on their own, since the
-defective code predates this project's authorship entirely. See
-`DECISIONS.md` §44.4's fourth instance. Nothing else in `§14.6`'s ranked list
-changes: this finding is orthogonal to D15, the consumption/reconstruction
+frame" — is now evidenced a **fifth** time (§49 and §50 both), and by
+instances none of this project's own review passes could have found on their
+own, since the defective code predates this project's authorship entirely.
+`DECISIONS.md` §44.4 records both explicitly as its fourth and fifth
+instances, with §50's distinct moral stated there: the mechanism that catches
+one frozen-code defect does not stop at the first thing it finds, once it is
+pointed at the function that held it. Nothing else in `§14.6`'s ranked list
+changes: both findings are orthogonal to D15, the consumption/reconstruction
 conflict, D13, and the GST axis.
 
-This item was not previously listed because it was not previously known — the
+Neither item was previously listed because neither was previously known — the
 frozen cascade's own reproducibility had never been checked, only its
-correctness (`investigation/DEFECT_REPORT.md`, D1–D3). It is now closed, not
-open: verified deterministic under both uncontended and contended conditions,
-with the fix, the prediction, and the miss all published together.
+correctness (`investigation/DEFECT_REPORT.md`, D1–D3). Both are now closed,
+not open: verified deterministic under both uncontended and contended
+conditions, with each fix, its prediction, and its miss published together.

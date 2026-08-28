@@ -1707,7 +1707,7 @@ The mechanism the rule in this entry asks for — frames named in code — is
 weaker than a checker that verifies them, and no such checker exists here.
 That is a named gap, not a solved problem.
 
-#### Four times, now, and the fourth changes the moral
+#### Five times, now, and the fourth and fifth both change the moral
 
 This is no longer a coincidence and is recorded as a count:
 
@@ -1731,29 +1731,47 @@ This is no longer a coincidence and is recorded as a count:
    against CP-SAT's internal state" was not a category that existed here
    before §39, and once it did, it applied to code this project did not
    write just as much as to code it did.
+5. **§50 — `truncated` computed from the cap alone, one function deeper than
+   §49.** Found *while fixing §49*, in the same frozen function, and
+   deliberately deferred to its own cycle rather than patched inline. Its
+   own committed prediction (0–5 enumerations flip, no `Determinate`
+   decreases) **missed badly** — at least 26 flipped, and **three
+   previously-published `Determinate` results in the frozen-cascade
+   comparison were never actually proven unique**
+   (`datasets_v2/A20_B100_Cfifo`, `datasets_v2/A40_B100_Cfifo`,
+   `datasets_v2/A40_B100_Cmax`; full accounting in
+   `investigation/nondeterminism_evidence/TRUNCATED_RESULTS.md`). This
+   repository's own `THREE_SYSTEMS.md` carried an overstated soundness claim
+   about the frozen cascade — the comparison's *baseline*, not its subject —
+   for exactly as long as §49 was fixed and §50 was not, and that period is
+   now closed and dated.
 
 The first three were written by someone who had just finished cataloguing the
 previous one, and that is the story the first three instances tell on their
 own: **the author of a rule is the worst available auditor of their own
 compliance with it**, because the same misunderstanding that produced the
-error also produces the check for it. The fourth instance does not fit that
-story — nobody here wrote `matching/stage3_solver.py`'s clock — and it revises
-the moral rather than merely extending the count: **sometimes the mechanism
-that catches an old defect is a newer defect's own postmortem.** Fixing §39
-did not just remove one bug; it left behind a description precise enough to
-recognize the same bug in a codebase this project never touched. That is a
-real, useful side effect of naming a defect class carefully, and it is worth
-stating plainly rather than as self-congratulation: the fourth instance is
-evidence for the mechanism's reach, not evidence of unusual care.
+error also produces the check for it. The fourth and fifth instances do not
+fit that story — nobody here wrote `matching/stage3_solver.py`'s clock or its
+enumeration-cap check — and together they revise the moral rather than merely
+extending the count twice: **sometimes the mechanism that catches an old
+defect is a newer defect's own postmortem, and once that mechanism exists it
+does not stop at the first thing it finds.** Fixing §39 left behind a
+description precise enough to recognize the same shape in code this project
+never wrote (§49); fixing §49 then put a reviewer's attention directly on the
+one function most likely to hold a sibling defect, and it did (§50). Neither
+is self-congratulation — the fifth instance is evidence that finding one
+frozen-code defect via this mechanism does not exhaust the function it was
+found in, not evidence that the search is now thorough.
 
-What caught all four was a *mechanism* — a gate, a generated table, a
+What caught all five was a *mechanism* — a gate, a generated table, a
 diagnostic that recomputed a number from a different direction, a fix whose
-own vocabulary generalized past its original target — and in each case the
-mechanism was built for a different purpose and caught this as a side effect.
+own vocabulary generalized past its original target, a deliberate deferral
+followed by a second pass over the same code — and in each case the mechanism
+was built for a different purpose and caught this as a side effect.
 
 The honest implication is uncomfortable and is stated rather than softened:
-**there is no reason to believe there is not a fifth.** The controls that
-exist are the ones that found these four, and none of them was designed to.
+**there is no reason to believe there is not a sixth.** The controls that
+exist are the ones that found these five, and none of them was designed to.
 
 #### 44.10 A truncated field that did not announce its truncation
 
