@@ -265,6 +265,16 @@ detected — is unchanged. See
 dataset-by-dataset accounting; this note corrects the total in place rather
 than rewriting history the way §6 does for the errors found there.
 
+**Second correction, same day.** `DECISIONS.md` §50 fixed an adjacent defect
+in the same function: `truncated` was computed from the enumeration cap
+alone, so a search that exhausted its deterministic-time budget before
+reaching the cap was misreported as exhaustive. On the original-14 family
+specifically, `Determinate`/`Ambiguous`/`Unresolved` do not move again (all
+three affected datasets are in `datasets_v2`), but **unrepresentable claims
+fall further, 59 → 46** — several `Ambiguous` resolutions on this family had
+a falsely non-empty `certain_rows` from the same bug. See
+`investigation/nondeterminism_evidence/TRUNCATED_RESULTS.md`.
+
 ---
 
 ## 5. The contract amendment, and the theorem it rested on

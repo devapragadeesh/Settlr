@@ -2165,3 +2165,82 @@ by the resolver, not audited by it. It became visible only because §39's fix
 gave this project the vocabulary — "an externally measured clock compared
 against CP-SAT's internal state is a defect" — to recognize the same shape in
 someone else's code. See §44.4's fourth instance for the moral this changes.
+
+---
+
+## 50. `truncated` must reflect the enumerator's own status, not the cap alone — §39's class, third time, one function deeper than §49
+
+**The defect.** `matching/stage3_solver.py:enumerate_decompositions` computed
+`truncated = hit_cap` (`len(collector.subsets) >= cap`) and separately derived
+`over_time_budget` from the enumerator's own CP-SAT status, without folding
+the second into the first. An enumeration that exhausted its
+deterministic-time budget **before** reaching the cap was therefore reported
+`truncated=False` — a stopped-early search recorded as a completed one.
+`matching/model.py:resolve_from_candidates` branches on `truncated` directly:
+`len(unique) == 1 and not truncated` returns `Determinate`, a claim of proven
+uniqueness. A line where the budget ran out after finding exactly one
+candidate, without ruling out a second, was indistinguishable from a line
+genuinely proven unique.
+
+**How it was found.** Found and deliberately left alone while fixing §49, in
+the same function, because §49's authorized scope was the wall-clock →
+deterministic-time swap and nothing else. Recorded as a follow-on finding at
+the time; fixed now, in its own cycle, per that plan.
+
+**The fix.** `truncated = enum_status != cp_model.OPTIMAL`, replacing
+`hit_cap` alone. A `StopSearch()` call at the cap reports `FEASIBLE`, never
+`OPTIMAL`, exactly as a budget-exhausted stop does — so this single
+expression covers both cap-hit and budget-exhaustion, which is the point:
+they are both truncation.
+
+**The prediction, and the miss.** `investigation/nondeterminism_evidence/
+TRUNCATED_PREDICTION.md`, committed before the fix, reasoned from
+`ENUMERATION_CAP = 32` and the corpus's observed candidate counts that few
+enumerations (0–5) would flip, and that no `Determinate` count would
+decrease. **Both claims missed, and by a wide margin.**
+`unrepresentable_claims` fell in 16 of 30 datasets by 26 in total — a lower
+bound on the true flip count, since a flip on an `Unresolved` outcome or an
+already-empty `certain_rows` produces no visible signal in that field at all.
+**Three `Determinate` results decreased**:
+`datasets_v2/A20_B100_Cfifo` (4→3), `datasets_v2/A40_B100_Cfifo` (3→2),
+`datasets_v2/A40_B100_Cmax` (3→2). Three lines previously published as
+`Determinate` in the frozen-cascade baseline had never actually been proven
+unique — the search that produced them was cut off by the deterministic-time
+budget, not exhausted. Full accounting: `investigation/
+nondeterminism_evidence/TRUNCATED_RESULTS.md`.
+
+**Why the prediction's reasoning was wrong, stated plainly.** It conflated
+the cost of *finding* solutions with the cost of *proving no more exist*.
+CP-SAT can find every actual solution to a subset-sum instance quickly and
+still spend a large amount of deterministic time exhausting the remaining
+branches to confirm completeness; that proof cost is a property of the
+pool's size and structure, not of how many solutions were found. "Few
+solutions found" was treated as evidence of "little search needed," and that
+inference does not hold for exhaustive enumeration. This is itself a useful,
+if humbling, calibration of `SOLVER_TIME_LIMIT_SECONDS = 30.0`: it is
+adequate for many pools in this corpus but not all, and the pools it is
+inadequate for are not identifiable in advance from candidate-set size alone.
+
+**The before/after pair.** `corpus/baseline_results_pretruncationfix.json`
+(the run with §49's fix but this section's bug still present) and
+`corpus/baseline_results.json` (now this fix's output). A second pair
+alongside §49's, both preserved rather than discarded.
+
+**Downstream figures, recomputed again.** `corpus/THREE_SYSTEMS.md`,
+README.md's spliced summary, and `CHECKPOINT.md` §4.6 (a second, dated
+correction: unrepresentable claims on the original-14 family fall further,
+59 → 46; outcome buckets on that family do not move again, since all three
+`Determinate` flips are in `datasets_v2`). `CLAIMS.md` checked, unaffected.
+
+**Scope, held exactly.** Only `enumerate_decompositions`'s `truncated`
+computation changed. `num_workers`, the objective, `ENUMERATION_CAP`, and
+everything §49 already fixed are untouched.
+
+**§44.9's inventory, updated.** This is the reference-frame class's *third*
+instance inside one function — §39's `complete` flag was the resolver-side
+original; §49 found the same shape in the frozen cascade's clock; this is a
+second, independent predicate in that same frozen-cascade function computing
+"did the search finish" from an incomplete signal. Three instances, in one
+function, found across three separate passes, is itself evidence for §44.4's
+claim that this class is not eliminable by care: each pass fixed what it was
+looking at and left the adjacent line for the next one to find.

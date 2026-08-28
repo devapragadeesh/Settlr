@@ -232,18 +232,18 @@ def enumerate_decompositions(
     # OPTIMAL` means the enumeration genuinely exhausted the search space;
     # any other status means it did not, and if that was not because the cap
     # was reached, it was the deterministic-time budget.
-    #
-    # NOTE, not fixed here: `truncated` (returned below) is `hit_cap` alone
-    # and does not independently reflect `enum_status`, so an enumeration
-    # that exhausts its deterministic-time budget BEFORE reaching the cap is
-    # still reported as `truncated=False` -- the same "weaker state reported
-    # as stronger" pattern sec 39 fixed on the resolver side, one level
-    # deeper in this same function. Out of scope for this change, which is
-    # the wall-clock -> deterministic-time swap and nothing else; recorded in
-    # `investigation/nondeterminism_evidence/` as a follow-on finding.
     over_time_budget = enum_status != cp_model.OPTIMAL and not hit_cap
+    # `truncated` used to be `hit_cap` alone, so an enumeration that exhausted
+    # its deterministic-time budget BEFORE reaching the cap was reported
+    # `truncated=False` -- the same "weaker state reported as stronger"
+    # pattern sec 39 fixed on the resolver side, one level deeper in this
+    # same function (`DECISIONS.md` sec 50). Cap-hit and budget-exhaustion
+    # are both truncation: `enum_status != OPTIMAL` covers both, because a
+    # `StopSearch()` at the cap reports `FEASIBLE`, never `OPTIMAL`, just as
+    # a budget-exhausted stop does.
+    truncated = enum_status != cp_model.OPTIMAL
 
-    return (sorted(collector.subsets), hit_cap,
+    return (sorted(collector.subsets), truncated,
             len(debit_side) - applied, time.perf_counter() - began,
             over_time_budget)
 

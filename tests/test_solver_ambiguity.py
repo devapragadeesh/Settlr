@@ -4,12 +4,16 @@
 existed. These tests run it against what the solver really returns.
 """
 
+import random
+
 import pytest
 
+import matching.stage3_solver as stage3_solver
 from matching.model import (
     Ambiguous, BalanceProof, BalanceViolation, Decomposition, Determinate,
     Unresolved, resolve_from_candidates,
 )
+from matching.stage3_solver import enumerate_decompositions
 
 
 def ambiguous_reconstructions(cascade):
@@ -183,3 +187,43 @@ def test_a_non_closing_determinate_cannot_be_constructed():
             proof=BalanceProof(bank_amount=999, credit_total=100, debit_total=0,
                                residual=-899, tolerance=0),
             method="test")
+
+
+# --- DECISIONS.md sec 50: truncated must reflect enumerator status, not cap alone ---
+
+def _budget_exhausted_pool():
+    """A pool engineered so the FIRST solve succeeds fast (establishing
+    feasibility) but the SECOND, enumerating solve cannot reach `OPTIMAL`
+    within a near-zero deterministic-time budget, and finds FEWER than the
+    cap before being cut off -- isolating the budget-exhaustion branch from
+    the cap-hit branch.
+    """
+    random.seed(11)
+    values = sorted(random.randint(100, 999) for _ in range(30))
+    target = sum(values[:15])
+    pool = [{"entity_id": f"p{i}", "type": "payment", "credit": v, "debit": 0}
+            for i, v in enumerate(values)]
+    return pool, target
+
+
+def test_truncated_reflects_enumerator_status_not_cap_alone():
+    """sec 50. An enumeration that exhausts its deterministic-time budget
+    before reaching the cap must still report `truncated=True` -- cap-hit
+    and budget-exhaustion are both truncation.
+    """
+    pool, target = _budget_exhausted_pool()
+    original_budget = stage3_solver.SOLVER_TIME_LIMIT_SECONDS
+    stage3_solver.SOLVER_TIME_LIMIT_SECONDS = 1e-6
+    try:
+        subsets, truncated, _, _, over_time_budget = enumerate_decompositions(
+            pool, target, cap=32)
+    finally:
+        stage3_solver.SOLVER_TIME_LIMIT_SECONDS = original_budget
+
+    assert len(subsets) < 32, (
+        "this fixture must exercise the budget branch, not the cap branch")
+    assert over_time_budget, (
+        "this fixture must actually exhaust the deterministic-time budget")
+    assert truncated, (
+        "truncated must be True whenever the enumerator's own status is not "
+        "OPTIMAL, even when the cap was never reached")
