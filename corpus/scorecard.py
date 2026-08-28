@@ -179,7 +179,8 @@ def main() -> int:
             "fails the oracle; that failure has now been measured and **all 15 "
             "abstentions are correct refusals**, because the resolver proved "
             "two or more closing subsets exist over the pool it can actually "
-            "see. Nothing found here is worth fixing in the engine.", ""]
+            "see. Nothing measured on this scorecard is worth fixing in the "
+            "engine.", ""]
     arguments.out.write_text("\n".join(out) + "\n")
     print(f"wrote {arguments.out}")
     return 0
