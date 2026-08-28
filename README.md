@@ -111,9 +111,9 @@ The full per-dataset table, generated: **[`corpus/THREE_SYSTEMS.md`](corpus/THRE
 <!-- THREE-SYSTEM-SUMMARY:START -->
 | dataset family | naive `GROUP BY` | frozen cascade | new resolver |
 |---|---|---|---|
-| **original 14** | coverage **168/168 (100%)**<br>168/168 right, **0 wrong**<br>abstained 0/88 det, 0/31 rec<br>discrepancies 0/13 | coverage **56/168 (33%)**<br>55/56 right, **1 wrong**<br>abstained 50/88 det, 16/31 rec<br>discrepancies 0/13 | coverage **143/168 (85%)**<br>143/143 right, **0 wrong**<br>abstained 0/88 det, 0/31 rec<br>discrepancies 13/13 |
-| **PSP absent (2)** | **cannot run** | **cannot run** | coverage **1/24 (4%)**<br>1/1 right, **0 wrong**<br>abstained 0/0 det, 15/18 rec<br>discrepancies 0/0 |
-| **false attestation (14)** | coverage **167/167 (100%)**<br>154/167 right, **13 wrong**<br>abstained 0/76 det, 0/43 rec<br>discrepancies 0/26 | coverage **50/167 (30%)**<br>48/50 right, **2 wrong**<br>abstained 42/76 det, 29/43 rec<br>discrepancies 0/26 | coverage **132/167 (79%)**<br>132/132 right, **0 wrong**<br>abstained 0/76 det, 0/43 rec<br>discrepancies 24/26 |
+| **original 14** | coverage **168/168 (100%)**<br>168/168 right, **0 wrong**<br>abstained 0/88 det, 0/31 rec<br>discrepancies 0/13 | coverage **57/168 (34%)**<br>56/57 right, **1 wrong**<br>abstained 49/88 det, 16/31 rec<br>discrepancies 0/13 | coverage **143/143 (100%), 25 record-contradicted**<br>143/143 right, **0 wrong**<br>abstained 0/88 det, 0/31 rec<br>discrepancies 13/13 |
+| **PSP absent (2)** | **cannot run** | **cannot run** | coverage **1/22 (5%), 2 record-contradicted**<br>1/1 right, **0 wrong**<br>abstained 0/0 det, 15/18 rec<br>discrepancies 0/0 |
+| **false attestation (14)** | coverage **167/167 (100%)**<br>154/167 right, **13 wrong**<br>abstained 0/76 det, 0/43 rec<br>discrepancies 0/26 | coverage **51/167 (31%)**<br>49/51 right, **2 wrong**<br>abstained 42/76 det, 29/43 rec<br>discrepancies 0/26 | coverage **132/132 (100%), 35 record-contradicted**<br>132/132 right, **0 wrong**<br>abstained 0/76 det, 0/43 rec<br>discrepancies 24/26 |
 
 **Read coverage first.** *coverage* is settlement lines attempted out of settlement lines present — the denominator all three systems face. *right/attempted* is compositions exactly correct **out of the lines that system tried**, so it says nothing about the ones it declined; a system that declines a line and a system that answers it correctly look identical in that ratio. *abstained* is silence on instances that have exactly one answer — oracle gates G7 and G8, and **G8’s uniqueness is scoped to the pool the simulator drew from, 1.4×–14× smaller than the pool the resolver searches** (`DECISIONS.md` §46). *discrepancies* is planted record errors found, and the reported total is larger than the planted total because reversals are real findings the corpus did not plant — the genuinely-false count is **zero**. Full table: [`corpus/THREE_SYSTEMS.md`](corpus/THREE_SYSTEMS.md).
 <!-- THREE-SYSTEM-SUMMARY:END -->
@@ -315,6 +315,9 @@ nothing. Full audit:
 [`investigation/DERIVED_BRANCH_AUDIT.md`](investigation/DERIVED_BRANCH_AUDIT.md).
 
 <!-- SPLIT-FIGURES:START -->
+**701 rows are `ProvenUnmatched`** — the ledger entails no bank credit exists — with **0** of them found to have settled (gate G9). **4308 rows are `OpenBreak`**, which assert nothing and are never gated on correctness. The two are never summed (`DECISIONS.md` §40).
+
+**1472 `OpenBreak` rows are `unexplained`**, 758 of them at the two PSP-absence datasets, where no attestation exists so no causing line can be named and the resolver cannot say why it failed.
 <!-- SPLIT-FIGURES:END -->
 
 A small proven set behind a zero-tolerance gate, plus a large classified and

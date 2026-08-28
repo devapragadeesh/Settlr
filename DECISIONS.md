@@ -1643,11 +1643,13 @@ decision rather than a finding:**
 > come from different frames is a defect **even when it currently agrees** —
 > because the agreement is then a property of the data, not of the rule.
 
-### 44.1 Five instances
+### 44.1 Six instances
 
 The class was named after three. A directed sweep of 20 predicates across
 `resolver/` and `corpus/oracle.py` found two more, and one of the two is in
-the **oracle** — the component that scores everything else.
+the **oracle** — the component that scores everything else. A sixth surfaced
+later, outside that sweep, in code none of this project's passes had reason
+to look at.
 
 | # | where | left side | right side | claim it inflated |
 |---|---|---|---|---|
@@ -1656,10 +1658,12 @@ the **oracle** — the component that scores everything else.
 | D13 | `breaks.py` break reason | `on_hold` **current-state snapshot** | the **past** settlement horizon | 202 of 540 disputed rows (37.4%) disagree between the two |
 | **F1** | `eligibility.py:73` | the **same** snapshot | the **same** past horizon | the pool's stated **superset** invariant, silently broken |
 | **F2** | `oracle.py:219, 551` | uniqueness over the **true** pool | a resolver searching a **derived** pool 1.4×–14× larger | "the benchmark proves this line has exactly one explanation" |
+| **§49** | `matching/stage3_solver.py` (frozen, `81c04e0`) | **external** wall clock | CP-SAT's **internal** limit | two runs of the same frozen baseline disagreeing on 10 of 30 datasets — the same shape as §39, in the code §39's fix was never applied to |
 
 F1 and D13 are *the same error, one file apart*. Cataloguing D13 did not
 prevent F1, and F1 was written after D13 was known — which is the point of
-§44.4.
+§44.4. §49 is the same pair again, at a further remove: it is §39's own
+error, in the codebase §39's author was actively comparing against.
 
 ### 44.2 What each instance cost
 
@@ -1667,7 +1671,11 @@ prevent F1, and F1 was written after D13 was known — which is the point of
 by an API ceiling and is open (44.5). **F1** is fixed in the cycle that
 follows this entry; it never bit, which is exactly why it needed fixing —
 see §45. **F2** is a *corpus* defect and the gate is **not** loosened for it;
-only every statement of a G8 result is rescoped (§46).
+only every statement of a G8 result is rescoped (§46). **§49** was a
+reproducibility hazard rather than a correctness one — every run computed a
+CP-SAT-valid answer, just not the same one twice — and is fixed; the before/after pair and the
+reconciliation against everything previously published from the old baseline
+are in §49 itself.
 
 ### 44.3 A mixed-frame computation survived one line above the fix that removed it
 
@@ -1699,7 +1707,7 @@ The mechanism the rule in this entry asks for — frames named in code — is
 weaker than a checker that verifies them, and no such checker exists here.
 That is a named gap, not a solved problem.
 
-#### Three times, now, the project has committed the error it had just catalogued
+#### Four times, now, and the fourth changes the moral
 
 This is no longer a coincidence and is recorded as a count:
 
@@ -1713,19 +1721,39 @@ This is no longer a coincidence and is recorded as a count:
 3. **§48 — the coverage metric.** Introduced *by the reporting-honesty pass
    whose entire purpose was to remove this class of error*, and it fell as
    detection improved.
+4. **§49 — `max_time_in_seconds` in the frozen cascade.** Unlike the first
+   three, this one was **not written by this project's process at all**. It
+   predates the phase entirely — `matching/stage3_solver.py` is frozen at
+   `81c04e0`, authored to be replaced, not audited — and no pass of this
+   project's own work could have caught it, because no pass of this project's
+   own work ever looked at it. It was recognizable only because §39's fix
+   *created the vocabulary to see it*: "an externally measured clock compared
+   against CP-SAT's internal state" was not a category that existed here
+   before §39, and once it did, it applied to code this project did not
+   write just as much as to code it did.
 
-Each was written by someone who had just finished cataloguing the previous
-one. The pattern is not carelessness and cannot be fixed by more care: **the
-author of a rule is the worst available auditor of their own compliance with
-it**, because the same misunderstanding that produced the error also produces
-the check for it. What caught all three was a *mechanism* — a gate, a
-generated table, a diagnostic that recomputed a number from a different
-direction — and in each case the mechanism was built for a different purpose
-and caught this as a side effect.
+The first three were written by someone who had just finished cataloguing the
+previous one, and that is the story the first three instances tell on their
+own: **the author of a rule is the worst available auditor of their own
+compliance with it**, because the same misunderstanding that produced the
+error also produces the check for it. The fourth instance does not fit that
+story — nobody here wrote `matching/stage3_solver.py`'s clock — and it revises
+the moral rather than merely extending the count: **sometimes the mechanism
+that catches an old defect is a newer defect's own postmortem.** Fixing §39
+did not just remove one bug; it left behind a description precise enough to
+recognize the same bug in a codebase this project never touched. That is a
+real, useful side effect of naming a defect class carefully, and it is worth
+stating plainly rather than as self-congratulation: the fourth instance is
+evidence for the mechanism's reach, not evidence of unusual care.
+
+What caught all four was a *mechanism* — a gate, a generated table, a
+diagnostic that recomputed a number from a different direction, a fix whose
+own vocabulary generalized past its original target — and in each case the
+mechanism was built for a different purpose and caught this as a side effect.
 
 The honest implication is uncomfortable and is stated rather than softened:
-**there is no reason to believe there is not a fourth.** The controls that
-exist are the ones that found these three, and none of them was designed to.
+**there is no reason to believe there is not a fifth.** The controls that
+exist are the ones that found these four, and none of them was designed to.
 
 #### 44.10 A truncated field that did not announce its truncation
 
@@ -2055,3 +2083,85 @@ order to locate 25 unattempted lines, and the decomposition showed that 60 of
 60 on the non-absence datasets were correct findings. The metric was introduced
 by the pass that existed to remove this class of error; see §44.4, where it is
 recorded as the third such instance.
+
+---
+
+## 49. `max_deterministic_time`, not `max_time_in_seconds` — §39's class, found one component over, in code this project did not write
+
+**The defect.** `matching/stage3_solver.py` — the frozen cascade, `81c04e0`,
+the engine this project was built to replace — sets
+`solver.parameters.max_time_in_seconds = 30.0` at both of its CP-SAT solve
+calls. That is a **wall-clock** budget: identical search orders
+(`num_workers=1`, so the order is otherwise reproducible) run for 30 seconds
+of real time regardless of how much CPU contention exists during that window,
+so the same dataset produces a different truncation point — and therefore a
+different outcome distribution — depending on what else the machine was doing.
+This is `DECISIONS.md` §39's exact class (`enumerate_closures.py`'s external
+wall clock compared against CP-SAT's internal state), found **one component
+over**: not in the resolver §39 already fixed, but in the frozen cascade the
+resolver exists to be compared against.
+
+**How it was found.** Not by review, and not by looking for it. `corpus/
+baseline_old_engine.py --all` was run twice in the course of ordinary work on
+this phase — once alone, once with an oracle-scoring pass running
+concurrently — and the two runs disagreed on 10 of 30 datasets'
+`Determinate`/`Ambiguous`/`Unresolved` counts. `investigation/FINAL_GATE.md`
+diagnosed the mechanism before this decision was written.
+
+**The fix.** `max_time_in_seconds` → `max_deterministic_time` at both call
+sites, keeping the same numeric value (30.0) as the simplest choice that
+preserves the budget's order of magnitude without a theoretical claim that it
+is an equivalent *amount* of search — OR-Tools does not publish a fixed
+conversion between deterministic-time units and wall-clock seconds by design.
+`investigation/nondeterminism_evidence/PREDICTION.md` states this reasoning
+in full, committed before the fix existed.
+
+**The contended-run verification, not skipped.** A directional prediction
+(weak, explicitly flagged as resting on an unverified premise — the exact §47
+shape) was committed before the fix. The result: **the prediction is not
+confirmed.** Of the 10 disagreeing datasets, the stable output matches the
+prior run A on 2, matches prior run B on 2, and matches **neither** on 6 — four
+of those six are cases where A and B had *agreed with each other* and the
+deterministic-budget result broke with both. Full accounting:
+`investigation/nondeterminism_evidence/RECONCILIATION.md`. Determinism itself
+is confirmed separately and unconditionally: three uncontended runs of
+`corpus/baseline_old_engine.py --all` are byte-identical excluding wall-clock
+`seconds`, and a fourth run — deliberately contended with a concurrent
+`corpus/score_resolver.py --all` — matches all three exactly.
+
+**The before/after pair, published rather than discarded**, per the §39
+standard: `corpus/baseline_results_predeterminism.json` (the old,
+uncontrolled draw — bit-identical to the run committed in
+`corpus/baseline_results.json` before this fix) and `corpus/
+baseline_results.json` (now the verified-stable run). Every downstream figure
+sourced from the old file — `corpus/THREE_SYSTEMS.md`, `README.md`,
+`CHECKPOINT.md` §4.6 — is recomputed, not eyeballed for closeness; see
+`RECONCILIATION.md` for the dataset-by-dataset diff. `CLAIMS.md` and
+`SCORECARD.md` were checked and are unaffected: `SCORECARD.md` never reads
+`baseline_results.json`, and `CLAIMS.md`'s only use of it (`len(ran)` of 30
+datasets) does not change.
+
+**Rejected: leave `max_time_in_seconds` alone because the frozen cascade is
+already documented as defective.** `investigation/DEFECT_REPORT.md`'s three
+defects (D1–D3) are about what the cascade computes; this is about whether two
+runs of the same computation agree with each other at all, which is a
+precondition for every comparison in `corpus/THREE_SYSTEMS.md` and
+`corpus/BASELINE_OLD_ENGINE.md`, not a fourth item on that list. A frozen
+baseline that is not reproducible is not a baseline.
+
+**Scope, held exactly.** Only the two `max_time_in_seconds` call sites and
+their immediate consequence (`over_time_budget`'s derivation, forced by the
+same edit — see §44.3's precedent for a mixed-frame line surviving one line
+above a fix) changed in `matching/`. `num_workers`, the objective, and
+`ENUMERATION_CAP` are untouched. `engine/`, `resolver/`, `resolver_contract/`,
+and `corpus/oracle.py` are untouched. A second, adjacent defect in the same
+function — `truncated` computed from the enumeration cap alone, never from
+solver status — was found and deliberately left for its own cycle; see §50.
+
+**Distinct from §44's other four instances, and worth stating precisely: this
+one was not written by this project's process.** `matching/stage3_solver.py`
+is frozen at `81c04e0`, predates this phase, and was authored to be *replaced*
+by the resolver, not audited by it. It became visible only because §39's fix
+gave this project the vocabulary — "an externally measured clock compared
+against CP-SAT's internal state is a defect" — to recognize the same shape in
+someone else's code. See §44.4's fourth instance for the moral this changes.

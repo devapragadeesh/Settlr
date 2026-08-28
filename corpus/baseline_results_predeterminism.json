@@ -3,7 +3,7 @@
   "dataset": "A10_B100_Cmax",
   "family": "datasets",
   "ran": true,
-  "seconds": 0.42,
+  "seconds": 0.55,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 1,
   "false_settlement_id_planted": 0,
@@ -50,19 +50,13 @@
    "wrong": [],
    "foreign": [],
    "unrepresentable": []
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 0
   }
  },
  {
   "dataset": "A20_B0_Cmax",
   "family": "datasets",
   "ran": true,
-  "seconds": 137.15,
+  "seconds": 263.92,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 0,
   "false_settlement_id_planted": 0,
@@ -104,8 +98,8 @@
   "rows_misplaced": 0,
   "determined_instances": 0,
   "determined_abstained": 0,
-  "unrepresentable_claims": 6,
-  "mean_candidate_set_size": 21.357142857142858,
+  "unrepresentable_claims": 4,
+  "mean_candidate_set_size": 23.214285714285715,
   "detail": {
    "wrong": [],
    "foreign": [],
@@ -125,29 +119,15 @@
     {
      "bank_index": 7,
      "why": "11 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
-    },
-    {
-     "bank_index": 10,
-     "why": "7 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
-    },
-    {
-     "bank_index": 11,
-     "why": "3 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 6
   }
  },
  {
   "dataset": "A20_B100_Cfifo",
   "family": "datasets",
   "ran": true,
-  "seconds": 51.26,
+  "seconds": 87.51,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 1,
   "false_settlement_id_planted": 0,
@@ -212,19 +192,13 @@
      "why": "5 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 4
   }
  },
  {
   "dataset": "A20_B100_Cmax",
   "family": "datasets",
   "ran": true,
-  "seconds": 17.76,
+  "seconds": 33.76,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 1,
   "false_settlement_id_planted": 0,
@@ -267,14 +241,14 @@
   "determined_instances": 10,
   "determined_abstained": 5,
   "unrepresentable_claims": 5,
-  "mean_candidate_set_size": 6.416666666666667,
+  "mean_candidate_set_size": 6.916666666666667,
   "detail": {
    "wrong": [],
    "foreign": [],
    "unrepresentable": [
     {
      "bank_index": 5,
-     "why": "10 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+     "why": "9 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     },
     {
      "bank_index": 6,
@@ -293,19 +267,13 @@
      "why": "5 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 5
   }
  },
  {
   "dataset": "A20_B100_Crandom",
   "family": "datasets",
   "ran": true,
-  "seconds": 36.81,
+  "seconds": 67.38,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 1,
   "false_settlement_id_planted": 0,
@@ -370,19 +338,13 @@
      "why": "15 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 4
   }
  },
  {
   "dataset": "A20_B100_Crandom0",
   "family": "datasets",
   "ran": true,
-  "seconds": 50.71,
+  "seconds": 98.81,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 1,
   "false_settlement_id_planted": 0,
@@ -443,19 +405,13 @@
      "why": "8 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 3
   }
  },
  {
   "dataset": "A20_B50_Cmax",
   "family": "datasets",
   "ran": true,
-  "seconds": 0.32,
+  "seconds": 0.43,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 1,
   "false_settlement_id_planted": 0,
@@ -536,19 +492,13 @@
      "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
     }
    ]
-  },
-  "detail_truncated": true,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 9
   }
  },
  {
   "dataset": "A20_B75_Cmax",
   "family": "datasets",
   "ran": true,
-  "seconds": 132.02,
+  "seconds": 225.24,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 1,
   "false_settlement_id_planted": 0,
@@ -621,12 +571,6 @@
      "why": "4 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 6
   }
  },
  {
@@ -634,7 +578,7 @@
   "family": "datasets",
   "ran": false,
   "failure": "KeyError: 'settlement_id'",
-  "seconds": 0.0,
+  "seconds": 0.01,
   "bank_lines": 20,
   "determined_instances": 0,
   "reconstructible_instances": 11
@@ -643,7 +587,7 @@
   "dataset": "A30_B100_Cmax",
   "family": "datasets",
   "ran": true,
-  "seconds": 143.25,
+  "seconds": 202.34,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 1,
   "false_settlement_id_planted": 0,
@@ -676,8 +620,8 @@
   "settlements": 12,
   "outcomes": {
    "Determinate": 4,
-   "Ambiguous": 7,
-   "Unresolved": 9
+   "Ambiguous": 6,
+   "Unresolved": 10
   },
   "confident_wrong_on_our_lines": 0,
   "foreign_lines_adopted": 0,
@@ -685,15 +629,15 @@
   "rows_misplaced": 0,
   "determined_instances": 9,
   "determined_abstained": 6,
-  "unrepresentable_claims": 4,
-  "mean_candidate_set_size": 14.0,
+  "unrepresentable_claims": 3,
+  "mean_candidate_set_size": 14.1,
   "detail": {
    "wrong": [],
    "foreign": [],
    "unrepresentable": [
     {
      "bank_index": 7,
-     "why": "15 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+     "why": "14 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     },
     {
      "bank_index": 9,
@@ -702,25 +646,15 @@
     {
      "bank_index": 15,
      "why": "12 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
-    },
-    {
-     "bank_index": 16,
-     "why": "7 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 4
   }
  },
  {
   "dataset": "A40_B100_Cfifo",
   "family": "datasets",
   "ran": true,
-  "seconds": 82.36,
+  "seconds": 55.97,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 1,
   "false_settlement_id_planted": 0,
@@ -752,18 +686,18 @@
   "bank_lines": 20,
   "settlements": 12,
   "outcomes": {
-   "Determinate": 5,
+   "Determinate": 4,
    "Ambiguous": 7,
-   "Unresolved": 8
+   "Unresolved": 9
   },
   "confident_wrong_on_our_lines": 0,
   "foreign_lines_adopted": 1,
   "foreign_lines_in_file": 8,
   "rows_misplaced": 10,
   "determined_instances": 6,
-  "determined_abstained": 3,
-  "unrepresentable_claims": 3,
-  "mean_candidate_set_size": 16.166666666666668,
+  "determined_abstained": 4,
+  "unrepresentable_claims": 2,
+  "mean_candidate_set_size": 20.0,
   "detail": {
    "wrong": [],
    "foreign": [
@@ -775,10 +709,6 @@
    ],
    "unrepresentable": [
     {
-     "bank_index": 7,
-     "why": "5 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
-    },
-    {
      "bank_index": 11,
      "why": "24 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     },
@@ -787,19 +717,13 @@
      "why": "Determinate on a bank line that is not a settlement of ours (kind=foreign_credit)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 1,
-   "unrepresentable": 3
   }
  },
  {
   "dataset": "A40_B100_Cmax",
   "family": "datasets",
   "ran": true,
-  "seconds": 196.79,
+  "seconds": 433.14,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 1,
   "false_settlement_id_planted": 0,
@@ -832,8 +756,8 @@
   "settlements": 12,
   "outcomes": {
    "Determinate": 1,
-   "Unresolved": 7,
-   "Ambiguous": 12
+   "Unresolved": 5,
+   "Ambiguous": 14
   },
   "confident_wrong_on_our_lines": 0,
   "foreign_lines_adopted": 0,
@@ -841,8 +765,8 @@
   "rows_misplaced": 0,
   "determined_instances": 5,
   "determined_abstained": 4,
-  "unrepresentable_claims": 4,
-  "mean_candidate_set_size": 21.923076923076923,
+  "unrepresentable_claims": 5,
+  "mean_candidate_set_size": 22.666666666666668,
   "detail": {
    "wrong": [],
    "foreign": [],
@@ -862,21 +786,19 @@
     {
      "bank_index": 10,
      "why": "45 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 16,
+     "why": "12 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 4
   }
  },
  {
   "dataset": "A40_B100_Crandom",
   "family": "datasets",
   "ran": true,
-  "seconds": 133.03,
+  "seconds": 217.58,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 1,
   "false_settlement_id_planted": 0,
@@ -909,8 +831,8 @@
   "settlements": 12,
   "outcomes": {
    "Determinate": 2,
-   "Unresolved": 10,
-   "Ambiguous": 8
+   "Unresolved": 9,
+   "Ambiguous": 9
   },
   "confident_wrong_on_our_lines": 0,
   "foreign_lines_adopted": 0,
@@ -918,8 +840,8 @@
   "rows_misplaced": 0,
   "determined_instances": 7,
   "determined_abstained": 6,
-  "unrepresentable_claims": 2,
-  "mean_candidate_set_size": 22.1,
+  "unrepresentable_claims": 1,
+  "mean_candidate_set_size": 24.09090909090909,
   "detail": {
    "wrong": [],
    "foreign": [],
@@ -927,25 +849,15 @@
     {
      "bank_index": 3,
      "why": "31 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
-    },
-    {
-     "bank_index": 11,
-     "why": "29 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 2
   }
  },
  {
   "dataset": "A40_B50_Cmax",
   "family": "datasets",
   "ran": true,
-  "seconds": 169.19,
+  "seconds": 219.26,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 1,
   "false_settlement_id_planted": 0,
@@ -987,8 +899,8 @@
   "rows_misplaced": 0,
   "determined_instances": 0,
   "determined_abstained": 0,
-  "unrepresentable_claims": 6,
-  "mean_candidate_set_size": 21.0,
+  "unrepresentable_claims": 5,
+  "mean_candidate_set_size": 22.0,
   "detail": {
    "wrong": [],
    "foreign": [],
@@ -1010,20 +922,10 @@
      "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
     },
     {
-     "bank_index": 9,
-     "why": "8 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
-    },
-    {
      "bank_index": 12,
      "why": "6 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 6
   }
  },
  {
@@ -1040,7 +942,7 @@
   "dataset": "A60_B100_Cmax",
   "family": "datasets",
   "ran": true,
-  "seconds": 218.1,
+  "seconds": 406.69,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 1,
   "false_settlement_id_planted": 0,
@@ -1083,7 +985,7 @@
   "determined_instances": 3,
   "determined_abstained": 2,
   "unrepresentable_claims": 3,
-  "mean_candidate_set_size": 17.875,
+  "mean_candidate_set_size": 20.0,
   "detail": {
    "wrong": [],
    "foreign": [],
@@ -1098,22 +1000,16 @@
     },
     {
      "bank_index": 14,
-     "why": "54 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+     "why": "47 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 3
   }
  },
  {
   "dataset": "A10_B100_Cmax",
   "family": "datasets_v2",
   "ran": true,
-  "seconds": 0.11,
+  "seconds": 0.13,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 2,
   "false_settlement_id_planted": 1,
@@ -1166,19 +1062,13 @@
      "why": "8 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 1
   }
  },
  {
   "dataset": "A20_B0_Cmax",
   "family": "datasets_v2",
   "ran": true,
-  "seconds": 234.99,
+  "seconds": 457.55,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 0,
   "false_settlement_id_planted": 0,
@@ -1211,8 +1101,8 @@
   "settlements": 12,
   "outcomes": {
    "Determinate": 4,
-   "Unresolved": 9,
-   "Ambiguous": 7
+   "Unresolved": 7,
+   "Ambiguous": 9
   },
   "confident_wrong_on_our_lines": 0,
   "foreign_lines_adopted": 0,
@@ -1220,8 +1110,8 @@
   "rows_misplaced": 0,
   "determined_instances": 0,
   "determined_abstained": 0,
-  "unrepresentable_claims": 4,
-  "mean_candidate_set_size": 20.727272727272727,
+  "unrepresentable_claims": 5,
+  "mean_candidate_set_size": 20.53846153846154,
   "detail": {
    "wrong": [],
    "foreign": [],
@@ -1241,21 +1131,19 @@
     {
      "bank_index": 5,
      "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
+    },
+    {
+     "bank_index": 17,
+     "why": "6 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 4
   }
  },
  {
   "dataset": "A20_B100_Cfifo",
   "family": "datasets_v2",
   "ran": true,
-  "seconds": 82.07,
+  "seconds": 114.38,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 2,
   "false_settlement_id_planted": 1,
@@ -1298,7 +1186,7 @@
   "determined_instances": 10,
   "determined_abstained": 6,
   "unrepresentable_claims": 5,
-  "mean_candidate_set_size": 15.846153846153847,
+  "mean_candidate_set_size": 16.0,
   "detail": {
    "wrong": [
     {
@@ -1330,19 +1218,13 @@
      "why": "Determinate whose composition the attestation contradicts, with no contradiction recorded"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 1,
-   "foreign": 0,
-   "unrepresentable": 5
   }
  },
  {
   "dataset": "A20_B100_Cmax",
   "family": "datasets_v2",
   "ran": true,
-  "seconds": 19.11,
+  "seconds": 30.94,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 2,
   "false_settlement_id_planted": 1,
@@ -1403,19 +1285,13 @@
      "why": "38 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 3
   }
  },
  {
   "dataset": "A20_B100_Crandom",
   "family": "datasets_v2",
   "ran": true,
-  "seconds": 39.58,
+  "seconds": 50.77,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 2,
   "false_settlement_id_planted": 1,
@@ -1476,19 +1352,13 @@
      "why": "6 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 3
   }
  },
  {
   "dataset": "A20_B100_Crandom0",
   "family": "datasets_v2",
   "ran": true,
-  "seconds": 168.8,
+  "seconds": 272.72,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 2,
   "false_settlement_id_planted": 1,
@@ -1521,8 +1391,8 @@
   "settlements": 12,
   "outcomes": {
    "Determinate": 2,
-   "Unresolved": 9,
-   "Ambiguous": 9
+   "Unresolved": 8,
+   "Ambiguous": 10
   },
   "confident_wrong_on_our_lines": 0,
   "foreign_lines_adopted": 0,
@@ -1530,15 +1400,15 @@
   "rows_misplaced": 0,
   "determined_instances": 5,
   "determined_abstained": 3,
-  "unrepresentable_claims": 3,
-  "mean_candidate_set_size": 19.363636363636363,
+  "unrepresentable_claims": 4,
+  "mean_candidate_set_size": 19.0,
   "detail": {
    "wrong": [],
    "foreign": [],
    "unrepresentable": [
     {
      "bank_index": 8,
-     "why": "7 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+     "why": "4 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     },
     {
      "bank_index": 9,
@@ -1547,21 +1417,19 @@
     {
      "bank_index": 18,
      "why": "2 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+    },
+    {
+     "bank_index": 19,
+     "why": "7 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 3
   }
  },
  {
   "dataset": "A20_B50_Cmax",
   "family": "datasets_v2",
   "ran": true,
-  "seconds": 95.99,
+  "seconds": 158.07,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 2,
   "false_settlement_id_planted": 1,
@@ -1626,19 +1494,13 @@
      "why": "19 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 4
   }
  },
  {
   "dataset": "A20_B75_Cmax",
   "family": "datasets_v2",
   "ran": true,
-  "seconds": 49.88,
+  "seconds": 79.64,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 2,
   "false_settlement_id_planted": 1,
@@ -1671,8 +1533,8 @@
   "settlements": 12,
   "outcomes": {
    "Determinate": 4,
-   "Unresolved": 9,
-   "Ambiguous": 7
+   "Unresolved": 8,
+   "Ambiguous": 8
   },
   "confident_wrong_on_our_lines": 0,
   "foreign_lines_adopted": 0,
@@ -1680,8 +1542,8 @@
   "rows_misplaced": 0,
   "determined_instances": 6,
   "determined_abstained": 5,
-  "unrepresentable_claims": 7,
-  "mean_candidate_set_size": 10.181818181818182,
+  "unrepresentable_claims": 6,
+  "mean_candidate_set_size": 12.083333333333334,
   "detail": {
    "wrong": [],
    "foreign": [],
@@ -1689,10 +1551,6 @@
     {
      "bank_index": 0,
      "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
-    },
-    {
-     "bank_index": 3,
-     "why": "5 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     },
     {
      "bank_index": 5,
@@ -1715,19 +1573,13 @@
      "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 7
   }
  },
  {
   "dataset": "A30_B100_Cmax",
   "family": "datasets_v2",
   "ran": true,
-  "seconds": 85.45,
+  "seconds": 173.91,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 2,
   "false_settlement_id_planted": 1,
@@ -1788,19 +1640,13 @@
      "why": "19 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 3
   }
  },
  {
   "dataset": "A40_B100_Cfifo",
   "family": "datasets_v2",
   "ran": true,
-  "seconds": 101.81,
+  "seconds": 193.64,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 2,
   "false_settlement_id_planted": 1,
@@ -1842,8 +1688,8 @@
   "rows_misplaced": 6,
   "determined_instances": 5,
   "determined_abstained": 3,
-  "unrepresentable_claims": 7,
-  "mean_candidate_set_size": 17.285714285714285,
+  "unrepresentable_claims": 6,
+  "mean_candidate_set_size": 18.0,
   "detail": {
    "wrong": [
     {
@@ -1875,27 +1721,17 @@
      "why": "28 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     },
     {
-     "bank_index": 17,
-     "why": "14 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
-    },
-    {
      "bank_index": 19,
-     "why": "11 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+     "why": "17 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 1,
-   "foreign": 0,
-   "unrepresentable": 7
   }
  },
  {
   "dataset": "A40_B100_Cmax",
   "family": "datasets_v2",
   "ran": true,
-  "seconds": 216.67,
+  "seconds": 429.11,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 2,
   "false_settlement_id_planted": 1,
@@ -1927,9 +1763,9 @@
   "bank_lines": 20,
   "settlements": 12,
   "outcomes": {
-   "Determinate": 3,
+   "Determinate": 2,
    "Unresolved": 9,
-   "Ambiguous": 8
+   "Ambiguous": 9
   },
   "confident_wrong_on_our_lines": 0,
   "foreign_lines_adopted": 0,
@@ -1938,33 +1774,27 @@
   "determined_instances": 6,
   "determined_abstained": 4,
   "unrepresentable_claims": 2,
-  "mean_candidate_set_size": 22.363636363636363,
+  "mean_candidate_set_size": 23.636363636363637,
   "detail": {
    "wrong": [],
    "foreign": [],
    "unrepresentable": [
     {
-     "bank_index": 9,
-     "why": "12 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+     "bank_index": 4,
+     "why": "37 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     },
     {
-     "bank_index": 14,
-     "why": "5 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+     "bank_index": 9,
+     "why": "12 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 2
   }
  },
  {
   "dataset": "A40_B100_Crandom",
   "family": "datasets_v2",
   "ran": true,
-  "seconds": 122.99,
+  "seconds": 231.43,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 2,
   "false_settlement_id_planted": 1,
@@ -2004,8 +1834,8 @@
   "rows_misplaced": 0,
   "determined_instances": 3,
   "determined_abstained": 3,
-  "unrepresentable_claims": 3,
-  "mean_candidate_set_size": 25.9,
+  "unrepresentable_claims": 2,
+  "mean_candidate_set_size": 27.2,
   "detail": {
    "wrong": [],
    "foreign": [],
@@ -2015,27 +1845,17 @@
      "why": "24 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     },
     {
-     "bank_index": 12,
-     "why": "16 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
-    },
-    {
      "bank_index": 15,
      "why": "43 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 3
   }
  },
  {
   "dataset": "A40_B50_Cmax",
   "family": "datasets_v2",
   "ran": true,
-  "seconds": 171.94,
+  "seconds": 361.11,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 2,
   "false_settlement_id_planted": 1,
@@ -2088,19 +1908,13 @@
      "why": "Determinate on an UNATTESTED line: the contract has no outcome for a confident composition with neither unfiltered uniqueness nor cross-line exclusivity"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 1
   }
  },
  {
   "dataset": "A60_B100_Cmax",
   "family": "datasets_v2",
   "ran": true,
-  "seconds": 125.77,
+  "seconds": 271.14,
   "attestation_discrepancy_detected": 0,
   "attestation_discrepancy_planted": 2,
   "false_settlement_id_planted": 1,
@@ -2143,7 +1957,7 @@
   "determined_instances": 4,
   "determined_abstained": 3,
   "unrepresentable_claims": 2,
-  "mean_candidate_set_size": 25.785714285714285,
+  "mean_candidate_set_size": 25.642857142857142,
   "detail": {
    "wrong": [],
    "foreign": [],
@@ -2154,15 +1968,9 @@
     },
     {
      "bank_index": 4,
-     "why": "3 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
+     "why": "9 rows assigned via Ambiguous.certain_rows -- an ambiguity PROPERTY used as an assignment (defect D3)"
     }
    ]
-  },
-  "detail_truncated": false,
-  "detail_total": {
-   "wrong": 0,
-   "foreign": 0,
-   "unrepresentable": 2
   }
  }
 ]

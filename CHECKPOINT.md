@@ -252,6 +252,19 @@ Unrepresentable claims, 55 of 56 categorised (the per-dataset detail list caps
 at 8 and one dataset had 9): **45 `certain_rows` assignments**, 9 `Determinate`
 on unattested lines, 1 `Determinate` on a foreign line.
 
+**Correction, 2026-08-28.** The run above used `max_time_in_seconds`, a
+wall-clock CP-SAT budget later found to be non-deterministic under CPU
+contention (`DECISIONS.md` §49). Re-run with the fix
+(`max_deterministic_time`, verified stable across three uncontended runs and
+one contended one): `Determinate` **57** (unchanged), `Ambiguous` **109**
+(was 112), `Unresolved` **114** (was 111), unrepresentable claims **59** (was
+56). Every other figure in the table above — confident wrong answers, foreign
+lines adopted, rows misplaced, abstained-on-determined, `AttestationDiscrepancy`
+detected — is unchanged. See
+`investigation/nondeterminism_evidence/RECONCILIATION.md` for the full,
+dataset-by-dataset accounting; this note corrects the total in place rather
+than rewriting history the way §6 does for the errors found there.
+
 ---
 
 ## 5. The contract amendment, and the theorem it rested on
@@ -1075,3 +1088,67 @@ No genuine failure was found. The 15 abstentions are correct, the 60
 unattempted non-absence lines are correct findings, and no pool, cap or budget
 change is recommended — §45 established that no pool change is local, and there
 is no failure here for one to fix.
+
+---
+
+## 16. `max_deterministic_time`: the frozen baseline was not reproducible (2026-08-28)
+
+Found while closing out a final correctness pass, not while looking for it.
+`corpus/baseline_old_engine.py --all` — the frozen cascade, `81c04e0`, run
+against all 30 corpus datasets — disagreed with itself across two ordinary
+runs in this session: 10 of 30 datasets moved between
+`Determinate`/`Ambiguous`/`Unresolved` buckets depending on what else the
+machine was doing at the time. `matching/stage3_solver.py` used
+`max_time_in_seconds`, a wall-clock CP-SAT budget — `DECISIONS.md` §39's
+defect class, in the code the resolver replaces rather than in the resolver.
+
+### 16.1 What changed and what didn't
+
+Fixed: `max_time_in_seconds` → `max_deterministic_time` at both call sites in
+`matching/stage3_solver.py`, the only file this task authorized touching in
+that directory. Verified — not assumed — reproducible: three uncontended runs
+byte-identical, a fourth run deliberately contended with a concurrent oracle
+scoring pass matches all three. `DECISIONS.md` §49.
+
+A directional prediction was committed before the fix and **was not
+confirmed**: of the 10 previously-disagreeing datasets, the stable result
+matches neither of the two historical runs on 6 of them. Full accounting in
+`investigation/nondeterminism_evidence/RECONCILIATION.md`.
+
+`corpus/baseline_results.json` is replaced with the verified-stable run; the
+old, non-reproducible draw is kept at
+`corpus/baseline_results_predeterminism.json` rather than discarded.
+`corpus/THREE_SYSTEMS.md`, `README.md`, and this file's own §4.6 are
+recomputed against the corrected baseline, not eyeballed for closeness.
+`CLAIMS.md` and `SCORECARD.md` were checked and do not depend on any figure
+that moved.
+
+An unrelated, pre-existing bug in `corpus/three_systems.py`'s `_totals()` was
+found and fixed in the same pass, because it blocked regenerating
+`THREE_SYSTEMS.md` at all: a shadowed loop variable meant the
+`record_contradicted` column — added to the script at some point after the
+file was last regenerated — had never successfully rendered. Its arrival in
+this diff is coincidental to the determinism fix, not caused by it; both are
+disentangled in `RECONCILIATION.md`.
+
+A second, adjacent defect in the same function this fix touched —
+`truncated` computed from the enumeration cap alone, never from CP-SAT's own
+status, so a budget-exhausted-but-under-cap search is misreported as
+exhaustive — was found, deliberately left unfixed in this pass, and given its
+own cycle. `DECISIONS.md` §50 once filed.
+
+### 16.2 Standing gaps, updated
+
+Item 4 of `§14.6` above — "no checker verifies that a predicate names its
+frame" — is now evidenced a fourth time, and by an instance none of this
+project's own review passes could have found on their own, since the
+defective code predates this project's authorship entirely. See
+`DECISIONS.md` §44.4's fourth instance. Nothing else in `§14.6`'s ranked list
+changes: this finding is orthogonal to D15, the consumption/reconstruction
+conflict, D13, and the GST axis.
+
+This item was not previously listed because it was not previously known — the
+frozen cascade's own reproducibility had never been checked, only its
+correctness (`investigation/DEFECT_REPORT.md`, D1–D3). It is now closed, not
+open: verified deterministic under both uncontended and contended conditions,
+with the fix, the prediction, and the miss all published together.

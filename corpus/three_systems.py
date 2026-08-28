@@ -178,7 +178,7 @@ def _totals(subset, system) -> dict:
     out["lines_all"] = sum(r["lines"] for r in subset)
     # Only the resolver has an outcome meaning "the sources disagree"; for the
     # other two systems this is 0 BY CONSTRUCTION, not by measurement.
-    out["contradicted"] = sum(r[system].get("contradicted", 0) for r in ran)
+    out["contradicted"] = sum(item.get("contradicted", 0) for item in ran)
     out["seconds"] = sum(r[system].get("seconds", 0) for r in subset)
     out["mean_k"] = (sum(item.get("mean_k", 0) for item in ran) / len(ran)
                      if ran else 0.0)
