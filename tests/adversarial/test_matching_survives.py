@@ -40,7 +40,12 @@ EXPECTED_BUCKET_2_EXCEPTIONS = {
     "bank.missing_header_column": "KeyError",
     "bank.non_numeric_amount": "ValueError",
     "bank.over_precision_amount": "ValueError",  # matching.money.paise REJECTS
-    "disputes.malformed_shape": "KeyError",       # no dual-handling, unlike resolver
+    "disputes.malformed_shape": "KeyError",
+    # matching/ is frozen and unchanged. resolver/ now ALSO refuses this
+    # shape (ValueError, 2026-09-03) instead of silently emptying its
+    # dispute set, so the two packages agree the file is malformed and
+    # differ only in which exception says so. Was: "no dual-handling,
+    # unlike resolver".
 }
 
 

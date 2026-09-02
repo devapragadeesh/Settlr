@@ -193,37 +193,71 @@ def write_report(rows: list[dict]) -> None:
     lines.append("")
     lines.append("## Additional observations (not part of the 3-bucket tally)")
     lines.append("")
-    lines.append("These are behaviours the case sweep surfaced that are real "
-                 "but do not fit the Verified/Determinate bucket-3 "
-                 "definition -- documented here rather than silently folded "
-                 "into bucket 1.")
+    lines.append("Behaviours the case sweep surfaced that are real but do "
+                 "not fit the Verified/Determinate bucket-3 definition -- "
+                 "recorded here rather than silently folded into bucket 1.")
     lines.append("")
-    lines.append("- **`resolver.loaders.paise` truncates, `matching.money."
-                 "paise` rejects.** Both parse the same kind of rupee-string "
-                 "cell. `matching.money.paise` matches "
-                 "`^(-?)(\\d+)(?:\\.(\\d{1,2}))?$` and raises `ValueError` on "
-                 "a third decimal digit. `resolver.loaders.paise` does "
-                 "unchecked string surgery, `int((frac + \"00\")[:2])`, and "
-                 "silently drops any digits past the second -- `\"7612.9951\"` "
-                 "becomes `761299` paise with no signal. See "
-                 "`test_malformed_bank.py::test_paise_truncate_vs_reject_"
-                 "over_precision`.")
-    lines.append("- **`resolver.loaders.load`'s `settlement_report` dict is "
-                 "last-write-wins on a duplicate `settlement_id`**, silently. "
-                 "See `test_malformed_settlement_report.py::test_duplicate_"
-                 "settlement_id_is_last_write_wins_in_the_loader`.")
-    lines.append("- **A `disputes.json` shaped as a plain object (not "
-                 "`{\"items\": [...]}`, not a bare array) silently empties "
-                 "`resolver`'s dispute set** (`payload.get(\"items\", ...)` "
-                 "falls through to `[]`), while the same file makes "
-                 "`matching.loaders.load` raise `KeyError` on `[\"items\"]`. "
-                 "See `test_malformed_erp_disputes.py`.")
-    lines.append("- **A dispute item missing both `id` and `dispute_id` maps "
-                 "to key `\"\"`** in `resolver`'s disputes dict "
-                 "(`item.get(\"id\") or item.get(\"dispute_id\", \"\")`); a "
-                 "second such item would silently overwrite the first. Not "
-                 "exercised at two-item scale here, since that is a two-row "
-                 "mutation and this suite corrupts one field at a time.")
+    lines.append("**All four are now CLOSED (2026-09-03).** Each bullet is "
+                 "kept, rewritten, rather than deleted: what the defect was, "
+                 "what it would have cost, and the test that now pins the "
+                 "fixed behaviour. A section that empties itself as findings "
+                 "are fixed loses the record that they were ever found, and "
+                 "the tests named below were, until this date, asserting that "
+                 "three of these four defects PERSISTED.")
+    lines.append("")
+    lines.append("- **The two `paise` parsers agree. FIXED 2026-09-03; the "
+                 "finding this bullet used to report is closed.** Both parse "
+                 "the same kind of rupee-string cell. `resolver.loaders.paise` "
+                 "previously did unchecked string surgery, "
+                 "`int((frac + \"00\")[:2])`, silently dropping any digits past "
+                 "the second -- `\"7612.9951\"` became `761299` paise with no "
+                 "signal -- while `matching.money.paise` raised `ValueError` on "
+                 "the identical cell. Both now enforce "
+                 "`^(-?)(\\d+)(?:\\.(\\d{1,2}))?$` and reject it. The grammar is "
+                 "duplicated rather than shared because `resolver/` may not "
+                 "import `matching/` (`resolver/tests/test_isolation.py`). "
+                 "Behaviour-preserving on every dataset in the repo: 6,374 "
+                 "money cells across 168 CSVs, zero rejected. See "
+                 "`test_malformed_bank.py::test_the_two_paise_parsers_agree` "
+                 "and `::test_over_precision_is_rejected_not_truncated`.")
+    lines.append("- **`resolver.loaders.load` refused a duplicate "
+                 "`settlement_id`. FIXED 2026-09-03; the finding this bullet "
+                 "used to report is closed.** The `settlement_report` dict was "
+                 "built by plain assignment in file order, so a repeated "
+                 "`settlement_id` silently OVERWROTE the earlier row -- "
+                 "last-write-wins, no error, no signal. That feed is the PSP's "
+                 "attestation, so discarding one of two contradicting claims "
+                 "was the worst available answer to a self-contradicting "
+                 "record. It now raises `ValueError`. See "
+                 "`test_malformed_settlement_report.py::test_duplicate_"
+                 "settlement_id_is_refused_not_overwritten`.")
+    lines.append("- **An unrecognised `disputes.json` shape no longer empties "
+                 "the dispute set. FIXED 2026-09-03.** "
+                 "`payload.get(\"items\", payload if isinstance(payload, list) "
+                 "else [])` fell through to `[]` for a plain JSON object that "
+                 "was neither `{\"items\": [...]}` nor a bare array, so \"no "
+                 "disputes exist\" and \"this shape is unrecognised\" were "
+                 "indistinguishable. `resolver.loaders._load_disputes` now "
+                 "dispatches on shape explicitly and raises `ValueError`. "
+                 "`matching.loaders.load` raises `KeyError` on the same file; "
+                 "`matching/` is frozen and unchanged, so the two packages now "
+                 "agree the file is malformed and differ only in which "
+                 "exception says so. See `test_malformed_erp_disputes.py::"
+                 "test_resolver_refuses_the_unhandled_shape`.")
+    lines.append("- **A dispute item with no usable id no longer collapses to "
+                 "key `\"\"`. FIXED 2026-09-03.** "
+                 "`item.get(\"id\") or item.get(\"dispute_id\", \"\")` mapped "
+                 "every such item to `\"\"`, and a second one overwrote the "
+                 "first. That key was not inert: `resolver/breaks.py` reads "
+                 "back with `disputes.get(row.get(\"dispute_id\") or \"\")`, so "
+                 "every payment row without a `dispute_id` -- 94% of recon "
+                 "rows -- probed `\"\"` as well, and one malformed item would "
+                 "have reclassified almost the entire non-disputed population "
+                 "as `UNEXPECTED_CHANGE`. The loader now refuses the item, and "
+                 "refuses a duplicate dispute id. See "
+                 "`test_malformed_erp_disputes.py::test_dispute_missing_id_is_"
+                 "refused_not_collapsed_to_one_key` and "
+                 "`::test_a_duplicate_dispute_id_is_refused`.")
     lines.append("")
 
     out.write_text("\n".join(lines) + "\n")

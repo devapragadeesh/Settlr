@@ -3885,3 +3885,332 @@ buckets are the honest summary.
 **Scope.** `corpus/score_resolver.py` (two new functions, one report section)
 and this entry. No contract change, no corpus change, no scoring change — the
 oracle's inputs and outputs are untouched.
+
+---
+
+## 70. Two parsers for the same column disagreed, and a README probe went stale -- 2026-09-03
+
+Two documentation-and-hygiene defects found by an external audit of this repo,
+fixed together because neither moves a published figure and both are the same
+failure mode: a true statement that stopped being true and was not re-checked.
+
+### (a) `resolver/loaders.py::paise` truncated where `matching/money.py::paise` rejected
+
+`matching/money.py` matched `^(-?)(\d+)(?:\.(\d{1,2}))?$` and raised
+`ValueError` on a third decimal digit. `resolver/loaders.py` did unchecked
+string surgery -- `int((frac + "00")[:2])` -- and silently kept the first two
+decimal digits, so `"7612.9951"` became `761299` paise with no signal. Two
+parsers for the same CSV column, disagreeing about what "more than two
+decimals" means. It is a correctness difference, not a crash difference, and
+the loss always ran in the direction of truncation.
+
+This was already a documented finding -- `tests/adversarial/ADVERSARIAL_FINDINGS.md`
+reported it under "Additional observations", and two tests PINNED the divergent
+behaviour rather than fixing it. Reporting a defect and then testing that it
+stays is not the same as accepting it with a reason.
+
+**The fix is behaviour-preserving on every dataset in the repository, and that
+was measured before it was made, not asserted after.** 6,374 money cells across
+`bank_statement.csv`, `settlement_report.csv` and `gstr2b.csv` in all 168
+dataset CSVs; the strict grammar rejects **zero** of them. A 3,026-case
+differential test over both parsers -- valid amounts, malformed strings, and
+2,500 randomly generated cells -- reports **zero** divergences. No published
+figure can move. `test_the_strict_grammar_accepts_every_money_cell_in_the_repo`
+walks the corpus on every run so this stays true.
+
+**Rejected: sharing one parser between the two packages.** The obvious
+de-duplication, and it is forbidden -- `resolver/tests/test_isolation.py`'s
+FORBIDDEN set bans `resolver/` from importing `matching/`, because the frozen
+cascade must stay independently frozen. A shared `money.py` would either
+violate that ban or require a third package that both import, which is a
+structural change to the dependency graph for a nine-line function. The grammar
+is duplicated deliberately and `test_the_two_paise_parsers_agree` is what stops
+the duplication drifting apart again.
+
+**Rejected: making `matching/money.py` lenient instead.** It would have made
+the two agree with one fewer edit. It is the wrong direction -- `matching/` is
+frozen at `81c04e0`, and the strict parser is the correct behaviour. Silently
+discarding precision on a money column is the defect; matching it is not a fix.
+
+**Rejected: leaving it and keeping the finding.** The finding was two releases
+old, cost nine lines to close, and sits in a repo whose thesis is that
+unfalsifiable and stale claims are the enemy. An open defect with a cheap fix
+and no stated reason for deferral reads as an oversight, not a decision.
+
+### (b) README's §55 amendment made two claims that later stopped being true
+
+1. "a read-only probe in the same file confirms `resolver/loaders.py` never
+   opens `gstr2b.csv` at all." **False since §59.** `resolver/loaders.py:165-167`
+   opens it; §59-§61 wired the ITC-risk annotation and the loader read came with
+   it. `corpus/GST_RESULTS.md` §"removal probe" already recorded the change and
+   repurposed the probe -- the README was simply never updated to match.
+2. "the absent-from-2B ground's rupee total **structurally** disagrees between
+   an accrued and an aggregate figure." **Superseded by §66**, which established
+   it is a defect in the corpus generator (`corpus/generator/build.py:681`), not
+   a structural property.
+
+Neither error changes a conclusion. (1)'s conclusion -- no GST claim here is
+demonstrated -- holds and is now enforced by something stronger than a
+file-open check: `EvidenceKind.GST_DOCUMENT` is bound to
+`Attests.ROW_EXISTENCE` (`resolver_contract/types.py:208`), so a tax document
+cannot license a composition, asserted two ways in
+`resolver/tests/test_gst_risk.py` and corroborated by the removal probe
+(59 line outcomes with the file, 59 without, identical). That is the point:
+**a stale supporting claim under a correct conclusion is still a false claim,
+and this repo's whole argument is that it does not ship those.**
+
+**Rejected: editing the §55 paragraph in place.** It would leave no trace that
+the claim was ever made, which is exactly the convention this project has held
+since `RESOLVER_CONTRACT.md` §6.4 -- an amendment is dated and the prior text is
+left visible. Both stale sentences stand as written with a dated amendment
+below them.
+
+**Rejected: fixing (b)(2) in the generator in the same change.** That is corpus
+work with its own validation and its own pass, per §66. Only the README's
+description of it is corrected here.
+
+---
+
+## 71. The three remaining silent-failure findings in `resolver/loaders.py` are closed, and this pass supersedes §52's "do not patch" scoping -- 2026-09-03
+
+`tests/adversarial/ADVERSARIAL_FINDINGS.md`'s "Additional observations"
+section listed four behaviours the malformed-input sweep found and left
+unfixed. The `paise` divergence was closed earlier the same day. The other
+three, all in `resolver/loaders.py`, are closed here:
+
+1. a duplicate `settlement_id` was last-write-wins, silently;
+2. an unrecognised `disputes.json` top-level shape became an empty dispute
+   set, silently;
+3. a dispute item carrying neither `id` nor `dispute_id` collapsed to the key
+   `""`, and a second such item overwrote the first.
+
+**Two tests PINNED the broken behaviour** -- `assert dataset.disputes == {}`
+and `assert "" in dataset.disputes`. Reporting a defect and then asserting it
+persists is not the same as accepting it with a reason.
+
+### 52's rejection is scoped, and the scope expired
+
+52 rejected failing the suite on any uncaught exception because "this pass's
+hard constraint is that corpus/test work and resolver code changes do not land
+in the same change. A defect the suite finds gets written up alongside
+`investigation/DEFECT_REPORT.md`'s existing three, not patched here." That is
+a **pass-scoping** rule, not a permanent bar on fixing. This pass changes no
+corpus code, no oracle, and no scoring definition; its sole purpose is the
+resolver fix, which is the vehicle 52 was pointing at.
+
+### Two corrections to the severity ranking these fixes were prioritised by
+
+Recorded because getting a defect's blast radius wrong is how you fix the
+wrong thing, and the ranking these were queued in was wrong in both
+directions.
+
+**(2) cannot change a composition.** It was queued first on the assumption
+that disputes gate eligibility. They do not. `dataset.disputes` has exactly
+one consumer repo-wide, `resolver/breaks.py:350` inside `_break_reason`, and
+`dispositions()` is called at `resolver/resolve.py:256` -- after every
+`LineOutcome` is computed and after `assigned` is derived from them. The pool
+builder is `pool_at(dataset.rows, line.value_date, state.consumed)`; it does
+not take `dataset`, so it cannot see disputes at all.
+`resolver/eligibility.py:67-82` records that an `on_hold` filter used to live
+there and was deliberately REMOVED (D2). The blast radius is bounded to
+`OpenBreak.reason` flipping `UNEXPECTED_CHANGE` -> `UNEXPLAINED`.
+
+**(3) is the one with the wide latent blast radius.** `breaks.py:350` reads
+`disputes.get(row.get("dispute_id") or "")`, so every payment row lacking a
+`dispute_id` probes key `""` as well -- and **94% of recon rows lack one**.
+A single item stored at `""` would have reclassified essentially the whole
+non-disputed population as `UNEXPECTED_CHANGE` and routed it to disputes ops.
+It never fires on the corpus, which makes it latent, not harmless. A defect
+that cannot fire on the data you have is exactly the class this repository
+already learned about the expensive way: D2 was unreachable on the primary
+set and produced 50 wrong rows the first time it saw held-out data.
+
+### Behaviour-preserving, measured before the change rather than asserted after
+
+45 `disputes.json` files, 100% shaped `{"count", "entity", "items"}` -- zero
+bare arrays, zero plain objects, so the `.get("items", ...)` default was never
+taken. 5,472 dispute items, **0** lacking both id keys, **0** duplicate ids.
+33 `settlement_report.csv` files, 512 rows, **0** duplicate `settlement_id`.
+Every one of the 35 dataset directories `resolver/` reads loads unchanged.
+
+No published figure moves, so **no committed-prediction cycle is required**:
+the 49/50/58/67 protocol governs fixes that respond to a measured score or
+move published numbers, and this is neither.
+
+**Rejected: a `MalformedInput` type counted as a bucket-1 typed decline.**
+`tests/adversarial/bucket.py` counts only `GroundTruthAccess` and
+`ContractViolation` as clean typed declines, so these three cases land in
+bucket 2 and resolver's bucket-1 count goes DOWN, 12 -> 8. Adding a new type
+to `_resolver_typed_exceptions()` would have moved it up instead -- by editing
+the scoring function in the same pass that is scored by it. The bucket
+definition is left exactly as 52 wrote it and the count is allowed to fall.
+
+**Rejected: keying a dispute by file position when its id is missing.** It
+would keep the loader total and lose nothing observable. It also invents an
+identifier for a record that does not have one, which is the same instinct D5
+names -- no row is ever minted to make the arithmetic work. A dispute with no
+id is a fact about the input, not a gap to fill in.
+
+**Rejected: `ContractViolation` instead of `ValueError`.** `ContractViolation`
+is an `AssertionError` subclass about an OUTCOME the contract forbids; a
+resolver that has not run yet cannot have produced one. Malformed input gets
+`ValueError`, matching `paise` above and `matching/money.py`.
+
+**Rejected: converging `matching/loaders.py` too.** `matching/` is frozen at
+`81c04e0`, it never opens `settlement_report.csv`, and it stores disputes as a
+list so the `""`-key defect has no analogue there. It already raises
+`KeyError` on the malformed shape -- it was the resolver that failed quietly.
+The two now agree the file is malformed and differ only in which exception
+says so.
+
+**Not fixed here, and named rather than absorbed:** `resolver/loaders.py` reads
+the bank date column as `value_date` while `matching/loaders.py` reads `date`,
+so `engine/data`, `holdout/data` and every `scale/data_*` fixture raise
+`KeyError` in the resolver's loader. That is a second, larger schema
+divergence between the two packages, it long predates this pass, and it is not
+in this pass's scope.
+
+---
+
+## 72. `bank_statement.csv` ships under two column vocabularies, and the resolver could read only one of them -- 2026-09-03
+
+**The measured consequence, which is larger than the cause.**
+`resolver/loaders.py` read `bank_reference`/`value_date`; `matching/loaders.py`
+reads `utr`/`date`. Both are correct about the files they were written for --
+`corpus/generator/` emits the first spelling, the frozen `engine/generator.py`
+emitted the second -- but the resolver hardcoded its own and raised
+`KeyError: 'value_date'` on every dataset in the older vocabulary. That is
+**ten dataset directories**: `engine/data`, `holdout/data`, and all eight
+`scale/data_*` throughput fixtures. 35 of 45 dataset directories loaded.
+
+So the resolver **could not read the held-out set or any throughput fixture at
+all**, and that is the mechanical reason
+`investigation/BENCHMARK_EXTENSION_RESULTS.md` records resolver throughput at
+scale as "genuinely unmeasured" and §53 deferred it. The gap was described
+there as work not yet done. It was a `KeyError`.
+
+**The fix.** `_bank_column(role, fieldnames, path)` resolves each of the two
+roles against a small alias table and refuses everything else. After it, 45 of
+45 dataset directories load.
+
+**Behaviour-preserving on everything that already worked, and measured rather
+than argued.** Every `BankLine` field -- index, reference, value_date,
+narration, amount_paise -- was dumped for all 35 corpus datasets before and
+after the change and compared: **byte-identical**, 82,734 bytes. The only
+observable difference anywhere is the ten directories that previously raised.
+
+**Rejected: teaching `matching/loaders.py` the second spelling too.**
+`matching/` is frozen at `81c04e0` and reads the fixtures it was written for;
+it has no need of the corpus vocabulary. This is a widening on the resolver
+side only, which is the side that was blocked.
+
+**Rejected: renaming the columns in the older datasets.** `engine/data`,
+`engine/DATASET_HASHES.txt` and the `scale/` fixtures are frozen, and
+`tests/test_holdout_freeze.py` hashes nine paths around a live generation run
+to prove they have not moved. Rewriting frozen data to suit a loader inverts
+which artefact is authoritative.
+
+**Rejected: a general header-normalisation layer.** The obvious "real" fix,
+and out of proportion: there are exactly two spellings of exactly two columns
+in one file, and every other CSV and the recon JSON are already identical
+across both vocabularies (checked, not assumed). A configurable mapping layer
+would be a new surface with no second consumer, and this repository already
+has a name for inventing structure the data does not demand.
+
+**Rejected: preferring one spelling when both appear.** `_bank_column` raises
+on a header carrying both `value_date` and `date`. Two columns claiming the
+same meaning is a question about the data; answering it by preference order is
+the same silent guess as the three defects closed in §71 an hour earlier.
+
+**One pinned expectation moved, and it moved the right way.**
+`bank.missing_header_column` was pinned as `KeyError` -- the loader used to
+subscript a missing key. It is now a `ValueError` naming both accepted
+spellings and the header actually found. Same bucket (2), strictly more
+informative. `tests/adversarial/bucket.py` is again not touched; resolver's
+bucket tally is unchanged at 8/14/0.
+
+**A correction to §53's stated reasoning, which is factually wrong.** §53
+deferred measuring the resolver at scale and gave as its reason: *"`scale/`'s
+fixtures are frozen-generator CSV shape, read by `matching.loaders.load`;
+`resolver/loaders.py` reads only the corpus-generator JSON shape
+(`recon_combined.json`), produced solely by `corpus/generator/build.py`. There
+is no flag or adapter that makes the existing fixtures legible to the resolver
+— measuring it at scale means generating **new**, larger corpus-format
+datasets."*
+
+Every `scale/data_*` directory **does** carry a `recon_combined.json`, and its
+row schema is byte-identical to the corpus generator's: all 28 keys, same
+names, checked across `engine/data`, `holdout/data`, `scale/data_250` and
+`corpus/datasets/A20_B75_Cmax`. `erp_orders.csv`, `gstr2b.csv` and
+`disputes.json` are identical across both vocabularies too. The sole
+difference in the entire dataset directory is two column names in
+`bank_statement.csv`. The adapter §53 says does not exist is an eleven-line
+function, and no new data was needed.
+
+§53's *decision* — do not point `scale/` at the resolver in that pass — was
+still the right call under that pass's scope rule, and this entry does not
+reverse it. Its stated *reason* was an assumption about the file formats that
+nobody checked, and it hardened into a published claim that a measurement was
+expensive when it was blocked by a typo-scale divergence. Recorded here rather
+than by editing §53, which is append-only.
+
+**What this unblocks, and what it deliberately does not do.** The resolver now
+loads `holdout/data` and runs to completion on it (18 bank lines, 85.3s). It
+has never been scored there. **Nothing in this entry scores it.** The held-out
+protocol requires that the seed is never reselected, no sweep is run, and the
+solver is never tuned in response to held-out results; running the loader is an
+unblock, and scoring the held-out set is a separate deliberate act that needs
+its own dated decision and its own committed-before-the-run prediction, exactly
+as §49, §50 and §67 each got. The same applies to `scale/`: the fixtures are
+now readable, and measuring resolver throughput on them is §53's deferred work,
+not a side effect of this fix.
+
+---
+
+## 73. §68's deferred GST re-score, executed — and it moved nothing but the clock — 2026-09-03
+
+**What was owed.** §68 fixed the resolver's CP-SAT budget and regenerated every
+downstream artifact except `corpus/GST_RESULTS.md`, which it deliberately left
+alone: a concurrent line of work had modified `resolver/loaders.py` at 01:14,
+after every artifact in §68's commit was produced, and `corpus/score_gst.py`
+runs as a later process that would have imported it. Publishing GST figures
+carrying both changes under §68's name is the mixing this file exists to
+prevent, so §68 deferred the re-score "to a pass that owns the loader change".
+
+**§70 and §71 own it.** With `resolver/loaders.py`'s `paise()` grammar and the
+three silent-failure fixes landed, measured behaviour-preserving, and recorded,
+the confound is resolved and the re-score can be attributed.
+
+**Result: nothing substantive moved.** `python3 corpus/score_gst.py --all`
+against the fixed resolver and the fixed loaders produces a diff of **eight
+lines, all of them wall-clock timings**:
+
+```
+- datasets_gst/A20_B100_Cmax_gst        ... PASS | 31.19     -> 31.02
+- datasets_gst/A20_B100_Cmax_gst_noisy  ... PASS | 54.54     -> 55.18
+- datasets_gst/A20_B100_Cmax_gst        ... 59 | 59 | 62.17  -> 62.01
+- datasets_gst/A20_B100_Cmax_gst_noisy  ... 59 | 59 | 109.21 -> 110.55
+```
+
+Every per-ground precision/recall cell, every ITC rupee figure, both
+`absent_gap_decomposition` identities, the supplier-identification result, the
+removal probe and all gate verdicts are **byte-identical** to §66's
+regeneration. The `59 | 59` line-outcome counts are unchanged, which is the
+direct confirmation of §68's claim 2 on this family: the budget fix moved no
+outcome class here either.
+
+**Why this is worth an entry rather than a silent commit.** §68 published a
+claim — that the GST figures were deferred and would be recomputed — and an
+undischarged deferral in an append-only decision log is indistinguishable from
+one that was quietly dropped. This entry closes it with the measurement.
+It also removes a live caveat: `GST_RESULTS.md` no longer "reflects §66's
+regeneration under the pre-§68 wall-clock budget"; it now reflects the
+deterministic budget, and the two agree.
+
+**`corpus/GST_HOLDOUT_RESULTS.md` remains NOT re-scored**, per §64/§65/§68, and
+this entry does not change that. The held-out run happened once; §68's claim-1
+failure means the resolver would now answer slightly differently on that
+dataset, which is a reason to leave it alone, not a reason to refresh it.
+
+**Scope.** `corpus/GST_RESULTS.md`, `corpus/gst_results.json` (timings only)
+and this entry. No code changed in this pass.

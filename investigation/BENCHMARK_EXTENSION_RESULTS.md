@@ -62,6 +62,28 @@ of these was patched in this pass — per this repo's own rule, they are
 findings, not fixes, and belong in a future change that is *only* about
 `resolver`/`matching` source.
 
+**Amended 2026-09-03 (`DECISIONS.md` §70, §71), original text left above.**
+That future change happened, and it was only about `resolver/` source. **All
+four asymmetries are closed** and `resolver/loaders.py` now refuses each of
+them with a `ValueError` rather than absorbing it: the paise parser enforces
+the same grammar as `matching/money.py`, a duplicate `settlement_id` raises
+instead of overwriting the earlier attestation, an unrecognised
+`disputes.json` shape raises instead of becoming an empty dispute set, and an
+item with no usable id raises instead of collapsing to the key `""`. The
+suite passes 98/98, still with **zero bucket-3 findings**. `matching/` is
+frozen and was not touched; the two packages now agree these inputs are
+malformed and differ only in which exception says so.
+
+Two things that pass found and are worth carrying forward here. First, the
+empty-key defect was the widest of the four and the ranking above did not
+say so: `resolver/breaks.py` reads back with
+`disputes.get(row.get("dispute_id") or "")`, and 94% of recon rows carry no
+`dispute_id`, so a single malformed item would have reclassified almost the
+entire non-disputed population. It never fires on this corpus — which makes
+it the same shape as D2, unreachable on the data at hand and waiting for
+data that was not. Second, none of the four could move a published figure,
+and that was measured before each fix rather than argued after.
+
 ## 3. The frozen cascade's "does not scale" claim is now measured, not
    asserted
 
@@ -76,6 +98,30 @@ because it was avoided, but because measuring it honestly requires new
 corpus-format data at large pool sizes, which this pass's own scope rule
 correctly kept out of a change that also touches corpus generation
 elsewhere.
+
+**Amended 2026-09-03 (`DECISIONS.md` §72), original text left above. The
+stated reason was wrong, and the real one is less flattering.** Measuring
+resolver throughput did **not** require new corpus-format data. The eight
+`scale/data_*` fixtures already existed at 246 → 48,566 rows. The resolver
+could not read them because `resolver/loaders.py` hardcoded the corpus's
+`bank_reference`/`value_date` header while those fixtures are frozen at the
+older `utr`/`date` spelling — so `load()` raised `KeyError: 'value_date'` on
+all eight, and on `engine/data` and `holdout/data` besides. Ten of forty-five
+dataset directories were unreadable.
+
+A `KeyError` had been recorded here as a scope decision. The paragraph above
+is a true description of a rule this project follows and a false description
+of why this particular number was missing; nothing was checked at the time to
+tell the two apart. `_bank_column` now resolves either spelling and refuses
+anything else, all 45 directories load, and the resolver runs to completion on
+`holdout/data`.
+
+**This does not make the number measured.** It removes the obstacle. Running
+`scale/` against the resolver is §53's deferred work and the held-out set has
+its own protocol — the seed is never reselected, no sweep is run, and the
+solver is never tuned in response to held-out results — so scoring either is a
+separate deliberate act with its own dated decision and its own
+committed-before-the-run prediction, not a side effect of a loader fix.
 
 ## 4. The apparatus still holds together end to end
 
@@ -119,7 +165,9 @@ plainly. Nothing here was patched into looking better than it measured —
 every wrong-shaped finding (the oracle's PSP-side-only accounting, the four
 loader asymmetries) is written up and left for its own change, per this
 repo's own rule that discovering a defect while doing something else is not
-a license to fix it there.
+a license to fix it there. (The four loader asymmetries have since had
+that change: `DECISIONS.md` §70 and §71, 2026-09-03. The oracle's
+PSP-side-only accounting, `DECISIONS.md` §54, remains open.)
 
 What remains open, by design: the GST/ITC axis, the full B×C grid,
 `split-credit`, resolver throughput at scale, and any global financial-

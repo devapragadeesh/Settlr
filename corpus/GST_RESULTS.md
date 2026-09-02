@@ -120,8 +120,8 @@ A grep of `corpus/oracle.py` for `gst`/`itc`/`2b` (case-insensitive) now matches
 
 | dataset | gates | verdict | resolver seconds |
 |---|---|---|---:|
-| `datasets_gst/A20_B100_Cmax_gst` | all zero | PASS | 31.19 |
-| `datasets_gst/A20_B100_Cmax_gst_noisy` | all zero | PASS | 54.54 |
+| `datasets_gst/A20_B100_Cmax_gst` | all zero | PASS | 31.02 |
+| `datasets_gst/A20_B100_Cmax_gst_noisy` | all zero | PASS | 55.18 |
 
 ## The `gstr2b.csv` removal probe: can the tax feed move a line outcome?
 
@@ -129,8 +129,8 @@ When this probe was first written it asked whether `resolver/` opened `gstr2b.cs
 
 | dataset | line outcomes identical | line outcomes (with file) | line outcomes (without file) | seconds |
 |---|---|---:|---:|---:|
-| `datasets_gst/A20_B100_Cmax_gst` | **True** | 59 | 59 | 62.17 |
-| `datasets_gst/A20_B100_Cmax_gst_noisy` | **True** | 59 | 59 | 109.21 |
+| `datasets_gst/A20_B100_Cmax_gst` | **True** | 59 | 59 | 62.01 |
+| `datasets_gst/A20_B100_Cmax_gst_noisy` | **True** | 59 | 59 | 110.55 |
 
 ## The answer
 

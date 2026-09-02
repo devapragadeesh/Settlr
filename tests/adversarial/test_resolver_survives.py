@@ -42,12 +42,32 @@ def test_resolver_never_returns_a_silent_wrong_answer(
 EXPECTED_BUCKET_2_EXCEPTIONS = {
     "recon.truncated_json": "JSONDecodeError",
     "recon.missing_items_key": "KeyError",
-    "bank.missing_header_column": "KeyError",
+    # Was "KeyError": the loader subscripted line["value_date"] directly.
+    # Since 2026-09-03 `_bank_column` checks the header first and raises a
+    # ValueError naming BOTH accepted spellings and the header it actually
+    # found -- strictly more informative than a bare KeyError, and the same
+    # bucket (2) either way. matching/ is frozen and still raises KeyError.
+    "bank.missing_header_column": "ValueError",
     "bank.non_numeric_amount": "ValueError",
     "bank.blank_value_date": "ValueError",
     "settlement_report.missing_reported_amount_column": "KeyError",
     "settlement_report.non_numeric_amount": "ValueError",
-    "bank.over_precision_amount": None,  # resolver's paise TRUNCATES silently
+    # Was None: resolver's paise used to TRUNCATE silently while
+    # matching.money.paise rejected the same cell. Fixed 2026-09-03 --
+    # both parsers now enforce the same grammar, so both raise here and
+    # this expectation matches test_matching_survives.py's exactly.
+    "bank.over_precision_amount": "ValueError",
+    # All three were bucket 1 until 2026-09-03, each for a SILENT reason:
+    # a duplicate settlement_id overwrote the earlier attestation, an
+    # unrecognised disputes.json shape became an empty dispute set, and an
+    # item with no id collapsed to the key "". The loader now refuses all
+    # three, so they raise here. tests/adversarial/bucket.py is deliberately
+    # NOT extended to count these as typed declines: raising the bucket-1
+    # count by editing the bucket definition in the same pass that is scored
+    # by it would be scoring our own homework.
+    "settlement_report.duplicate_settlement_id": "ValueError",
+    "disputes.malformed_shape": "ValueError",
+    "disputes.missing_id": "ValueError",
 }
 
 

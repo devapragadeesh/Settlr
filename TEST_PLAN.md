@@ -95,6 +95,21 @@ silently empties `resolver`'s dispute set where `matching` raises a
 `KeyError`; and a dispute item missing both id fields maps to a shared empty
 key with a latent (untested at scale) collision risk.
 
+**Amended 2026-09-03 (`DECISIONS.md` §70, §71), original text left above.**
+All four asymmetries are now **closed**, and the suite passes **98/98**, not
+the 93/93 stated above — four tests were added in closing them. Three of the
+four were, until that date, pinned in place by tests asserting the defective
+behaviour persisted (`assert dataset.disputes == {}`, `assert "" in
+dataset.disputes`, `entry["reported_amount"] == 100`); those tests are
+rewritten, not deleted, and now assert the refusal. Each fix was measured
+behaviour-preserving on the whole corpus before it was made — 6,374 money
+cells, 45 `disputes.json` files, 5,472 dispute items, 512 settlement-report
+rows, zero affected — so no published figure moved and no committed-prediction
+cycle was owed. `resolver/`'s bucket-1 count **falls**, 12 → 8, because the
+refusals are `ValueError`s and `tests/adversarial/bucket.py` was deliberately
+not extended to count them as typed declines: raising a score by editing the
+scorer in the same pass is the move this repository exists to refuse.
+
 ## 3. Throughput — was the frozen cascade's "does not scale" claim ever
    actually measured?
 
@@ -166,7 +181,10 @@ throughput at scale, and global financial-conservation tests. What it found
 but did not fix, on purpose, per this repo's own governing rule against
 mixing corpus/test work with resolver code changes in the same pass: the
 oracle's PSP-side-only attestation-discrepancy accounting (`DECISIONS.md`
-§54), and the four adversarial-suite behavioral asymmetries above.
+§54), and the four adversarial-suite behavioral asymmetries above — the
+latter closed subsequently in their own dedicated pass, `DECISIONS.md` §70
+and §71, which is exactly the "future change that is *only* about" them that
+this sentence anticipated.
 
 ## Addendum: the GST/ITC axis — 2026-08-31, `DECISIONS.md` §55
 

@@ -1028,7 +1028,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 12,
      "mean_k": 1.0,
-     "seconds": 0.01
+     "seconds": 0.0
     },
     "frozen": {
      "ran": true,
@@ -1804,7 +1804,7 @@
  "hashes": null,
  "commit_ordering": {
   "available": true,
-  "count": 43,
+  "count": 44,
   "first_ten": [
    {
     "sha": "2ce40f95e1",
@@ -1859,11 +1859,6 @@
   ],
   "last_ten": [
    {
-    "sha": "b39e23fdab",
-    "date": "2026-08-28 14:10:19 +0530",
-    "subject": "Fix: matching/stage3_solver.py uses max_deterministic_time, not max_time_in_seconds"
-   },
-   {
     "sha": "d21a1fc8dd",
     "date": "2026-08-28 14:11:15 +0530",
     "subject": "Reconcile the stable baseline: prediction not confirmed, downstream figures recomputed"
@@ -1907,6 +1902,11 @@
     "sha": "ba2b7632c1",
     "date": "2026-09-02 19:19:58 +0530",
     "subject": "DECISIONS 67: the 58 prediction, committed BEFORE the fix"
+   },
+   {
+    "sha": "462ced6cb4",
+    "date": "2026-09-03 01:33:30 +0530",
+    "subject": "DECISIONS 68 and 69: the 58 fix, verified, and cardinality reporting"
    }
   ]
  },

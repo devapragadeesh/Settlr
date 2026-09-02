@@ -285,26 +285,26 @@ def _only_foreign_lines(directory: Path) -> dict:
 
 
 def _over_precision_bank_amount(directory: Path) -> dict:
-    """More than two decimal digits on the bank's own amount column -- the
-    case the task brief flags for `matching/money.paise` vs
-    `resolver/loaders.paise`: one rejects, the other silently truncates. See
-    `test_malformed_bank.py::test_paise_truncate_vs_reject_over_precision`
-    for the direct, package-level comparison; here the same string goes
-    through the full loader."""
+    """More than two decimal digits on the bank's own amount column.
+
+    This case originally documented a divergence: `matching/money.paise`
+    rejected the cell and `resolver/loaders.paise` silently truncated it to
+    the first two decimal digits, so `"7612.9951"` and the baseline's true
+    `"7612.99"` both became 761299 paise. A `Verified` here was therefore the
+    numerically CORRECT answer reached by a code path that happened not to
+    validate precision -- which is why the outcome could not honestly be
+    scored right or wrong, and the definitive finding lived in the
+    function-level comparison instead.
+
+    Fixed 2026-09-03: both parsers now enforce the same grammar and reject
+    the cell, so this case is expected to raise `ValueError` out of the
+    loader on BOTH packages (bucket 2). The direct comparison is
+    `test_malformed_bank.py::test_the_two_paise_parsers_agree`.
+    """
     path = directory / "bank_statement.csv"
     fieldnames, rows = _read_csv(path)
     rows[0]["amount"] = "7612.9951"
     _write_csv(path, fieldnames, rows)
-    # "n/a", not 0: `resolver_paise` truncates to exactly the first two
-    # decimal digits regardless of what follows -- "7612.9951" and the
-    # baseline's true "7612.99" both truncate to 761299 paise, so a
-    # Verified here would be the numerically CORRECT answer, arrived at by
-    # a code path that happens not to validate precision, not a wrong one.
-    # There is no ground truth for what a 4-decimal-digit rupee string
-    # "should" mean, so this specific full-pipeline outcome cannot honestly
-    # be scored right/wrong -- the definitive, unambiguous finding is the
-    # direct function-level comparison in
-    # `test_malformed_bank.py::test_paise_truncate_vs_reject_over_precision`.
     return {"target_bank_index": "n/a"}
 
 

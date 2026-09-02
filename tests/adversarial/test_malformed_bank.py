@@ -61,59 +61,109 @@ def test_only_foreign_lines_shares_no_reference_with_settlement_report(
 # money.paise: truncate vs reject on over-precision decimal strings
 # ---------------------------------------------------------------------------
 
-def test_paise_truncate_vs_reject_over_precision():
-    """`matching/money.py::paise` and `resolver/loaders.py::paise` both parse
-    the SAME kind of cell (a rupee string from a CSV) and disagree on what
-    "more than two decimal digits" means.
+def test_the_two_paise_parsers_agree():
+    """`matching/money.py::paise` and `resolver/loaders.py::paise` parse the
+    SAME kind of cell (a rupee string from a CSV) and must not disagree about
+    what it means.
 
-    `matching.money.paise` matches against `_RUPEES = r"^(-?)(\\d+)(?:\\.(\\d{1,2}))?$"`
-    and RAISES `ValueError` on a third decimal digit -- a malformed cell fails
-    loudly (its own docstring says so).
+    They used to. `matching.money.paise` matched
+    `_RUPEES = r"^(-?)(\\d+)(?:\\.(\\d{1,2}))?$"` and RAISED `ValueError` on a
+    third decimal digit. `resolver.loaders.paise` did string surgery with no
+    validation at all -- `int((frac + "00")[:2])` always took exactly the first
+    two decimal digits -- so `"7612.9951"` became `7612.99` silently: not
+    rounded, not an error, the tail simply dropped.
 
-    `resolver.loaders.paise` does string surgery with no validation at all:
-    `int((frac + "00")[:2])` always takes exactly the first two decimal
-    digits and silently drops the rest. `"7612.9951"` truncates to
-    `7612.99`, not `7612.995` rounded, and not an error -- the third and
-    fourth digits are dropped with no signal.
-
-    This is not a crash difference; it is a correctness difference. The
-    frozen cascade fails loudly on this cell. The resolver accepts it and
-    quietly discards 0.01 paise-scale precision -- the exact "does this
-    degrade safely" question this whole suite is asking, isolated to one
-    function call with no dataset or loader involved.
+    That was a correctness difference, not a crash difference, and the loss
+    always ran in the same direction. Fixed 2026-09-03 by giving
+    `resolver.loaders.paise` the identical grammar. The two are duplicated
+    rather than shared because `resolver/` may not import `matching/` --
+    `resolver/tests/test_isolation.py`'s FORBIDDEN set keeps the frozen cascade
+    independently frozen -- so this test is what stops the duplication drifting
+    back apart. If it fails, the two parsers have diverged again; fix the
+    parser, do not relax the test.
     """
     from matching.money import paise as matching_paise
     from resolver.loaders import paise as resolver_paise
 
-    over_precision = "7612.9951"
+    def outcome(fn, value):
+        try:
+            return ("ok", fn(value))
+        except ValueError:
+            return ("ValueError", None)
 
-    with pytest.raises(ValueError):
-        matching_paise(over_precision)
+    accepted = ["0", "1", "100", "7612.99", "-5.5", "-0.01", "0.00",
+                "999999999.99", "42.5", "-7"]
+    rejected = ["7612.9951", "7612.996", "0.999", "", "   ", "abc", "1.",
+                ".5", "+5", "1.2.3", "-", "1 2", "1e5"]
 
-    # resolver's paise does NOT raise -- it silently truncates to the first
-    # two decimal digits, i.e. drops the "51" tail without complaint.
-    truncated = resolver_paise(over_precision)
-    assert truncated == 761299, (
-        "resolver.loaders.paise's truncate behaviour changed -- if this "
-        "assertion is what fails, the discrepancy documented in "
-        "ADVERSARIAL_FINDINGS.md needs updating, not silencing")
+    for value in accepted + rejected:
+        assert outcome(matching_paise, value) == outcome(resolver_paise, value), (
+            f"the two paise parsers disagree on {value!r} -- "
+            f"matching={outcome(matching_paise, value)} "
+            f"resolver={outcome(resolver_paise, value)}")
 
-    # explicit contrast: the same string parsed as if it were exactly
-    # two decimal digits gives the identical result, proving the extra
-    # digits were dropped rather than incorporated in any way (e.g. rounded).
-    assert resolver_paise("7612.99") == truncated
+    # and the agreement is not the trivial one of both rejecting everything
+    assert outcome(matching_paise, "7612.99") == ("ok", 761299)
+    assert outcome(resolver_paise, "7612.99") == ("ok", 761299)
 
 
-def test_paise_truncate_is_floor_not_round(tmp_path):
-    """`resolver.loaders.paise` truncates rather than rounds: "7612.996"
-    (which a human would round to 7612.996 ~ 7613.00 at 2dp, or at minimum to
-    7613.00 by round-half-up on the third digit) truncates DOWN to 7612.99,
-    losing money in the direction that always favours truncation, never
-    correct rounding."""
+def test_over_precision_is_rejected_not_truncated():
+    """The specific cell that used to lose precision silently. Both parsers
+    now refuse it, so a malformed money cell fails loudly on either side.
+
+    Replaces `test_paise_truncate_is_floor_not_round`, which asserted the old
+    truncating behaviour ("7612.996" -> 761299, floor rather than round) and
+    is obsolete now that the value raises instead.
+    """
+    from matching.money import paise as matching_paise
     from resolver.loaders import paise as resolver_paise
 
-    assert resolver_paise("7612.996") == 761299
-    assert resolver_paise("0.999") == 99
+    for value in ("7612.9951", "7612.996", "0.999"):
+        with pytest.raises(ValueError):
+            matching_paise(value)
+        with pytest.raises(ValueError):
+            resolver_paise(value)
+
+
+def test_the_strict_grammar_accepts_every_money_cell_in_the_repo():
+    """The fix is only safe because nothing in the corpus needed the leniency.
+
+    Walks every money column of every dataset CSV in the repository and asserts
+    the strict grammar accepts all of them -- i.e. no published figure can move
+    as a result of tightening the parser. Measured at the time of the change:
+    6,374 cells across 168 CSVs, zero rejected.
+    """
+    from resolver.loaders import paise as resolver_paise
+
+    repo_root = Path(__file__).resolve().parents[2]
+    targets = {
+        "bank_statement.csv": ("amount",),
+        "settlement_report.csv": ("reported_amount",),
+        "gstr2b.csv": ("taxable_value", "igst", "cgst", "sgst"),
+    }
+
+    checked = 0
+    for filename, columns in targets.items():
+        for path in repo_root.rglob(filename):
+            if ".venv" in path.parts or ".claude" in path.parts:
+                continue
+            with path.open(newline="") as handle:
+                for row in csv.DictReader(handle):
+                    for column in columns:
+                        if column not in row:
+                            continue
+                        checked += 1
+                        try:
+                            resolver_paise(row[column])
+                        except ValueError:  # pragma: no cover - the assertion
+                            raise AssertionError(
+                                f"the strict grammar rejects a REAL cell: "
+                                f"{path}:{column}={row[column]!r} -- tightening "
+                                f"the parser would move a published figure")
+
+    assert checked > 6000, (
+        f"only {checked} money cells found; this test is meant to sweep the "
+        f"whole corpus and something is not being walked")
 
 
 # ---------------------------------------------------------------------------
@@ -158,3 +208,88 @@ def test_matching_loader_smoke_large_bank_file(matching_case_dir):
     elapsed = time.perf_counter() - began
     assert len(dataset.bank) == 5000
     assert elapsed < 30, f"matching.loaders.load took {elapsed:.1f}s for 5000 rows"
+
+
+# ---------------------------------------------------------------------------
+# bank_statement.csv column vocabulary -- the two-schema divergence
+# ---------------------------------------------------------------------------
+
+def test_both_bank_column_vocabularies_load():
+    """`bank_statement.csv` ships under two header spellings in this repo and
+    the resolver must read both.
+
+    The corpus generator emits `bank_reference,value_date`; the frozen
+    `engine/generator.py` emitted `utr,date`, and `engine/data`,
+    `holdout/data` and all eight `scale/data_*` fixtures are frozen at that
+    spelling. `resolver/loaders.py` used to hardcode the first, so it raised
+    `KeyError: 'value_date'` on ten dataset directories -- the held-out set
+    and every throughput fixture. That is the mechanical reason resolver
+    throughput at scale was never measured.
+
+    Fixed 2026-09-03. If this fails, the resolver has stopped reading one of
+    the two vocabularies; fix the loader, do not narrow the test.
+    """
+    from resolver.loaders import load
+
+    repo_root = Path(__file__).resolve().parents[2]
+    new_schema = repo_root / "corpus/datasets/A20_B75_Cmax"
+    old_schema = repo_root / "engine/data"
+
+    for directory in (new_schema, old_schema):
+        header = (directory / "bank_statement.csv").read_text().splitlines()[0]
+        dataset = load(directory)
+        assert dataset.bank, f"{directory.name}: loaded no bank lines ({header})"
+        assert dataset.rows, f"{directory.name}: loaded no recon rows"
+
+    # and the two really are different vocabularies, not the same file twice
+    assert "value_date" in (new_schema / "bank_statement.csv").read_text()
+    assert "utr," in (old_schema / "bank_statement.csv").read_text()
+
+
+def test_a_missing_bank_date_column_is_refused_not_defaulted():
+    """Accepting two spellings must not become accepting anything. A header
+    carrying neither spelling of a role raises, naming both accepted names."""
+    from resolver.loaders import _bank_column
+
+    path = Path("bank_statement.csv")
+    with pytest.raises(ValueError) as excinfo:
+        _bank_column("value_date", ["utr", "narration", "amount"], path)
+    assert "value_date" in str(excinfo.value) and "date" in str(excinfo.value)
+
+    # both spellings of one role present is ambiguous, and is refused rather
+    # than resolved by preference order
+    with pytest.raises(ValueError) as excinfo:
+        _bank_column("value_date", ["value_date", "date", "amount"], path)
+    assert "ambiguous" in str(excinfo.value)
+
+    # the ordinary cases still resolve
+    assert _bank_column("value_date", ["value_date", "amount"], path) == "value_date"
+    assert _bank_column("value_date", ["date", "amount"], path) == "date"
+    assert _bank_column("reference", ["utr", "amount"], path) == "utr"
+    assert _bank_column("reference", ["bank_reference"], path) == "bank_reference"
+
+
+def test_every_dataset_in_the_repo_loads():
+    """The whole point of the fix, pinned: no dataset directory in the
+    repository is unreadable by the resolver's loader.
+
+    Was 35 of 45 before 2026-09-03 -- the ten failures were `engine/data`,
+    `holdout/data` and the eight `scale/data_*` throughput fixtures.
+    """
+    import glob
+    from resolver.loaders import load
+
+    repo_root = Path(__file__).resolve().parents[2]
+    directories = sorted(
+        {Path(p).parent for p in glob.glob(
+            str(repo_root / "**/recon_combined.json"), recursive=True)
+         if ".claude" not in Path(p).parts})
+    assert len(directories) >= 45, f"only found {len(directories)} datasets"
+
+    failures = []
+    for directory in directories:
+        try:
+            load(directory)
+        except Exception as exc:  # noqa: BLE001 - the failure IS the finding
+            failures.append(f"{directory}: {type(exc).__name__}: {exc}")
+    assert not failures, "datasets the resolver cannot read:\n" + "\n".join(failures)

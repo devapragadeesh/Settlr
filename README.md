@@ -372,6 +372,38 @@ in the same file confirms `resolver/loaders.py` never opens `gstr2b.csv` at
 all. The paragraph above is left as originally written, per this project's
 own convention of dating an amendment rather than editing prior text.
 
+**Amended 2026-09-03.** Two sentences in the §55 amendment above have since
+gone stale. Both paragraphs are left as originally written, per the same
+convention.
+
+1. **`resolver/loaders.py` does now open `gstr2b.csv`** —
+   `resolver/loaders.py:165-167`. The probe cited above was accurate when
+   §55 was written; `DECISIONS.md` §59-§61 subsequently wired the ITC-risk
+   annotation and the loader read came with it. **The conclusion the probe
+   was cited to support still holds, and is now enforced by something
+   stronger than a file-open check:** `EvidenceKind.GST_DOCUMENT` is bound
+   to `Attests.ROW_EXISTENCE` (`resolver_contract/types.py:208`), which is
+   not one of the kinds that can license a composition, so a tax document
+   cannot reach a `Verified`, `Reconstructed`, `Ambiguous` or
+   `AttestationDiscrepancy` outcome. The GST feed sets two additive fields
+   on `OpenBreak` — a row nothing placed — and nothing else.
+   `resolver/tests/test_gst_risk.py` asserts this two ways: removing
+   `gstr2b.csv` leaves every line outcome byte-identical including `repr()`
+   (measured: 59 outcomes with the file, 59 without), and
+   `EvidenceKind.GST_DOCUMENT` never appears in the warrant of any
+   composition-bearing outcome. **No GST claim in this repository is
+   demonstrated, and that is unchanged** — but the reason is the evidence
+   contract, not the absence of a file read.
+
+2. **The `gstr2b_absent` rupee gap is not "structural."** The §55 amendment
+   describes it as a disagreement between an accrued and an aggregate
+   figure. `DECISIONS.md` §66 (2026-09-02) supersedes that: it is a defect
+   in the corpus generator — `corpus/generator/build.py:681` computes
+   taxable value guarded only on `fee`, so rows with `fee > 0, tax == 0`
+   contribute their full fee and are charged 18% they never accrued. Both
+   consumers exclude those rows correctly. The remediation is corpus work
+   and is not yet done; see §66.
+
 **There is no wrong-*bank*-side class.** The benchmark plants attestations that
 are wrong. It never plants a case where the two sources contradict and the
 truth is on the *bank* side — a bank splitting one settlement into two credits,
