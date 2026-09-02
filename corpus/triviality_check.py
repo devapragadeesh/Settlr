@@ -57,7 +57,8 @@ if str(ROOT) not in sys.path:
 
 from corpus.baseline_naive import measure                      # noqa: E402
 
-FAMILIES = ("datasets", "datasets_v2")
+FAMILIES = ("datasets", "datasets_v2", "datasets_bankside", "datasets_gst",
+            "datasets_gst_holdout")
 
 
 def dataset_dirs() -> list[Path]:

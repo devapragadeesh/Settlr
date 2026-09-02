@@ -87,3 +87,46 @@ Same protocol as above and as `holdout/SEED.txt`: these seeds are never
 reselected, no sweep is run, and a dataset that comes out awkward is reported
 as it is or a BUG is fixed. Points 1 and 2 are verifiable from `git log` --
 this commit precedes every file it describes.
+
+---
+
+# ADDENDUM, 2026-08-31 17:23 IST -- committed BEFORE any held-out GST data
+# exists. See `DECISIONS.md` §55-63 for the GST/ITC pass this closes, and
+# §63 specifically for why this is a content-hash freeze, not a commit-order
+# one: nothing in that pass is committed to git yet, so the `holdout/SEED.txt`
+# git-log verification this file's other addenda rely on is not available
+# here. This addendum's own ordering evidence is instead: this line exists,
+# and `corpus/datasets_gst_holdout/` does not yet exist on disk, at the
+# timestamp above -- checkable by `ls corpus/datasets_gst_holdout/` failing
+# right now, the way `git log` would be checked if this were committed.
+
+## 3. GST/ITC HELD-OUT -- one dataset the resolver+oracle code has never seen
+
+Every `corpus/datasets_gst/*` dataset was generated, inspected, and used to
+develop and fix the resolver's ITC-risk flag (§59, §61) and its oracle
+measurement (§60) in this same session. Scoring that capability again against
+the same two datasets would not be an out-of-sample test -- the code was
+shaped, in part, by what it saw there. This seed is for a third GST dataset,
+generated after §63's freeze, seen by nobody before the frozen code is run
+against it exactly once.
+
+| axis point | family | seed |
+|---|---|---|
+| A20_B100_Cmax_gst_holdout | datasets_gst_holdout | 20261013 |
+
+Same `weeks=52`, `gst_absent_fraction=1/12`, `gst_no_irn_fraction=1/6`,
+`gst_37a_fraction=1/6`, `wrong_attestations=0` as the existing GST spine
+point (`A20_B100_Cmax_gst`) -- a comparable population, not a different
+experiment, so the held-out result is comparable to §60/§61's numbers
+rather than a different question. `20261013` continues the sequential
+YYYYMMDD numbering already used for `GST_POINTS`' own seeds (`20261001`-
+`20261012`) rather than restarting a new scheme, and is the first unused
+value in that sequence -- not picked for any property of the data it
+produces, since no data exists yet to have a property.
+
+Same protocol as points 1 and 2: never reselected, no sweep, an awkward
+result reported as it is or a bug fixed -- but per `DECISIONS.md` §63/§64,
+"a bug fixed" means only in `corpus/generator/` itself if generation fails
+its own leak/triviality audits (as happened once for the noisy GST dataset),
+never in `resolver/`, `resolver_contract/`, or `corpus/oracle.py` in response
+to what the held-out SCORE says.

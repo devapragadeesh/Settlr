@@ -58,6 +58,7 @@ import json
 import sys
 from collections import Counter
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable, Sequence
 
@@ -152,6 +153,7 @@ class OracleReport:
             ("attestation_discrepancy", "AttestationDiscrepancy detected vs planted"),
             ("proven_unmatched", "ProvenUnmatched -- gated by G9"),
             ("open_break", "OpenBreak -- asserts nothing, never gated"),
+            ("itc_risk_flag", "ITC risk annotation (measured, NOT gated)"),
             ("foreign_lines", "Foreign bank lines (not ours)"),
             ("premise_sharing", "Premise sharing: rank-1 hit rate vs chance"),
             ("determined", "Determined subpopulation"),
@@ -375,6 +377,39 @@ def score(output: ResolverOutput, truth: dict) -> OracleReport:
     return report
 
 
+def _bank_side_planted_indices(truth: dict) -> set[int]:
+    """Planted BANK-side attestation discrepancies, as bank-line indices.
+
+    `DECISIONS.md` 56. Read generically from `planted_classes`, mirroring
+    `corpus/leakage_audit.py::classes_from_ground_truth` -- no class name is
+    hardcoded, so a future bank-side discrepancy class needs no oracle edit.
+
+    `table: "bank"` alone is NOT the qualifying predicate, and 57 records why:
+    `d01_settlement_reversal` and `d02_foreign_bank_lines` are also
+    `table: "bank"` in all 34 corpus datasets and are not attestation
+    discrepancies at all -- a reversal is a correctly recorded reversal and a
+    foreign line is somebody else's money. Counting them would publish
+    "planted discrepancies the resolver missed" for lines where there is
+    nothing to detect. The predicate is structural instead: the class must
+    declare, per member, a contradiction between a bank line and a named
+    settlement -- i.e. its `detail` entries carry both `bank_line_index` and
+    `settlement_id`. Membership itself is still read from `members`, which
+    carries the bank-line indices (as strings).
+    """
+    indices: set[int] = set()
+    for spec in truth.get("planted_classes", {}).values():
+        if not spec.get("planted", True) or spec.get("table") != "bank":
+            continue
+        detail = spec.get("detail") or []
+        if not detail or not all(
+                "bank_line_index" in d and "settlement_id" in d
+                for d in detail):
+            continue
+        for member in spec.get("members", []):
+            indices.add(int(member))
+    return indices
+
+
 def _measure(output, truth, by_line, bank_truth, determined,
              wrong_attested, reconstructible=()) -> dict:
     accounting = output.accounting()
@@ -413,13 +448,26 @@ def _measure(output, truth, by_line, bank_truth, determined,
                 "not gated -- but they are still errors and are reported"}
 
     # --- AttestationDiscrepancy: detected vs planted ----------------------
-    planted = len(truth["attestation"]["wrong_attestations"])
+    #
+    # TWO REFERENCE FRAMES, kept apart on purpose. `wrong_attested` is a set of
+    # SETTLEMENT IDS (the PSP attested a wrong amount). A bank-side planted
+    # class lives in BANK-LINE-INDEX space (the bank posted a wrong amount for
+    # a settlement whose own record is correct). DECISIONS.md 56 fixes the
+    # accounting for the second frame and explicitly REJECTS mapping one frame
+    # into the other through `by_line`: a bank line's index and the settlement
+    # it happens to correspond to are not interchangeable keys (see 44).
+    bank_side_planted_indices = _bank_side_planted_indices(truth)
+    planted = len(wrong_attested) + len(bank_side_planted_indices)
     detected = [o for o in output.line_outcomes
                 if isinstance(o, AttestationDiscrepancy)]
     true_positive = 0
     for outcome in detected:
         expected = by_line.get(outcome.bank_index)
-        if expected and expected["settlement_id"] in wrong_attested:
+        # frame 1: settlement-id space -- the PSP attested wrongly
+        psp_side = bool(expected and expected["settlement_id"] in wrong_attested)
+        # frame 2: bank-line-index space -- the bank posted wrongly (56)
+        bank_side = outcome.bank_index in bank_side_planted_indices
+        if psp_side or bank_side:
             true_positive += 1
     # FOUR-WAY, not two-way. "reported minus planted" reads as a false-alarm
     # rate to anyone skimming, and it is not one: a bank debit revoking an
@@ -435,7 +483,14 @@ def _measure(output, truth, by_line, bank_truth, determined,
     for outcome in detected:
         expected = by_line.get(outcome.bank_index)
         settlement = expected["settlement_id"] if expected else None
+        # frame 1: a planted PSP-side wrong attestation -- a correct detection
         if settlement in wrong_attested:
+            continue
+        # frame 2: a planted BANK-side mispost -- also a correct detection, and
+        # before 56 it fell through to `genuinely_false` for want of a
+        # settlement id to be found by. Kept as its own branch, not folded into
+        # the condition above, so the frame distinction stays visible.
+        if outcome.bank_index in bank_side_planted_indices:
             continue
         kind = outcome.contradiction.kind.value
         corroborated = (kind == "credit_reversed"
@@ -448,6 +503,12 @@ def _measure(output, truth, by_line, bank_truth, determined,
     missed = sorted(wrong_attested - {
         by_line[o.bank_index]["settlement_id"] for o in detected
         if by_line.get(o.bank_index)})
+    # frame 2's misses, reported in BANK-LINE-INDEX space as their own
+    # collection (56). They are deliberately NOT coerced into `missed`'s
+    # settlement-id shape -- the two are not the same kind of thing, and a
+    # reader must not be able to read one as the other.
+    missed_bank_side = sorted(
+        bank_side_planted_indices - {o.bank_index for o in detected})
     measured["attestation_discrepancy"] = {
         "planted": planted, "reported": len(detected),
         "correctly_identified": true_positive,
@@ -455,12 +516,16 @@ def _measure(output, truth, by_line, bank_truth, determined,
         "genuinely_false": genuinely_false,
         "genuinely_false_detail": false_detail,
         "planted_but_missed": missed,
+        "planted_but_missed_bank_side": missed_bank_side,
         "false_findings": len(detected) - true_positive,
         "note": "FOUR-WAY. `false_findings` is retained for continuity and is "
                 "MISLEADING on its own: it is reported minus planted, and a "
                 "reversal corroborated by a reversal_debit line in the answer "
                 "key is a true finding of a kind the corpus did not plant. "
-                "`genuinely_false` is the false-alarm count"}
+                "`genuinely_false` is the false-alarm count. TWO FRAMES: "
+                "`planted_but_missed` is settlement ids (PSP attested "
+                "wrongly); `planted_but_missed_bank_side` is bank-line "
+                "indices (the bank posted wrongly). DECISIONS.md 56"}
 
     # --- G9: a ProvenUnmatched row that actually settled ------------------
     # Contract 4.7.1. Until this gate existed, "0 wrong answers" in every
@@ -525,6 +590,10 @@ def _measure(output, truth, by_line, bank_truth, determined,
                 "asserts nothing. `rows_that_did_settle` is descriptive: those "
                 "rows are correctly OPEN, not correctly explained"}
 
+    # --- ITC risk annotation on OpenBreak: MEASURED, never gated ----------
+    if "gst_truth" in truth:
+        measured["itc_risk_flag"] = _itc_risk_flag(output, truth)
+
     # --- foreign bank lines: can the resolver say "not ours"? -------------
     foreign = [index for index, line in bank_truth.items()
                if line["kind"] != "settlement"]
@@ -555,6 +624,142 @@ def _measure(output, truth, by_line, bank_truth, determined,
                 "Abstention here is gated at zero (G7 attested, G8 "
                 "unattested) and these are the only gates silence cannot pass"}
     return measured
+
+
+#: The reporting timezone the whole corpus is generated in. Declared here
+#: rather than imported: the oracle shares no helper with the generator, and a
+#: shared offset constant would make an offset bug invisible to both sides.
+_IST = timezone(timedelta(hours=5, minutes=30))
+
+#: `ground_truth.json`'s statutory reason string -> the resolver's ground name.
+#: Two independent vocabularies for one set of statutes, related by a table
+#: rather than by a shared enum, for the same reason.
+_REASON_TO_GROUND = {
+    "absent_from_gstr2b": "gstr2b_absent",
+    "no_irn_on_notified_supplier_invoice": "gstr2b_no_irn",
+    "supplier_gstr3b_not_filed_rule_37a": "gstr2b_37a_exposure",
+}
+
+
+def _itc_risk_flag(output, truth) -> dict:
+    """Precision/recall of `OpenBreak.itc_risk` / `.itc_risk_grounds`.
+
+    MEASURED, NOT GATED, and `DECISIONS.md` 60 records why at length. In one
+    line: this is the first contact between `resolver/` and `gstr2b.csv` in
+    any form, `resolver/breaks.py` reimplements the gateway-GSTIN
+    identification and the three statutory checks rather than importing the
+    frozen reference (an accepted duplication-drift risk, 59), and gating an
+    untested reimplementation's FIRST measured numbers is exactly the mistake
+    G5 was withdrawn for. A number has to exist before a threshold on it can
+    mean anything.
+
+    ## The two frames, and why the disagreement between them is the finding
+
+    The resolver's claim is per ROW: "this row belongs to a settled month
+    carrying an ITC finding". It attributes a row to a month by
+    `first_reconcilable` -- deliberately NOT `settled_at`, because every row
+    reaching `dispositions()` is a row nothing placed and `settled_at` is an
+    unconfirmed PSP claim on such a row (59 records that choice and its
+    reason).
+
+    The truth here is built in the OTHER frame, from the key alone and with no
+    reference to that choice: `settled_in` names the batch a row genuinely
+    landed in, `batches[].formed_at` dates that batch, and `itc_at_risk` names
+    the periods carrying a finding. A row that never settled has no month in
+    this frame at all -- and correctly so, because the gateway never invoiced a
+    fee for it, so there is no input tax on it to be at risk.
+
+    Scoring one frame against the other is the point, not a defect in the
+    measurement. Forcing them into a common frame -- e.g. re-deriving truth
+    from `first_reconcilable` too -- would make the row->month attribution
+    shared between the thing measured and the thing measuring it, and the
+    statistic would then be unable to see an attribution error at all. That is
+    44's named defect class and 56 already rejected the same move once.
+
+    ## Scope, stated rather than implied
+
+    The universe is the rows that appear in some `OpenBreak`, because that is
+    the only place the resolver may put this annotation (59 confines GST
+    evidence to `OpenBreak` outright). A row the resolver correctly settled is
+    neither flagged nor flaggable, and counting it as a false negative would
+    measure the contract's own restriction rather than the flag.
+
+    `precision` and `recall` are `None`, never 1.0, when their denominator is
+    empty. An undefined recall is reported as undefined.
+
+    Pairs are `(row_id, ground)`. `itc_risk_grounds` is a per-BREAK union, so a
+    break whose flagged rows straddled two at-risk months would attribute both
+    months' grounds to every flagged row in it; `breaks_straddling_months`
+    counts how often that could have happened, so the reader can see whether
+    the cross-product is lossy on this data rather than trusting that it isn't.
+    """
+    gst_truth = truth["gst_truth"]
+    # invoice -> filing period. Same source `corpus/score_gst.py` already uses
+    # to turn a period back into an invoice for the frozen filters; read in the
+    # other direction here.
+    invoice_period = {item["invoice_no"]: item["period"]
+                      for item in truth.get("itc_at_risk", [])}
+    at_risk: dict[str, set[str]] = {}
+    unmapped: list[str] = []
+    for invoice_no, reasons in gst_truth["grounds_by_invoice"].items():
+        period = invoice_period.get(invoice_no)
+        if period is None:
+            unmapped.append(invoice_no)
+            continue
+        for reason in reasons:
+            ground = _REASON_TO_GROUND.get(reason)
+            if ground is not None:
+                at_risk.setdefault(period, set()).add(ground)
+
+    month_of_batch = {batch["settlement_id"]:
+                      datetime.fromtimestamp(batch["formed_at"],
+                                             _IST).strftime("%Y-%m")
+                      for batch in truth["batches"]}
+    settled_in = truth.get("settled_in", {})
+
+    def truth_month(row_id: str):
+        return month_of_batch.get(settled_in.get(row_id))
+
+    universe = sorted({row_id for item in output.open_breaks
+                       for row_id in item.row_ids})
+    predicted: set[tuple[str, str]] = set()
+    straddling = 0
+    for item in output.open_breaks:
+        if len({truth_month(r) for r in item.row_ids
+                if truth_month(r) is not None}) > 1:
+            straddling += 1
+        for row_id in item.itc_risk:
+            for ground in item.itc_risk_grounds:
+                predicted.add((row_id, ground))
+    actual = {(row_id, ground) for row_id in universe
+              for ground in at_risk.get(truth_month(row_id) or "", ())}
+
+    tp = len(predicted & actual)
+    fp = len(predicted - actual)
+    fn = len(actual - predicted)
+    flagged = {row_id for item in output.open_breaks for row_id in item.itc_risk}
+    return {
+        "open_break_rows": len(universe),
+        "open_break_rows_settled_in_truth":
+            sum(1 for r in universe if truth_month(r) is not None),
+        "flagged_rows": len(flagged),
+        "flagged_rows_that_never_settled":
+            sum(1 for r in flagged if truth_month(r) is None),
+        "breaks_straddling_months": straddling,
+        "at_risk_months": {month: sorted(grounds)
+                           for month, grounds in sorted(at_risk.items())},
+        "invoices_with_no_period_in_key": sorted(unmapped),
+        "true_positive": tp, "false_positive": fp, "false_negative": fn,
+        "precision": None if tp + fp == 0 else round(tp / (tp + fp), 4),
+        "recall": None if tp + fn == 0 else round(tp / (tp + fn), 4),
+        "note": "measured, not gated -- first contact between resolver/ and "
+                "gstr2b.csv, no prior baseline exists to gate against "
+                "(mirrors reconstructed_accuracy and this repo's own G5 "
+                "withdrawal). Truth is in the SETTLED-month frame read from "
+                "the key; the resolver attributes by first_reconcilable. A "
+                "row that never settled accrued no gateway fee and so carries "
+                "no input tax to be at risk",
+    }
 
 
 def _premise_sharing(output, truth, by_line) -> dict:

@@ -56,6 +56,16 @@ regenerated, which are flagged as such. It is generated, so it cannot drift
 from the runs. If a number anywhere else disagrees with it, that number is
 stale.
 
+## Testing this repository's own named gaps
+
+**[`TEST_PLAN.md`](TEST_PLAN.md)** closes the highest-value gaps this
+document itself names below — a wrong-*bank*-side error class, a malformed-
+input robustness suite, the frozen cascade's throughput ceiling, a
+cold-clone operational check, and an industry-standard controls mapping.
+**[`investigation/BENCHMARK_EXTENSION_RESULTS.md`](investigation/BENCHMARK_EXTENSION_RESULTS.md)**
+is what it found. Neither claims the remaining named gaps (GST/ITC, the
+full axis grid) are closed — they state plainly that they are not.
+
 ## Run it
 
 ```bash
@@ -348,11 +358,42 @@ volume of ITC decisions, no partially-filed-supplier population, no IRN timing
 distribution. The three statutory findings it produces are each a
 single-column filter. **Do not read any GST claim here as demonstrated.**
 
+**Amended 2026-08-31 (`DECISIONS.md` §55).** A real population axis now
+exists — `corpus/datasets_gst/`, varying invoice volume, a genuine
+partial-filing fraction, and a genuine IRN-presence fraction over the
+gateway's own 2B lines, scored read-only against the frozen filters in
+[`corpus/GST_RESULTS.md`](corpus/GST_RESULTS.md). What that measured: the
+`itc_availability` single-column shortcut does **not** generalize (it misses
+every Rule-37A-only and absent-from-2B invoice by construction), and the
+absent-from-2B ground's rupee total structurally disagrees between an
+accrued and an aggregate figure even when invoice identification is exact.
+Neither result licenses a GST/ITC claim in `resolver/` — a read-only probe
+in the same file confirms `resolver/loaders.py` never opens `gstr2b.csv` at
+all. The paragraph above is left as originally written, per this project's
+own convention of dating an amendment rather than editing prior text.
+
 **There is no wrong-*bank*-side class.** The benchmark plants attestations that
 are wrong. It never plants a case where the two sources contradict and the
 truth is on the *bank* side — a bank splitting one settlement into two credits,
 say. So "two independent parties agree" is never tested at the one point where
 the direction of the disagreement matters. This is the largest remaining gap.
+
+**Amended 2026-08-31 (`DECISIONS.md` §51), original text left above.** A
+wrong-bank-side class now exists, scoped narrowly. `corpus/datasets_bankside/`
+— two datasets, via `corpus/generator/bank_side_errors.py`'s `plant_mispost`
+— corrupts one bank credit's amount while `recon_combined.json` and
+`settlement_report.csv` stay correct and untouched, so the disagreement is
+real and it is the bank, not the PSP, that is wrong. It covers **`mispost`
+only** — one line posted at the wrong amount — not the `split-credit` shape
+named above (one settlement posted as two bank credits): that shape may need a
+`resolver_contract` change, and this project's rule is that a contract change
+is its own dated decision, never folded into the corpus work that provoked it.
+It is **two datasets, not a grid**, audited (`leakage_audit.py --all`,
+`triviality_check.py --all`) but scored outside the 30-dataset aggregate this
+document otherwise cites, by a dedicated `corpus/score_bankside.py` — see
+`corpus/CORPUS_SPEC.md` §10 and `DECISIONS.md` §51. The gap is narrowed, not
+closed: `split-credit`, and any wrong-bank-side interaction with the other
+axes, remain untested.
 
 **Other named gaps.** The foreign-credit class is a rare-event class as built —
 amounts are drawn independently of the ledger, so a subset almost never nets to
@@ -378,7 +419,8 @@ engine/              the frozen data generator and its settlement spec
 matching/            the frozen 4-stage cascade (the previous engine)
 eval/, holdout/,     the earlier evaluation of the frozen engine, including
 scale/               the held-out run that produced the 50 wrong answers
-investigation/       the defect report
+investigation/       the defect report, plus the operational, controls, and
+                     benchmark-extension write-ups (see TEST_PLAN.md)
 DECISIONS.md         numbered, append-only; every entry carries the
                      alternatives it rejected and why
 CHECKPOINT.md        the current state, written against the artefacts on disk

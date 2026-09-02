@@ -2262,3 +2262,1265 @@ second, independent predicate in that same frozen-cascade function computing
 function, found across three separate passes, is itself evidence for §44.4's
 claim that this class is not eliminable by care: each pass fixed what it was
 looking at and left the adjacent line for the next one to find.
+
+---
+
+## 51. A wrong-*bank*-side class is added, scoped to `mispost` only, and scored outside the 30-dataset aggregate
+
+**Decision.** A new planted class corrupts the **bank** side of a settlement
+rather than the PSP's attestation: one bank credit's amount is replaced with
+an amount that matches no valid batch composition, while
+`settlement_report.csv` and `recon_combined.json` are left correct and
+untouched. It lands in a new module, `corpus/generator/bank_side_errors.py`,
+called from `build.py` on the `payouts` sequence *before*
+`build_bank_statement` runs — `bank.py` itself is not edited, so the
+independence guarantee its `Payout` signature encodes (amount + timestamp,
+nothing else) is exercised, not weakened. Two new datasets, one axis point
+each, ship in a new family, `corpus/datasets_bankside/`.
+
+**Why.** README's own Limitations section names this the largest remaining
+gap: every planted record error so far corrupts the PSP's attestation; the
+benchmark never once tests the direction where the bank side disagrees and is
+the one that is wrong. `AttestationDiscrepancy`'s own contract text is
+already symmetric — "the sources disagree… a finding about the record, not a
+claim about which rows settled" — so this class asks whether that symmetry
+holds in the implementation, not just in the prose.
+
+**Scoped to `mispost`, not `split-credit`.** A second shape was considered —
+one settlement posted as two separate bank credits summing to the true
+amount. It was set aside for this pass: it may expose a real question the
+outcome vocabulary does not yet answer (can any current outcome represent
+"these two bank lines are jointly one attested settlement"?), and this
+project's own rule is that a change to `resolver_contract` is a dated,
+separate decision (§31, §46), never folded into corpus work that happens to
+provoke it. If the resolver mishandles `split-credit` when it is eventually
+built, that is a finding to write up, not a reason to extend the contract in
+the same change that discovered it.
+
+**Rejected: fold the new family into `FAMILIES`/`three_systems.py`.**
+`corpus/three_systems.py`, `corpus/scorecard.py`, and `corpus/claims_ledger.py`
+carry the dataset counts as narrative prose — "30 datasets", "the 28
+datasets" — not purely computed values. Adding a two-dataset family whose
+main purpose is exposing a gap, not producing a new headline aggregate,
+would mean editing sentences inside three already-cited, already-audited
+generated documents for a small addition. Rejected in favor of a dedicated,
+small scorer, `corpus/score_bankside.py`, writing `corpus/BANKSIDE_RESULTS.md`
+and `.json`. The existing cited numbers stay true and stable.
+
+**A finding, made while implementing this decision rather than assumed in
+advance.** `corpus/leakage_audit.py` and `corpus/triviality_check.py` are
+class-agnostic — both read `ground_truth.json["planted_classes"]` and
+per-dataset directory contents generically, so a `table: "bank"` planted
+class needs no change to either script's *auditing* logic, and
+`leakage_audit.py`'s `load_tables` already builds a `bank` table keyed by
+`_file_position` (the bank statement's line index), which is exactly the key
+a bank-side planted class needs. But both scripts' `--all` convenience flag
+hardcodes `FAMILIES = ("datasets", "datasets_v2")` (identically, in both
+files) to discover what to audit — a new family is invisible to `--all`
+until that tuple is extended. `datasets_bankside` is added to both tuples.
+This is corpus-tooling code, not `resolver/` or `matching/`, so extending it
+is within this pass's scope; it is recorded here because the original plan
+for this class assumed `--all` would need no changes, and that assumption
+was wrong.
+
+---
+
+## 52. The adversarial-input suite fails the build only on a silently wrong answer, never on a raised exception
+
+**Decision.** `tests/adversarial/` feeds `resolver/` and `matching/` — read
+only, through their existing public `load()`/`resolve()`/`run_cascade()`
+entry points — a family of single-field corruptions of an otherwise-valid
+dataset: negative amounts, duplicate `settlement_id`/`bank_reference`,
+truncated or malformed JSON, out-of-order timestamps, over-precision decimal
+strings, missing optional files, empty files, non-numeric fields. Every case
+is sorted into exactly one of three buckets: (1) a clean, typed decline —
+best; (2) an uncaught low-level exception (`KeyError`, `ValueError`, …) —
+acceptable, but named and cataloged so a change in which exception fires is
+visible; (3) a **silent, plausible-looking wrong answer** — a `Verified` or
+equivalent built from corrupted input with no signal anything was off. Only
+bucket 3 fails the suite.
+
+**Why.** This suite lives outside `corpus/` because it is not a claim about
+composition accuracy and must never be read as one — it answers "does this
+degrade safely," not "is this correct," and mixing the two is exactly the
+error `eval/scale_report.py` was already written to avoid for throughput
+numbers. Bucket 3 is the only outcome that matters for a financial system: an
+uncaught `KeyError` on a truncated CSV is safe (nothing downstream trusts a
+crash), a clean decline is the contract working as designed, but a resolver
+that turns a corrupted input into a confident, wrong `Verified` is the one
+failure mode with no downstream backstop.
+
+**Rejected: fail on any uncaught exception.** Would implicitly demand
+hardening `resolver/`/`matching/` against every malformed-input case this
+pass enumerates — that is resolver work, and this pass's hard constraint is
+that corpus/test work and resolver code changes do not land in the same
+change. A defect the suite finds gets written up alongside
+`investigation/DEFECT_REPORT.md`'s existing three, not patched here.
+
+**Rejected: gate through `corpus/oracle.py`'s G1–G9 machinery.** Those gates
+score `(resolver_output, ground_truth)` pairs from the seeded corpus; this
+suite has no ground truth to score against — a corrupted input by
+construction closes to nothing, or to something arbitrary. It needs its own
+three-bucket accounting, not a new oracle gate.
+
+---
+
+## 53. `scale/` is run to completion for the frozen cascade only; measuring the resolver at scale is deferred, not attempted
+
+**Decision.** `scale/generate_scale.py` and `eval/scale_report.py` are run
+as they already exist, unmodified, producing the long-missing
+`scale/SCALE_REPORT.md`. No new code is written to point either script at
+`resolver/`.
+
+**Why deferred, not built.** `scale/`'s fixtures are frozen-generator CSV
+shape, read by `matching.loaders.load`; `resolver/loaders.py` reads only the
+corpus-generator JSON shape (`recon_combined.json`), produced solely by
+`corpus/generator/build.py`. There is no flag or adapter that makes the
+existing fixtures legible to the resolver — measuring it at scale means
+generating **new**, larger corpus-format datasets, which is corpus-generation
+work, which by this pass's own governing constraint must not land in the
+same change as anything resolver-adjacent, and would additionally re-trigger
+`leakage_audit.py`/`triviality_check.py` gating at an untested scale. Both
+of those are real projects, not a flag flip.
+
+**Rejected: skip `scale/` entirely since it only covers the superseded
+engine.** The frozen cascade is still the corpus's second baseline in
+`corpus/THREE_SYSTEMS.md`, and its throughput was never measured at any
+scale beyond the ~1.4s primary-set runtime — "does not scale to a real
+merchant book" has been asserted (`SETTLEMENT_SPEC.md` §1.5, this document's
+§15) since early in the project and never actually measured. Running the
+existing scaffolding closes that specific, cheap gap even though it does not
+touch the newer resolver.
+
+**Consequence accepted.** The results document states plainly that resolver
+throughput at scale is unmeasured, and names the reason above rather than
+omitting it.
+
+---
+
+## 54. The bank-side class is scored by a scorer-local check, and `corpus/oracle.py` is left uncorrected in public view — 2026-08-31
+
+**Decision.** `corpus/score_bankside.py` carries its own `bankside_verdict`
+function for the `d12_bank_side_mispost` class. `corpus/oracle.py` is imported
+and run unmodified, its gates are reported as the gates, and its *measured,
+ungated* `attestation_discrepancy` block is printed **exactly as the oracle
+produced it** — including the number it gets wrong — with the re-attribution
+shown in adjacent columns rather than applied to it. `BANKSIDE_RESULTS.md`
+states in the body that the `verdict` column is a scorer-local check and not
+an oracle gate.
+
+**What the oracle cannot represent, measured rather than assumed.** The gates
+*do* cover the primary soundness question: G1 fires on a `Verified` whose
+composition is not the key's composition, and it is class-agnostic — it reads
+`truth["batches"]`, so a bank-side corruption needs nothing added. G7 also
+behaves correctly here without knowing about the class: the corrupted line is
+in `determined_instances` (the register was computed from the *true* payout),
+but `ResolverOutput.abstention_failures` counts only `Unresolved` and
+`Ambiguous` as abstention, so an `AttestationDiscrepancy` on that line is not
+scored as a missed answer. Neither of those needed checking against the class.
+
+What breaks is one ungated measurement: `_measure` derives
+`attestation_discrepancy["planted"]` from
+`truth["attestation"]["wrong_attestations"]`, which by construction records
+PSP-side wrong attestations only. A `table: "bank"` planted class cannot
+appear there. So a **correct** bank-side detection falls through to
+`genuinely_false` — the oracle reports 1 genuinely-false finding per dataset
+for a finding that is true and planted.
+
+**Rejected: fix `corpus/oracle.py` to count bank-side planted classes.** This
+is the obvious change and it is the wrong one to make here. `planted` feeds
+the four-way split cited in `ORACLE_RESULTS.md` and `THREE_SYSTEMS.md`;
+widening it changes a published false-alarm number across 30 datasets, and it
+widens what the oracle *means* by a planted discrepancy, which is contract
+vocabulary. §31, §46 and §51 all say the same thing: a change to the oracle or
+the contract provoked by corpus work is a separate dated decision, never
+folded into the change that provoked it. Doing it here would also mean the
+resolver's first bank-side score and the oracle change that scores it landed
+together, which is precisely the ordering this project spends its evidence
+budget avoiding.
+
+**Rejected: silently correct the number in `BANKSIDE_RESULTS.md`.** Printing
+`genuinely_false: 0` because the scorer knows better, without printing what
+the oracle actually said, would make the report disagree with the tool it
+claims to be reporting. The two columns sit side by side instead; a reader can
+see the oracle was not edited.
+
+**Rejected: leave the class unscored beyond the gates.** The gates pass on a
+resolver that abstains on every corrupted line, and abstention is exactly the
+weaker behaviour this class exists to distinguish from the sound one. Without
+`bankside_verdict` the report could not tell "named the disagreement" apart
+from "could not explain it", which is the whole question §51 asked.
+
+**Consequence accepted.** `corpus/BANKSIDE_RESULTS.md` reports a check that no
+gate enforces, and says so in those words. The follow-up — teaching the oracle
+about bank-side planted classes — is now an owed, named change rather than an
+undocumented divergence.
+
+---
+
+## 55. A real GST/ITC population axis is added, scored against the frozen filters only, and no resolver work rides along — 2026-08-31
+
+**Decision.** The corpus's GST/ITC leg gains three new `AxisPoint` fields —
+`gst_absent_fraction`, `gst_no_irn_fraction`, `gst_37a_fraction` — plus
+`gst_vendor_noise_multiplier`, all defaulting to values that reproduce
+today's exact fixed-3-index plant (`gst_rows[0]` gets Rule 37A,
+`gst_rows[1]` is dropped for Sec 16(2)(aa), a third gets Rule 48(5)) when
+unset. A new module, `corpus/generator/gst_population.py`, sibling to
+`bank_side_errors.py`, implements the real fractional planting; it replaces
+`build.py`'s inline `if len(gateway_invoices) >= 3:` block and never touches
+`engine/generator.py` (frozen, and already a separate implementation for the
+primary dataset). Two new datasets ship in a new family,
+`corpus/datasets_gst/`: `A20_B100_Cmax_gst` (`weeks=52` → ~12 gateway
+months instead of ~3, `gst_absent_fraction=1/12`, `gst_no_irn_fraction=1/6`,
+`gst_37a_fraction=1/6`, seed `20261001`) and `A20_B100_Cmax_gst_noisy`
+(same, plus `gst_vendor_noise_multiplier=12`, seed `20261002`). Both carry
+`wrong_attestations=0`, mirroring `BANKSIDE_POINTS`' own isolation
+discipline. A new scorer, `corpus/score_gst.py`, mirrors
+`corpus/score_bankside.py`'s shape: it runs the existing, unmodified
+`matching/stage4_exceptions.py` filters and `resolver/` **read-only**
+against the new population and reports `corpus/GST_RESULTS.md`.
+
+**A structural fact this design depends on, verified by reading
+`matching/stage4_exceptions.py`'s `_tax_exceptions()`, not assumed.** It
+inspects only the gateway's own monthly 2B lines
+(`dataset.gstr2b` filtered to `line.gstin == findings.supplier_gstin`); the
+third-party vendor-noise rows built alongside them are invisible to the
+three statutory filters and only matter as noise `identify_supplier()` must
+not be fooled by. Gateway-line variation and vendor-noise variation are
+therefore two different knobs, and only the former exercises the filters —
+this is why the two new fields for grounds (`gst_absent_fraction` etc.) are
+separate from `gst_vendor_noise_multiplier`, and why the second dataset
+exists at all: to isolate the noise question from the population question
+rather than let a finding in one hide inside the other.
+
+**Why.** `corpus/CORPUS_SPEC.md`'s own limitations table names this
+directly, as D9: *"the GST leg has no reconciliation work; 20-row file; all
+3 ITC findings are single-column filters at precision 1.000;
+`itc_availability == 'No'` supplies the conclusion as an input column."* And
+further: *"[the corpus] still has no volume of ITC decisions, no
+partially-filed-supplier population, and no IRN timing distribution. Any
+GST claim in a headline remains substantially unearned."* This entry closes
+those three named absences — volume, a real partial-filing population, a
+real IRN-presence population — with the smallest change that does not mint
+a lateness case the generator's own commentary already calls mechanically
+impossible.
+
+**Rejected: model "IRN generated more than 30 days late."** Both
+`engine/generator.py`'s and this corpus's own generator commentary already
+establish that the IRP refuses late registration outright, so such a row
+never reaches 2B at all — it is indistinguishable from the already-covered
+absent-from-2B ground, not a fourth, separate one. Modelling it would add a
+field that tests nothing new.
+
+**Rejected: fold `datasets_gst` into `corpus/three_systems.py`'s
+`FAMILIES`.** Identical reasoning to §51: that pipeline's dataset counts are
+narrative prose in three already-cited, already-audited generated documents.
+A two-dataset family whose purpose is exposing a gap gets its own small
+report, `corpus/GST_RESULTS.md`, instead.
+
+**Rejected: patch `matching/stage4_exceptions.py` or `identify_supplier()`
+in this same change if the new population shows they do not generalize.**
+That is `matching/` source — resolver-adjacent work — and this repo's
+governing rule is that corpus/dataset work and resolver/matching code
+changes never land in the same change. A finding here is written up in
+`corpus/GST_RESULTS.md`, not patched.
+
+**Rejected: patch `corpus/oracle.py` in this same change, even if
+`score_gst.py` finds it has no tax-leg logic at all.** Per §54's precedent,
+an oracle change is its own decision. `score_gst.py` carries a scorer-local
+check instead, and states plainly whether the oracle's silence on the tax
+leg is total (no gate, no ungated measurement) or partial — checked, not
+assumed, since a grep of `oracle.py` for "gst"/"itc"/"2b" returns zero
+matches today, which is a different and more basic finding than §54's
+miscalibrated-measurement one.
+
+**Rejected: design or build any GST-aware `resolver/` reasoning in this
+pass.** `resolver_contract/types.py` already declares
+`SourceSystem.TAX_AUTHORITY` and `EvidenceKind.GST_DOCUMENT`, and nothing in
+`resolver/*.py` consumes them — `resolver/loaders.py::load()` does not even
+open `gstr2b.csv`. Implementing that consumption is a distinct, resolver-side
+workstream, out of scope here by the same governing rule as the previous
+rejection, and confirmed out of scope by the project owner directly rather
+than assumed.
+
+**Scope, stated so it is not overread.** This entry authorizes corpus-side
+work only: `corpus/generator/build.py`, the new
+`corpus/generator/gst_population.py`, `corpus/score_gst.py`, and adding
+`"datasets_gst"` to the hardcoded `FAMILIES` tuples in
+`corpus/leakage_audit.py` and `corpus/triviality_check.py` (both scripts
+already read `ground_truth.json["planted_classes"]` and scan dataset
+directories generically otherwise — the `FAMILIES` tuple is the one place
+that needs a name added, per §51's own finding about the same tuple). It
+does not authorize any edit to `resolver/`, `matching/`,
+`resolver_contract/`, or a same-change `corpus/oracle.py` fix. A dataset
+where every new fraction rounds to zero available lines ships without that
+ground planted, exactly as `plant_mispost`/`plant_false_composition` ship
+without their class when they cannot construct one honestly — no row is
+ever minted to force arithmetic to work.
+
+**Consequence accepted.** Whichever of the two outcomes `score_gst.py`
+measures — the existing filters generalizing to a real population, or not —
+neither licenses a claim that GST/ITC reasoning exists in `resolver/`. That
+remains a distinct, unattempted workstream, and `corpus/GST_RESULTS.md`
+states this in one explicit sentence rather than leaving it to omission.
+
+---
+
+## 56. The oracle's bank-side attestation accounting is fixed, in its own frame — 2026-08-31
+
+**Decision.** `corpus/oracle.py::_measure`'s `attestation_discrepancy` block
+gains a second, explicitly separate computation in bank-line-index space,
+alongside the existing settlement_id-keyed one — never merged into it.
+`planted` becomes `len(wrong_attested) + len(bank_side_planted_indices)`,
+where `bank_side_planted_indices` is read generically from
+`truth.get("planted_classes", {})` filtered to `spec.get("table") ==
+"bank"`, exactly mirroring `corpus/leakage_audit.py::classes_from_ground_truth`'s
+already-generic pattern — no class name is hardcoded, so a future bank-side
+class needs no further oracle edit. The `detected`/`true_positive`/`missed`
+loops each gain a second, clearly-commented branch checking
+`outcome.bank_index in bank_side_planted_indices`, kept visibly distinct
+from the `expected["settlement_id"] in wrong_attested` branch rather than
+folded into one condition.
+
+**Why.** `DECISIONS.md` §54 diagnosed the bug and deliberately deferred the
+fix: *"the oracle was not edited to fix this... The follow-up — teaching the
+oracle about bank-side planted classes — is now an owed, named change rather
+than an undocumented divergence."* This entry is that owed change. The bug
+itself is a reference-frame defect (§44's named class): `wrong_attested` is
+a set of settlement ids; `corpus/datasets_bankside/*/ground_truth.json`'s
+`planted_classes["d12_bank_side_mispost"]["members"]` is a list of bank-line
+indices. `_measure` compared everything as if it were in the first frame,
+so a correct bank-side `AttestationDiscrepancy` detection had no matching
+settlement id to be found by and fell through to `genuinely_false`.
+
+**Rejected: force the bank-line index through `by_line[...]["settlement_id"]`
+into the existing `wrong_attested` set.** This was considered and rejected
+as the wrong fix, not merely a less convenient one: it would make the two
+frames look unified in the code while remaining conceptually distinct
+(a bank line's index and the settlement it happens to correspond to are not
+interchangeable keys — `by_line` is itself a lookup FROM one frame TO
+information keyed in the other, and using it to erase the distinction is
+exactly the move §44 names as the recurring mistake). The two branches stay
+separate on purpose, so a reader auditing this code later sees the frame
+distinction rather than having to re-derive it.
+
+**Rejected: widen `wrong_attested` itself to include bank-side entries.**
+Same objection — `wrong_attested`'s name and every other use of it in this
+module (G-gate-adjacent checks, missed-detection reporting) assumes
+settlement-id membership. Widening its meaning silently would make every
+existing caller subtly wrong in a way not visible at any single call site.
+
+**Consequence, checked not assumed.** This changes
+`corpus/BANKSIDE_RESULTS.md`'s published oracle columns:
+`genuinely_false: 1 → 0` on both `datasets_bankside/*` datasets (the
+"after re-attribution" column that file already prints independently
+already showed 0, confirming this fix produces the number the scorer-local
+re-attribution logic in `corpus/score_bankside.py` computed by hand). That
+file must be regenerated via `corpus/score_bankside.py`, and its "Where the
+oracle cannot represent this class" paragraph amended, dated, to say the
+oracle was fixed here — while `bankside_verdict`'s per-line
+SOUND/UNSOUND/DECLINED/NO_OUTCOME taxonomy is kept, not deleted: this fix
+only corrects the *aggregate* `genuinely_false` counter, and the oracle
+still has no gate or measurement that fires per-line the way
+`bankside_verdict` does, so that scorer-local check still answers a
+question the oracle cannot.
+
+**Scope.** `corpus/oracle.py` only. No gate (G1-G9) changes — all nine are
+already confirmed class-agnostic (§51, §54). `corpus/three_systems.py`'s
+30-dataset aggregate is unaffected: `datasets_bankside/` is not in its
+`FAMILIES` tuple and this fix does not add it there.
+
+## 57. §56's bank-side predicate is narrowed from `table` to a declared per-line contradiction — 2026-08-31
+
+**Decision.** `corpus/oracle.py::_bank_side_planted_indices` implements §56 with
+one deviation, recorded here rather than silently: a planted class qualifies as
+a bank-side attestation discrepancy when it is `planted`, `table: "bank"`, **and**
+its `detail` entries each carry both `bank_line_index` and `settlement_id` —
+i.e. the class itself declares, per member line, a contradiction against a named
+settlement. §56 specified `spec.get("table") == "bank"` alone. No class name is
+hardcoded either way, so §56's stated intent (a future bank-side class needs no
+further oracle edit) is preserved.
+
+**Why, measured not assumed.** `table: "bank"` alone is not a predicate for
+"attestation discrepancy". Two other classes are also `table: "bank"`, in **all
+34** corpus datasets: `d01_settlement_reversal` (1 member) and
+`d02_foreign_bank_lines` (7 members). Neither is a discrepancy — a reversal is a
+correctly recorded reversal, which `_measure` already accounts for separately as
+`true_finding_of_another_kind` via `reversed_settlements`, and a foreign bank
+line is a third party's money that the resolver is right to leave alone. Under
+the literal §56 predicate the two bank-side datasets would report
+`planted = 9` with 7 entries in the new `planted_but_missed_bank_side`
+collection: a published claim that the resolver missed seven planted
+discrepancies on lines where there is nothing to detect. It would also have
+moved the reversal detection out of `true_finding_of_another_kind` into
+`correctly_identified`, erasing the distinction the FOUR-WAY split exists to
+make. §56 predicted its own consequence as `genuinely_false: 1 → 0` and nothing
+else; the literal predicate does not produce that, and the narrowed one does.
+
+**Blast radius, checked.** `_bank_side_planted_indices` returns a non-empty set
+on exactly the two `corpus/datasets_bankside/` datasets ({19} and {14}, the two
+planted misposts) and the empty set on all 32 others, verified by running it
+over every `corpus/datasets*/*/ground_truth.json`. `corpus/three_systems.py`,
+`corpus/scorecard.py` and `corpus/claims_ledger.py` all aggregate
+`attestation_discrepancy.planted`, so the literal predicate would have made
+their published 30-dataset numbers stale by +272 planted; the narrowed one
+leaves them bit-for-bit unchanged, which is what §56's own scope paragraph
+requires.
+
+**Rejected: implement §56 literally and absorb the wrong numbers.** The whole
+point of §56 is that the oracle should count planted discrepancies correctly.
+Trading a false `genuinely_false` for a false `planted_but_missed` is not a fix.
+
+**Rejected: discriminate on `members` being strings rather than ints.** It
+happens to work today (`d12`'s members are `["19"]`, `d01`/`d02`'s are ints) and
+is pure coincidence of serialisation. It would break the first time a generator
+normalised its types, and it encodes nothing about what the class means.
+
+**Rejected: keep `table == "bank"` and subtract the two known class names.**
+That is the hardcoded-class-name coupling §56 explicitly refused, restored in
+negative form.
+
+**Scope.** `corpus/oracle.py` and the report text in `corpus/score_bankside.py`.
+No gate changed; G1–G9 were re-read and confirmed class-agnostic (none reads
+`planted_classes`). §56 is not edited — DECISIONS.md is append-only.
+
+---
+
+## 58. `resolver/enumerate_closures.py` still budgets in WALL-CLOCK seconds — §49's defect, fourth instance, and it is DOCUMENTED here rather than fixed — 2026-08-31
+
+**The finding.** `resolver/resolve.py` is not reproducible run-to-run on a
+dataset large enough that any bank line's closure enumeration hits its time
+budget. `resolver/enumerate_closures.py:closing_subsets` sets
+
+```
+solver.parameters.num_workers = 1          # determinism across runs
+solver.parameters.max_time_in_seconds = time_budget
+```
+
+with `time_budget` defaulting to `10.0` (`DEFAULT_TIME_BUDGET`, and
+`resolve(..., time_budget: float = 10.0)`). `num_workers = 1` fixes the search
+*order*; it does not fix where a **wall-clock** budget cuts that order off.
+Two runs of the same search on the same machine stop at different points
+depending on what else the machine was doing, so a truncated enumeration
+returns a different subset set, and `resolve()` can return a different
+`composition` for the same bank line.
+
+**How it was found — not by review.** `resolver/tests/test_gst_risk.py::
+test_removing_the_gst_feed_changes_nothing_but_the_annotation` (§ the GST
+annotation capability) resolves `corpus/datasets_gst/A20_B100_Cmax_gst` twice
+and asserts the two `line_outcomes` tuples are identical. It was reported
+passing when written; it then failed on two independent subsequent runs of
+`pytest resolver/tests`, at bank index **56** on one run and **58** on
+another. Filesystem and process-startup variance were then eliminated by
+calling `resolve()` three times on the **identical in-memory `Dataset`
+object** inside one Python process:
+
+```
+run 0: 30.45s, 59 outcomes
+run 1: 30.42s, 59 outcomes
+run 2: 30.41s, 59 outcomes
+run0 == run1: False
+run1 == run2: True
+first diff at index 56: bank_index=56, both Verified, different composition
+```
+
+Two `Verified` outcomes, same line, same input object, different composition.
+That is the whole defect in three lines of output.
+
+**Instrumented, so the mechanism is measured and not inferred.** Wrapping
+`closing_subsets` over one `resolve()` of that dataset:
+
+| `time_budget` | wall | enumerator statuses |
+|---|---|---|
+| 10.0 | 31s | 49 `optimal`, 3 `infeasible`, **2 `time_budget_exceeded`** |
+| 60.0 | 86s | 49 `optimal`, 3 `infeasible`, 1 `cap_reached`, **1 `time_budget_exceeded`** |
+
+Exactly the two lines that do not complete are the two the test disagreed on.
+Raising the budget six-fold does not close the hole: one pool (33 rows) still
+exhausts 60 seconds without proving completeness, and a second (34 rows) merely
+converts into `cap_reached` at 200 subsets.
+
+**Root cause, and it is a known one in this repository.** This is §39's class
+and §49's exact remedy, one component over. §49 replaced
+`max_time_in_seconds` with `max_deterministic_time` at both CP-SAT call sites
+in `matching/stage3_solver.py` for precisely this reason — OR-Tools'
+deterministic-time budget is its own published mechanism for run-to-run
+reproducibility irrespective of wall-clock conditions — and §50 then fixed the
+adjacent `truncated` predicate in the same function. `resolver/
+enumerate_closures.py` was written before that lesson existed and never
+received the equivalent change. §39's own fix in this file corrected
+`complete` (the soundness claim) and deliberately left the `timed_out` label
+line alone as evidence (see its FRAME comment, §44 instance F3); nobody in
+that pass looked one line further up at the `parameters` block. §44.4's claim
+— that this class is not eliminable by care, only by repeated passes — now has
+a fourth instance, and this one is in the resolver written to prevent it.
+
+**Decision: fixing `enumerate_closures.py` is OUT OF SCOPE here.** This entry
+documents the finding; it changes no solver parameter. The fix is a swap of
+`max_time_in_seconds` for `max_deterministic_time` (and a decision about what
+numeric budget to carry, which §49 records as *not* having a published
+conversion), and it will move published resolver numbers on every dataset with
+a truncating pool — which means it needs its own dated decision, its own
+committed-before-the-fix prediction, and its own before/after pair, exactly as
+§49 and §50 each got. Doing it inside a task whose scope is a GST test would
+produce a parameter change with no prediction, no measured blast radius, and no
+recomputed downstream figures. §44's standing treatment of "found while doing
+something else" is to record it and let it have its own cycle; §50 is the
+precedent for the follow-on actually happening.
+
+**What this means for existing claims, named rather than hunted.** Any
+byte-identical-across-runs claim about `resolver/` output on a dataset large
+enough to truncate is, until the fix lands, a claim about one draw. The
+mechanism is stated here; deciding which specific published figures need
+re-verification belongs to the pass that makes the fix, because that pass has
+to recompute them anyway. Two things bound the exposure and are worth stating:
+`complete` is still sound (§39 — it is `status == OPTIMAL` and nothing weaker),
+so a truncated enumeration cannot be promoted to `Reconstructed`; and the
+frozen cascade's own baseline is unaffected, since `matching/stage3_solver.py`
+was fixed in §49.
+
+**The consequence taken now, and only this one.** The GST test above is not
+about closure enumeration and must not be hostage to a defect that has nothing
+to do with GST. It is rebuilt on a small synthetic dataset written in the test
+itself — seven rows, two bank lines, four closure enumerations, all four
+`optimal`, whole run 0.03s — so the mechanical proof it exists to make runs
+entirely outside the truncating regime rather than working around the trigger
+with a larger number. A companion test resolves that fixture twice and asserts
+equality, so if it is ever grown into the slow regime the suite says so
+directly instead of flaking.
+
+**Rejected: raise `time_budget` to 60.0 on the two `resolve()` calls in the
+test.** Measured above: it does not work. One pool still times out at 60s, and
+the test would have gone from 60 seconds to 175 while remaining flaky — the
+worst of both.
+
+**Rejected: use the other GST dataset, or a smaller corpus dataset.** There are
+exactly two GST datasets and they are the same size (`A20_B100_Cmax_gst` and
+`A20_B100_Cmax_gst_noisy`, both `weeks=52` for population volume). No smaller
+one exists, and the test needs a GST feed.
+
+**Rejected: keep the SPINE and skip the two bank lines that truncate.** Choosing
+which lines to compare by whether they agree is not a proof of anything, and the
+selection would have to be re-derived every time the machine got faster.
+
+**Rejected: fix `enumerate_closures.py` here and note it in passing.** See the
+decision paragraph. A silent parameter change to the resolver's solver, made
+while editing a test, is the shape of change this repository's whole
+DECISIONS/prediction discipline exists to prevent.
+
+**Scope.** `DECISIONS.md` (this entry) and `resolver/tests/test_gst_risk.py`.
+No file under `resolver/` other than that test, and no file under `matching/`,
+`corpus/` or `resolver_contract/`, is touched.
+
+---
+
+## 59. GST evidence reaches `resolver/`, and it may only ever annotate an `OpenBreak` — 2026-08-31
+
+**Decision.** `resolver/loaders.py::Dataset` gains a fifth optional file,
+`gstr2b`, following the exact pattern already established for
+`settlement_report`/`erp_order_ids`/`disputes`: a new `Gstr2bLine` frozen
+dataclass, field-identical to `matching/loaders.py`'s own (defined locally,
+not imported — the two packages stay independent, the same reason `resolver/`
+shares no other code with `matching/` or `engine/`), `.exists()`-checked,
+empty by default. `resolver/breaks.py` gains `_itc_risk_months(dataset)`,
+reimplementing (not importing) the shape of
+`matching/stage4_exceptions.py`'s gateway-GSTIN identification and its three
+statutory checks, month-keyed rather than row-keyed (there is no per-payment
+`invoice_no` on a recon row — ITC risk is a property of a settled month, not
+a single row). `OpenBreak` gains two additive fields,
+`itc_risk: frozenset[str]` and `itc_risk_grounds: tuple[str, ...]`, wired
+into `dispositions()` — the sole `OpenBreak`-construction point, called at
+the very end of `resolve()`, after every `Verified`/`Ambiguous`/
+`Determinate`/collision-resolution decision is already final.
+
+**Why.** `resolver_contract/types.py` has declared
+`SourceSystem.TAX_AUTHORITY`/`EvidenceKind.GST_DOCUMENT` since the contract
+was first written, and nothing has ever consumed them — `resolver/loaders.py`
+did not even open `gstr2b.csv` (§55's own read-only probe confirmed this).
+`EVIDENCE_SEMANTICS[GST_DOCUMENT] = Attests.ROW_EXISTENCE`: a 2B line can say
+an invoice exists; it can say nothing about which rows composed a bank
+credit. That restriction is the whole of this decision's shape — GST
+evidence is confined to `OpenBreak`, the one outcome that already asserts
+nothing and is never consumed by anything downstream.
+
+**Rejected: using GST absence to eliminate or narrow candidate compositions
+("ambiguity-breaking").** Considered and explicitly declined for this pass.
+It is structurally the same move as the resolver's own `D1` defect
+(`investigation/DEFECT_REPORT.md`) and the "residual reconstruction" already
+rejected in §38: using an evidence source to filter or rank candidates before
+`CandidateSet`'s enumeration is complete, which `CandidateSet.__post_init__`
+raises `ContractViolation` to prevent. A `ROW_EXISTENCE`-only evidence kind
+informing which rows are even eligible for a subset-sum pool would need its
+own contract-level design and its own dated amendment (the way G8 got one in
+§31) — not something to slip in as a side effect of adding a loader.
+
+**Rejected: import `matching/loaders.py::Gstr2bLine` and
+`matching/stage4_exceptions.py`'s logic rather than reimplement.**
+`resolver/tests/test_isolation.py` forbids the import outright, and the
+reasoning is the same one that already keeps `resolver/` from sharing code
+with the frozen generator: a bug in one package must not become invisible to
+the other's test suite by construction. The accepted cost is duplication risk
+— two independent implementations of one statutory rule can drift — mitigated
+by a mandatory cross-check test asserting the two agree on every
+`corpus/datasets_gst/*` dataset. They agree today, with a genuine
+implementation difference recorded rather than hidden: `resolver/breaks.py`
+attributes a row's month via `first_reconcilable` (the row has already failed
+to be placed by the time `dispositions()` sees it, so `settled_at` is an
+unconfirmed PSP claim at best), where the dataset-level monthly fee accrual
+still uses `settled_at`, matching the reference exactly on that half — which
+is why the cross-check passes.
+
+**Rejected: reuse `BreakReason.MISSING_SOURCE` instead of new `OpenBreak`
+fields.** A break's `reason` answers why it is open; ITC exposure is an
+independently-true-or-false fact about the same rows, not a root cause —
+conflating the two loses information whenever both apply, and
+`MISSING_SOURCE`'s routing (`data ops`, "the missing artefact arrives") is
+the wrong owner for a tax-ops finding in any case.
+
+**Verified, not assumed: this cannot touch a composition.** `dataset.gstr2b`
+does not appear anywhere in `resolver/resolve.py` upstream of the
+`dispositions(...)` call (checked by grep, not by reading intent into the
+code) — the safety property is therefore checkable by one search, not an
+audit of every construction site. `resolver/tests/test_gst_risk.py` makes
+this mechanical: every non-`OpenBreak` outcome is asserted byte-identical
+with and without `gstr2b.csv` present, and no `Verified`/`Ambiguous`/
+`Reconstructed`/`AttestationDiscrepancy`/`Determinate` warrant is ever found
+to carry `GST_DOCUMENT` evidence, across every GST dataset.
+
+**A defect found while building this, documented separately, not fixed
+here.** The mechanical no-op test above, run against the large `weeks=52`
+GST spine dataset, surfaced a genuine, pre-existing, unrelated resolver
+nondeterminism — `resolver/enumerate_closures.py`'s wall-clock time budget,
+the same defect class as §39/§49/§50, its fourth instance, this time in code
+this decision did not write and does not fix. See §58. The test itself was
+rebuilt against a small, fully-`optimal` synthetic fixture instead, so the
+GST proof no longer depends on a bug orthogonal to what it is proving.
+
+**Scope.** `resolver/loaders.py`, `resolver/breaks.py`,
+`resolver_contract/types.py` (additive `OpenBreak` fields only),
+`resolver/tests/test_gst_risk.py`. `resolver/resolve.py`'s control flow is
+read, not edited. No file under `matching/`, `engine/`, or `corpus/` is
+touched.
+
+---
+
+## 60. The resolver's ITC-risk flag gets a number before it gets a threshold — MEASURED, NOT GATED, and it scores 0.0 — 2026-08-31
+
+**Decision.** `corpus/oracle.py::_measure` gains one block, guarded by
+`"gst_truth" in truth` so it is a silent no-op on all 30 non-GST datasets:
+`measured["itc_risk_flag"]`, computed by a new `_itc_risk_flag(output,
+truth)`. It scores §59's two additive `OpenBreak` fields — `itc_risk` and
+`itc_risk_grounds` — as `(row_id, ground)` pairs against the corpus key.
+`corpus/score_gst.py` surfaces it as a new section in `corpus/
+GST_RESULTS.md`. **No G-numbered gate is added, no existing gate G1-G9 is
+touched, and no other measured statistic is touched.**
+
+**Why measured and not gated.** §59 is the first contact between `resolver/`
+and `gstr2b.csv` in any form, and `resolver/breaks.py` deliberately
+*reimplements* the gateway-GSTIN identification and the three statutory
+checks rather than importing `matching/stage4_exceptions.py` — §59 records
+that duplication-drift risk as accepted, with a cross-check test as the
+mitigation. Gating an untested reimplementation's **first** measured numbers
+is precisely the mistake **G5** was withdrawn for: a threshold asserted on a
+proposition nobody had yet measured, which the corpus's own data then
+falsified. A number has to exist before a threshold on it can mean anything.
+The `reconstructed_accuracy` block is the template followed here, down to the
+`note` string: a weaker claim, so errors are measured rather than gated — but
+they are still errors and are still reported.
+
+**The result, stated first because it is bad.** Over
+`corpus/datasets_gst/A20_B100_Cmax_gst`: 22 rows sit in some `OpenBreak`, the
+resolver flags 4 of them, and **all 4 are false positives. Precision 0.0, TP
+0, FP 4.** Over `A20_B100_Cmax_gst_noisy` the flag fires on nothing at all: 0
+flagged, 0 true pairs, so precision and recall are both **undefined and
+reported as `None`, never as 1.0** — an untested flag and a correct flag
+produce the same silence and this repository will not conflate them. Recall
+is undefined at *both* seeds, because no settled row from an at-risk month
+reached an `OpenBreak`; nothing measured here says whether the flag would
+find a genuine exposure.
+
+**The cause is measured, not inferred, and it is one line of the table.**
+`flagged_rows_that_never_settled` equals `flagged_rows` — 4 of 4. All four
+rows (two `on_hold_dispute`, two `not_yet_eligible_at_horizon`) have
+`settled_in = None` in the key. The gateway never invoiced a fee against
+them, so they carry no input tax that could be at risk. §59 attributes a row
+to a month by `first_reconcilable`, which put them in `2027-12` — a month
+that genuinely carries a `gstr2b_no_irn` finding, but carries it on behalf of
+that month's *settled* population.
+
+**Two frames, deliberately not reconciled.** The resolver's frame is
+`first_reconcilable`, and §59 argues for it: every row reaching
+`dispositions()` is one nothing placed, so `settled_at` is an unconfirmed PSP
+claim on it. The oracle's frame is read from the key alone — `settled_in` →
+`batches[].formed_at` → `"%Y-%m"` — and never calls, imports, or reproduces
+`first_reconcilable`. **Rejected: deriving the truth side from
+`first_reconcilable` too**, which is what "make the numbers comparable" would
+have meant in practice. It would make the row→month attribution shared
+between the thing measured and the thing measuring it, and the statistic
+would then be structurally incapable of seeing an attribution error — §44's
+named defect class, and the same move §56 already rejected once on the
+bank-side accounting. The disagreement between the two frames **is** the
+measurement.
+
+**Scope of the universe, stated rather than implied.** Precision/recall range
+over rows appearing in some `OpenBreak`, because §59 confines this annotation
+to `OpenBreak` outright. A row the resolver correctly settled is neither
+flagged nor flaggable, and counting it as a false negative would measure the
+contract's own restriction rather than the flag. Pairs are the cross product
+of a break's flagged rows with its `itc_risk_grounds`, which is a per-break
+union; `breaks_straddling_months` reports how often that cross product could
+be lossy (**0 at both seeds**) rather than asking the reader to assume it
+isn't.
+
+**Rejected: fixing the resolver in this pass.** The obvious change — flag
+only rows the resolver has some reason to think settled — is a change to
+`resolver/breaks.py` made in direct response to an oracle number produced by
+the same pass, with no prediction committed beforehand. That is the shape §58
+just refused for `enumerate_closures.py` and the shape §49/§50 each got their
+own dated cycle for. This entry publishes the 0.0 and changes no resolver
+line.
+
+**Rejected: reporting precision alone, or suppressing the undefined cells.**
+A precision-only table would hide that recall is undefined at both seeds,
+which is the more important limitation: the *whole* at-risk-and-open
+subpopulation is empty here, so this is a one-sided measurement and the
+report says so in those words.
+
+**Two now-false sentences in `corpus/score_gst.py`'s own generated prose were
+corrected rather than left standing.** That file claimed "a grep of
+`corpus/oracle.py` for gst/itc/2b returns zero matches" (this entry makes it
+23 lines — now counted live by `oracle_gst_grep()`, not typed), and claimed
+`resolver/loaders.py::load()` "does not open `gstr2b.csv` at all", which §59
+made false. The removal probe is kept and its *question* changed: it no
+longer asks whether the file is read, it asks whether reading it moves any
+line outcome — §59's actual safety property. It does not, at both datasets.
+
+**Scope.** `corpus/oracle.py`, `corpus/score_gst.py`, the regenerated
+`corpus/GST_RESULTS.md` / `corpus/gst_results.json`, and this entry. No file
+under `resolver/`, `resolver_contract/`, `matching/`, `engine/` or
+`corpus/generator/` is touched, and `corpus/three_systems.py`,
+`corpus/scorecard.py` and `corpus/claims_ledger.py` are not touched either.
+
+---
+
+## 61. The ITC-risk flag is gated on the ROW's own settlement, not on its month's — the fix §60 measured and deliberately deferred — 2026-08-31
+
+**Decision.** `resolver/breaks.py` names one predicate, `_accrues_input_tax(row)`
+— `type == "payment"` and `settled_at` and `fee` and `tax` — and uses it in the
+**two** places that must not disagree: `_fee_accrual`, which decides which
+months are at risk, and the per-row annotation loop in `dispositions()`, which
+decides which rows may be told about it. The row-level flag becomes a
+conjunction:
+
+```python
+# before
+flagged = sorted(row_id for row_id in row_ids
+                 if _month(rows_by_id[row_id]) in at_risk)
+# after
+flagged = sorted(row_id for row_id in row_ids
+                 if _accrues_input_tax(rows_by_id[row_id])
+                 and _month(rows_by_id[row_id]) in at_risk)
+```
+
+`_itc_risk_months` is **not changed** — it was never wrong. It answers a
+month-level question correctly; §59 wired its answer to rows without asking
+whether the row belonged to the population the answer was about.
+
+**The bug, stated as the thing it actually was.** A month is at risk *on behalf
+of the settlements that accrued fees in it*. §59 attributed an open row to a
+month via `first_reconcilable` and flagged it if that month appeared in
+`_itc_risk_months`, with no test that the row itself had generated any input
+tax to lose. So the flag propagated a population-level property to individuals
+who were not in the population. §60 measured the consequence and published it:
+on `corpus/datasets_gst/A20_B100_Cmax_gst`, 4 rows flagged, **4 false
+positives, precision 0.0**, and its `flagged_rows_that_never_settled` line was
+already 4-of-4.
+
+**One part of §60's diagnosis is corrected here rather than repeated.** §60's
+prose, and §59's own comment on the grouping key, suggest the false positives
+arose because the rows *shared an `OpenBreak` with rows that did settle*. They
+did not: all four breaks are **single-row** (verified by inspection of the
+resolved output, not assumed). The sharing is with the calendar month
+`2027-12`, which carries a genuine `gstr2b_no_irn` ground on behalf of that
+month's settled population. The break-grouping key is a red herring; the fix is
+the same either way, and the new test asserts the stronger property — two rows
+in *one* break, only the settled one flagged — so it holds under both readings.
+
+**`fee` alone would not have caught it, and this was checked rather than
+assumed.** All four false positives carry a non-zero `fee` and `tax` on the
+ledger row; they are *prospective* charges on payments that never paid out
+(`unsettled_reason`: two `on_hold_dispute`, two `not_yet_eligible_at_horizon`).
+`settled_at` is the load-bearing clause. Across all 22 rows in some `OpenBreak`
+on the spine, the resolver-visible `settled_at` agrees with the key's
+`settled_in` on every row — so the gate is discoverable from the feed alone and
+needs nothing the resolver may not see.
+
+**What the fix does to the number, stated before anyone re-runs it.** The spine
+now flags **nothing**: of its 22 open rows, the 4 that accrued input tax settled
+in `2027-01`, which carries no ground, and the 18 in at-risk months accrued
+none. The intersection is empty. So precision goes from `0.0` to *undefined*,
+not to `1.0` — this removes 4 wrong answers and adds no right ones, and §60's
+finding that recall is undefined at both seeds is unchanged and remains the more
+serious limitation. A subsequent step re-runs `corpus/score_gst.py`; this entry
+does not, and neither `corpus/oracle.py` nor `corpus/score_gst.py` is touched.
+
+**This is NOT the pattern this repository forbids, and the distinction is
+structural, not a plea.** The prohibition is on tuning *in response to held-out
+results* — `holdout/SEED.txt`'s protocol, and the reason §58 refused to fix
+`enumerate_closures.py` inside the pass that found it. Three things make this
+different, each checkable:
+
+* **No held-out GST data exists.** `corpus/datasets_gst/` is the known,
+  developed-against set. There is nothing here that could be spent.
+* **The measurement already got its own dated cycle.** §60 published the 0.0,
+  named the cause, and *explicitly deferred the fix* — "Rejected: fixing the
+  resolver in this pass … This entry publishes the 0.0 and changes no resolver
+  line." The prediction is committed, in `git log`, before this change. That is
+  precisely the measure-then-fix-in-a-separate-dated-entry shape §49/§50 each
+  got, and the shape §58 asked for.
+* **The fix is not shaped to the score.** It is a predicate the module already
+  contained, applied to a second call site. It would be the correct code with no
+  corpus at all, and it changes behaviour on a dataset only by *removing*
+  claims. Nothing was swept, no threshold was chosen, no seed reselected.
+
+**Rejected: switching the row→month attribution from `first_reconcilable` to
+`settled_at`.** Now that a flagged row must have a `settled_at`, §59's stated
+reason for `first_reconcilable` ("it is null outright for an unsettled row")
+no longer bites — but its other half does: `settled_at` is a PSP claim the
+resolver could not corroborate, which is *why* the row reached `dispositions()`.
+More decisively, the oracle's frame is `settled_in → batches[].formed_at`, and
+adopting it inside the resolver would make the row→month attribution shared
+between the thing measured and the thing measuring it — §44's named defect
+class, rejected on the same grounds by §56 and again by §60 (which refused the
+mirror-image move on the truth side). The two frames stay unreconciled; their
+disagreement is still the measurement.
+
+**Rejected: making `_fee_accrual` itself use the predicate as its outer
+guard.** It reads as the obvious tidy-up and it would have changed behaviour. A
+fee-bearing row with no GST on it currently *opens* its month's bucket while
+contributing nothing to either leg, and that asymmetry is load-bearing for
+`gstr2b_absent`: the month saw settlement activity, so it is a month a 2B line
+can be missing from. The predicate is therefore shared at the contribution
+point only, and `_fee_accrual`'s outputs are byte-identical to before — which is
+why all five of §59's `_itc_risk_months` unit tests, including
+`test_a_fee_with_no_gst_on_it_accrues_no_taxable_value`, pass unmodified.
+
+**One existing test was inverted, and the inversion is recorded rather than
+quietly applied.** `test_the_spine_dataset_actually_flags_something` asserted
+that the spine flags something. It passed *because of the bug* — the four rows
+it was satisfied by are the four false positives. It is replaced by
+`test_the_spine_flags_nothing_because_it_has_nothing_to_flag`, which asserts the
+emptiness **together with its reason**: that both operands (open rows that
+accrue input tax; open rows in an at-risk month) are non-empty and their
+intersection is not, so it cannot be satisfied by a flag wired to a constant
+`False`. §59's no-op proof does not lose its non-vacuity guard — that lives on
+the small fixture inside
+`test_removing_the_gst_feed_changes_nothing_but_the_annotation`, which still
+flags and still passes untouched. A new test,
+`test_a_row_that_never_settled_is_not_flagged_by_its_break_mate`, puts two rows
+identical in every field the grouping key reads into one `OpenBreak` in an
+at-risk month and requires exactly the settled one back. It was negative-
+controlled: with the predicate forced to `True` it returns both rows and fails.
+
+**Verification.** `resolver/tests` run three times, 21 passed each time,
+including the §58-sensitive small-fixture tests — this change adds no dependency
+on the SPINE dataset for any determinism claim.
+
+**Scope.** `resolver/breaks.py`, `resolver/tests/test_gst_risk.py`, and this
+entry. Nothing under `matching/`, `engine/`, `corpus/`, `resolver_contract/`,
+and no other file under `resolver/`, is touched. `corpus/GST_RESULTS.md` is
+deliberately left stale for a later step to regenerate.
+
+---
+
+## 62. `score_gst.py`'s closing paragraph was hand-typed prose, not a generated claim — found and fixed regenerating after §61
+
+**Decision.** Regenerating `corpus/GST_RESULTS.md` after §61's fix, its
+closing "The answer" section still read "precision 0.0, every flagged row
+one that never settled" — the pre-§61 numbers, hardcoded as a literal string
+in `corpus/score_gst.py` rather than derived from the `results` this same
+function already computes (`zero_precision`/`silent`/`perfect`, used
+correctly two sections earlier in the same file). Two spots fixed: the
+"Recall is undefined..." sentence's closing clause (`"wrong or silent"` was
+unconditional; now selects among `"wrong"`/`"wrong or silent"`/`"silent"`
+from the live lists) and the final paragraph (now branches on
+`zero_precision`/`silent`/neither, describing whichever state the
+measurement actually shows, including a phrase crediting §61's fix when
+false positives are the thing that went away). Regenerated; the file now
+reads correctly against the post-§61 measurement.
+
+**Why.** This repo's own rule, stated in a dozen places and enforced by the
+convention that every generated `.md` file is written by a script from a
+live run: no number or claim in a generated report may be hand-typed,
+because a hand-typed claim is exactly the kind of thing that goes stale the
+moment the code it describes changes — which is precisely what happened
+here, one step later in the same pass.
+
+**Scope.** `corpus/score_gst.py` only (the two paragraph-generation sites),
+plus a regeneration of `corpus/GST_RESULTS.md`/`corpus/gst_results.json`.
+No file under `resolver/`, `matching/`, `engine/`, or `resolver_contract/`
+is touched.
+
+---
+
+## 63. The resolver+oracle GST code is frozen, by content hash, before any held-out data exists — 2026-08-31 17:23 IST
+
+**Decision.** §55-§62's entire GST/ITC pass — the corpus population axis,
+the resolver's `gstr2b` loading and `itc_risk` flagging, the row-attribution
+fix, and the oracle's measured (not gated) `itc_risk_flag` statistic — is
+declared frozen as of this entry. SHA-256 of every file this pass touched
+under `resolver/`, `resolver_contract/`, and the scoring path, taken at
+17:23 IST, 2026-08-31:
+
+```
+dec87ace1aa7f4c8accb88494842306df8cdd1b601d0e2e95f9f7303a11e9e05  resolver/loaders.py
+bfd91818c15bfcaf2f801951bd9c0560f6f0a3ad876d9a4382d73a642e8b996b  resolver/breaks.py
+9b72981c4399b0adddcec55a74492526180171e37fe882d77af3405386f6cbb1  resolver/resolve.py
+83842068b93d3fc9ad45d8b598a4778e120b32ad1610449ec7476fe0511deeaa  resolver_contract/types.py
+edfadde49c694af90bce0082b45fbbb57d4bf8384790c3ff3c68fd693b219d09  corpus/oracle.py
+7da59dd119581f0971ded4ff74d2c528e0242bc7c659a3a71f6bd73866bea4b5  corpus/score_gst.py
+```
+
+From this point forward, no line in any of these six files may change until
+the held-out run (§64 onward) has executed and reported. If any of them
+must change for a genuine, unrelated reason before that run happens, this
+entry is superseded by a new one recording new hashes and stating why —
+never silently.
+
+**Why a hash, not a commit.** This entire pass (§51-§62) sits uncommitted in
+the working tree — nothing has been committed in this session, by the
+project owner's own instruction to hold everything for review before
+committing. `holdout/`'s own protocol cites a frozen *commit* (`81c04e0`)
+because that work landed as committed history before the held-out run. That
+mechanism isn't available here yet, and simulating it with a premature
+commit would be a bigger, unrequested action than this decision warrants.
+A SHA-256 per file is the same property stated the only way currently
+verifiable: content, not history. `shasum -a 256 -c` against this block at
+any later point proves whether these six files are still exactly what the
+held-out run was scored against.
+
+**Rejected: commit now solely to get a citable hash.** The project owner
+has not asked for a commit at any point in this pass, and creating one only
+to produce a hash for this entry would be scope creep for a decision that
+doesn't need it — the content hash carries the same evidentiary weight for
+the one thing that matters here (did the code change between the freeze and
+the run), and is strictly local to this repo, requiring no push or history
+rewrite risk.
+
+**What is NOT frozen.** `corpus/generator/build.py`, `corpus/score_gst.py`'s
+own report-writing prose beyond what's hashed above is not a target of this
+freeze (only the file's exact bytes are, and they're already hashed), and
+any file under `corpus/datasets_gst/` — none of that is read by the held-out
+run, which only touches its own new dataset directory and the six frozen
+files above.
+
+**Consequence.** The held-out results document (§64 onward) must state this
+hash block again and re-verify it holds at the moment of the run — a claim
+of "frozen before the run" that cannot be checked is not evidence, per this
+whole pass's own standard.
+
+## 64. The held-out GST/ITC run executed — freeze held, gates passed clean, no code changed on the result — 2026-08-31
+
+**Decision.** `corpus/SEEDS.txt`'s "## 3. GST/ITC HELD-OUT" addendum and
+§63's freeze are executed, once, in full. `corpus/generator/build.py` gains
+one new `AxisPoint`, `A20_B100_Cmax_gst_holdout` (`family=
+"datasets_gst_holdout"`, `seed=20261013`), identical in population to the
+developed-against spine point `A20_B100_Cmax_gst` in everything but seed and
+family. `corpus/datasets_gst_holdout/` did not exist before this entry —
+confirmed by a failing `ls` immediately before generation, mirroring the
+ordering evidence the rest of this pass relies on. Generation produced 314
+rows / 51 batches / 59 bank lines on the first and only attempt.
+
+**Freeze verified twice, matching in both directions.** `shasum -a 256` on
+`resolver/loaders.py`, `resolver/breaks.py`, `resolver/resolve.py`,
+`resolver_contract/types.py`, `corpus/oracle.py`, `corpus/score_gst.py`
+immediately before generation, and again immediately after scoring,
+reproduced §63's exact six hashes both times:
+
+```
+dec87ace1aa7f4c8accb88494842306df8cdd1b601d0e2e95f9f7303a11e9e05  resolver/loaders.py
+bfd91818c15bfcaf2f801951bd9c0560f6f0a3ad876d9a4382d73a642e8b996b  resolver/breaks.py
+9b72981c4399b0adddcec55a74492526180171e37fe882d77af3405386f6cbb1  resolver/resolve.py
+83842068b93d3fc9ad45d8b598a4778e120b32ad1610449ec7476fe0511deeaa  resolver_contract/types.py
+edfadde49c694af90bce0082b45fbbb57d4bf8384790c3ff3c68fd693b219d09  corpus/oracle.py
+7da59dd119581f0971ded4ff74d2c528e0242bc7c659a3a71f6bd73866bea4b5  corpus/score_gst.py
+```
+
+**Gating passed cleanly, no re-seed.** `"datasets_gst_holdout"` was added to
+the family tuples already used for `"datasets_gst"`/`"datasets_bankside"` in
+`corpus/leakage_audit.py` and `corpus/triviality_check.py` — mechanical,
+one line each, no algorithm touched. `corpus/leakage_audit.py --all`:
+35/35 datasets pass, including the new one. `corpus/triviality_check.py
+--all`: the held-out dataset scores identically to its developed-against
+sibling (`51/52 line->batch`, `51/51 composition`, `0.0%` resistance,
+`TRIVIAL`) — an expected outcome for this family, since `datasets_gst`'s
+triviality was never the axis this population was built to test. Neither
+gate needed a generator bug fixed, and the seed was never reselected or
+swept — unlike the one precedent (`A20_B100_Cmax_gst_noisy`'s original seed
+20261002, re-seeded per §32's practice before any of this pass's data
+existed), this seed did not need it.
+
+**`corpus/score_gst.py` needed NO edit.** Its existing positional `dataset`
+argument already accepts an arbitrary directory, bypassing the hardcoded
+`FAMILY = "datasets_gst"` module constant entirely. It was invoked exactly
+once: `python3 corpus/score_gst.py
+corpus/datasets_gst_holdout/A20_B100_Cmax_gst_holdout --out
+corpus/GST_HOLDOUT_RESULTS.md --json corpus/gst_holdout_results.json`. Its
+own bytes are unchanged from §63's hash, confirmed above. A separate,
+non-frozen script prepended the freeze/seed citation header to the
+resulting `corpus/GST_HOLDOUT_RESULTS.md` — that header is prose and a
+freshly-recomputed hash printout, not a scored statistic, so it did not need
+to come from inside the frozen scorer.
+
+**The measured result, stated plainly.** On this one held-out dataset: all
+three statutory grounds (`gstr2b_absent`, `gstr2b_no_irn`,
+`gstr2b_37a_exposure`) score precision/recall 1.0/1.0; `identify_supplier()`
+finds the correct gateway GSTIN; the `itc_availability` single-column
+shortcut still fails to generalize exactly as documented (misses the
+Rule-37A-only invoice and cannot see the absent-from-2B invoice at all,
+1 of 2 true-at-risk-and-present invoices flagged); the total ITC-at-risk
+rupee figure disagrees by 1 paise, entirely on the `gstr2b_absent` ground,
+for the same structural rounding-basis reason §-adjacent text in
+`corpus/GST_RESULTS.md` already names (accrued vs. aggregate tax basis for
+an invoice that no longer exists in the file); all G1-G9 gates pass; the
+`gstr2b.csv`-removal probe shows line outcomes identical with and without
+the file, confirming the tax feed still cannot move a composition decision.
+**The resolver's `itc_risk` flag — the one number this whole freeze exists
+to test out-of-sample — scores precision 1.0 / recall 0.75** (3 of 4
+truly-at-risk-and-settled rows flagged, 0 false positives, 1 false
+negative), on data neither the flag's attribution fix (§61) nor its
+measurement code (§60) was ever run against before. This is a single
+measurement on one dataset, not a validated capability, and is reported as
+such in `corpus/GST_HOLDOUT_RESULTS.md`.
+
+**No code under `resolver/`, `resolver_contract/`, or `corpus/oracle.py` was
+changed in response to what this run found, regardless of the result.**
+This is the load-bearing sentence of the entire held-out exercise. The
+recall-0.75 result — the first miss this flag has produced against any
+dataset — was left exactly as measured. No new fix, no new gate, no
+retroactive threshold. `corpus/GST_HOLDOUT_RESULTS.md` is a new file,
+reporting this dataset alone; `corpus/GST_RESULTS.md` (the two
+developed-against datasets) is untouched.
+
+**Rejected: fixing the recall-0.75 gap now that it's visible.** The
+addendum in `corpus/SEEDS.txt` permits fixing a genuine bug in
+`corpus/generator/` if a gate fails — it does not permit fixing `resolver/`
+or `corpus/oracle.py` in response to a score, however tempting a single
+false negative is to chase. Both gates passed; nothing in `corpus/
+generator/` needed fixing. The 0.75 recall stands as reported, per the
+whole point of running a held-out set at all.
+
+---
+
+## 65. A prose-only bug in `score_gst.py`'s closing summary, found reading §64's own report, fixed without re-scoring
+
+**Decision.** Reading `corpus/GST_HOLDOUT_RESULTS.md` after §64 landed, its
+closing narrative described the flag as scoring "precision 1.0 wherever it
+fires" — technically true and materially misleading, since the held-out
+result is precision 1.0 / **recall 0.75**, one genuine finding missed. The
+narrative-generation code in `corpus/score_gst.py` classified a dataset as
+"perfect" on `precision == 1.0` alone, never checking `recall`, and separately
+hardcoded "at both seeds" throughout — wrong on a report scoring exactly one
+dataset. Both are report-rendering bugs, not scoring bugs: the underlying
+`TP`/`FP`/`FN`/`precision`/`recall` numbers in `corpus/gst_holdout_results.json`
+were, and remain, exactly right — §64's headline `precision 1.0 / recall 0.75`
+was correctly computed and correctly tabled; only the auto-generated prose
+paragraph summarizing it was wrong.
+
+**Fixed:** `perfect` now requires `recall == 1.0` too; a new `missed_some`
+category (`precision == 1.0`, `recall < 1.0`) gets its own sentence, stated
+as a miss, not smoothed into a precision figure; every hardcoded "both
+seeds"/dataset-count assumption is replaced with a summary built from
+whichever datasets actually fall into which category, by name.
+
+**Regenerated without re-scoring.** `corpus/GST_HOLDOUT_RESULTS.md` was
+rebuilt by loading the already-written `corpus/gst_holdout_results.json` and
+calling `corpus/score_gst.py::render()` directly on the saved `results` —
+not by re-invoking `score_one()`/`resolve()`/`corpus.oracle.score()`. This
+matters specifically because of §58: the frozen resolver's CP-SAT enumeration
+is not perfectly reproducible run-to-run on a truncating pool, so re-scoring
+the held-out dataset a second time — even to fix unrelated prose — could in
+principle have produced a different number and silently violated §64's "run
+exactly once" claim. Rendering from the saved JSON sidesteps that risk
+entirely: the numbers §64 reported are bit-for-bit the numbers in this
+corrected document. `corpus/GST_RESULTS.md` (the known-dataset report, never
+under a "run exactly once" constraint) WAS re-scored via a normal
+`score_gst.py --all` invocation, since no such risk applies there.
+
+**Consequence for §63's freeze.** `corpus/score_gst.py`'s content hash
+changes with this fix, breaking §63's literal hash match for that one file.
+This is disclosed, not hidden: the file's SCORING logic (`score_one`,
+`run_filters`, `precision_recall`, everything the oracle-facing measurement
+depends on) is untouched — only `render()`'s narrative-assembly code changed,
+after the held-out run, and the held-out run's own recorded numbers were
+never regenerated by it. A reader checking §63's hash against the current
+file will find a mismatch on `score_gst.py` alone and should read this entry
+as the reason, not assume the held-out result was re-run or tuned.
+
+**Scope.** `corpus/score_gst.py` (report-rendering functions only),
+`corpus/GST_RESULTS.md` (regenerated by full rerun), `corpus/
+GST_HOLDOUT_RESULTS.md` (regenerated from saved JSON, no rerun). No file
+under `resolver/`, `resolver_contract/`, `corpus/oracle.py`, or `corpus/
+generator/` touched.
+
+---
+
+## 66. The `gstr2b_absent` ITC gap is a DEFECT IN THE CORPUS GENERATOR, not the "structural, not a bug in either side" rounding artefact this repo published — 2026-09-02
+
+**The claim being retracted.** `corpus/score_gst.py::render()` generated, into
+both `corpus/GST_RESULTS.md` and `corpus/GST_HOLDOUT_RESULTS.md`, a paragraph
+opening:
+
+> **`gstr2b_absent` is the ground that disagrees, structurally — not a bug in
+> either side.**
+
+and attributing the disagreement to "the same aggregate-vs-accrued rounding
+gap `build_erp_and_gst`'s own `gst_rounding_residuals` already names elsewhere
+in this corpus". **Both halves are false**, and the second was refutable
+without leaving the file it was printed from.
+
+**How it was found: by arithmetic that did not add up, not by review.** The
+three published deltas were
+
+| dataset | true | reported | delta |
+|---|---:|---:|---:|
+| `datasets_gst/A20_B100_Cmax_gst` | 109574 | 80001 | **+29573** |
+| `datasets_gst/A20_B100_Cmax_gst_noisy` | 188218 | 188223 | −5 |
+| `datasets_gst_holdout/A20_B100_Cmax_gst_holdout` | 47564 | 47565 | −1 |
+
+Ceiling-rounding per transaction can only make an accrued sum **larger** than
+the aggregate, by at most a paise or two per transaction. It explains −5 and
+−1 exactly. It cannot produce a **27% one-directional shortfall** on the same
+mechanism. The published explanation invoked a quantity whose own recorded
+magnitude, three keys away in the same `ground_truth.json`, reads
+`{"period": "2027-10", ..., "residual_paise": -1}`. A hostile reader with that
+file open needs about ninety seconds.
+
+**The actual mechanism, measured.** The delta has two terms and the identity
+
+```
+true − reported  ==  exclusion  +  rounding_residual
+```
+
+**holds on every `gstr2b_absent` row of all three datasets.** It is now
+computed at render time by `absent_gap_decomposition()` and printed with an
+`identity_holds` column, so a future third mechanism shows up as `False`
+rather than disappearing into a total.
+
+* **Exclusion (the primary term).** `corpus/generator/build.py:681` builds the
+  gateway invoice's taxable value with `row["fee"] - (row["tax"] or 0)`,
+  guarded **only** on `fee` being truthy. A payment with `fee > 0, tax == 0` —
+  the `gst_applies == False` population minted at
+  `corpus/generator/ledger.py:339` (`rng.random() > 0.03`) — therefore
+  contributes its **full fee** to the taxable value, and the generator then
+  charges 18% on that aggregate. Both consumers exclude those rows:
+  `matching/stage4_exceptions.py:121` (`if row["tax"]:`, docstring *"there is
+  no input tax on them to claim"*) and `resolver/breaks.py:212`
+  (`_accrues_input_tax`). **The consumers are right. Ground truth is wrong.**
+* **Rounding (the secondary term).** `gst_rounding_residuals[period]
+  .residual_paise` — real, and 1–8 paise, which is all it was ever capable of.
+
+Worked, for the row that exposed it: month `2027-10` contains one row with
+`fee = 164298, tax = 0`; `ceil(164298 × 18/100) = 29574`; the month's rounding
+residual is `−1`; `29574 + (−1) = 29573` = the delta. The generator's
+aggregate taxable base is `608741`, the consumers' is `444443`, and the
+difference is `164298` — exactly the untaxed fee. **99.997% of that delta is
+exclusion; 0.003% is the rounding the report blamed for all of it.**
+
+**All three sites were read directly, not inferred from a summary:**
+`corpus/generator/build.py:681`, `matching/stage4_exceptions.py:121`,
+`resolver/breaks.py:212`. `breaks.py`'s own comment asserts the generator's
+behaviour to be impossible — *"including their fee in the taxable value would
+manufacture a mismatch against an invoice that correctly omits them"*. The
+generator's invoice does not omit them. Both sides stated their position in a
+code comment; only the **conflict** went unnoticed.
+
+**Why two of three datasets looked innocent, and why that is confirmation
+rather than coincidence.** The holdout's −1 and the noisy set's −5 are pure
+rounding **only because the seed's dropped invoice happened to land on a month
+containing no zero-GST fee row**. The mechanism is live in **9/12, 3/12 and
+6/12** settled months of the three datasets respectively. That is now printed
+as a coverage table beside the decomposition, because "exclusion term 0" must
+not read as "this dataset is unaffected". The diagnosis predicts the holdout
+shows no exclusion term, and it does.
+
+**The defect has been visible on SURVIVING invoices all along.**
+`analyse_tax`'s `rounding_residuals` reports every month carrying a zero-GST
+fee row as out of tolerance by three to four orders of magnitude
+(`2027-03`: residual 19486 against a tolerance of 33), and every month without
+one as within tolerance by single digits. `gstr2b_absent` is not where the
+defect lives — it is the only ground where a **second, independent computation
+of the same quantity exists**, so it is the only place the inflation becomes
+visible. The disagreement is a detector. Correspondingly, the exact agreement
+of `gstr2b_no_irn` and `gstr2b_37a_exposure` is **not** corroboration that
+their amount is right: both sides there read the same inflated column.
+
+**Decision: the prose is corrected and the generator is NOT.** What is fixed
+here is the false causal claim. `corpus/generator/build.py:681` is recorded as
+a defect and left standing on data that already exists.
+
+**Rejected: fix `build.py:681` and regenerate.** `build_erp_and_gst` is shared
+by every corpus family, so this moves `gstr2b.csv` and `DATASET_HASHES.txt`
+for `datasets/`, `datasets_v2/`, `datasets_bankside/`, `datasets_gst/` **and
+`datasets_gst_holdout/`**. Regenerating the held-out family *in response to
+having seen its score* is precisely what §63/§64's protocol exists to forbid,
+and no amount of "but the fix is correct" repairs a holdout that was
+regenerated after the fact. The correct fix belongs to a **future family at
+seeds committed before its data exists**, where generator and consumers agree
+from the start — the same route `datasets_v2` and `BANKSIDE_POINTS` took.
+
+**Rejected: change the generator's ground truth for `gstr2b_absent` only, to
+record the per-transaction accrual.** Two failures. It carries the same
+holdout regeneration, and it does not fix the defect — it **defines truth as
+whatever the filters compute**, which is the loophole this repository
+disciplines against everywhere else. It would also leave the surviving
+invoices still inflated and still silently wrong.
+
+**Rejected: change `monthly_fee_accrual` to include zero-GST rows, so the
+consumers match the generator.** Barred twice. `matching/` is frozen at
+`81c04e0` and `tests/test_holdout_freeze.py` enforces it. And it is
+substantively backwards: it would make the recon engine claim input tax credit
+on a fee that carried no input tax, contradicting `_accrues_input_tax` and
+§61's fix. To a compliance reader that is the more serious of the two errors —
+a wrong ITC claim, not a wrong test fixture.
+
+**Rejected: leave the prose and add a footnote.** The sentence "not a bug in
+either side" is not incomplete, it is false, and it is the load-bearing
+sentence of that section. §62 and §65 are this repository's precedent that a
+wrong generated paragraph gets regenerated, not annotated.
+
+**What is and is not affected.** Nothing gated moves. `resolver/breaks.py`
+reports month-level ITC-risk flags carrying **no rupee amount**, so §60/§64's
+`itc_risk_flag` precision/recall is untouched, and no G-gate reads
+`itc_amount_matches`. What was wrong is *published prose about a measured,
+ungated number* — which is worse for a hiring artifact than a wrong gate,
+because it is the part a reader checks by hand.
+
+**Regenerated without re-scoring the holdout, per §65.**
+`corpus/GST_RESULTS.md` was rebuilt by a normal `score_gst.py --all` run.
+`corpus/GST_HOLDOUT_RESULTS.md` was rebuilt by the new, committed
+`corpus/render_gst_holdout.py`, which loads `corpus/gst_holdout_results.json`
+and calls `render()` — it never invokes `score_one()`, `resolve()` or
+`corpus.oracle.score()`. §65 did this once ad hoc; committing it makes the
+operation repeatable and checkable. The script backfills exactly two
+descriptive keys (`absent_gap_decomposition`, `zero_tax_month_coverage`), both
+pure functions of committed on-disk data that run no resolver and read no
+resolver output, and it **refuses to write if any scored field changed**.
+Every held-out number remains bit-for-bit §64's.
+
+**Consequence for §63's freeze, disclosed again.** `corpus/score_gst.py`'s
+content hash changes, as it already did under §65. The measurement path this
+time is not entirely untouched: `score_one()` gained two calls to the new
+descriptive functions. Neither reads a resolver output, neither can alter any
+precision/recall/oracle figure, and the held-out JSON was not regenerated by
+them. A reader checking §63's hashes will find `score_gst.py` mismatched and
+should read §65 and this entry as the reasons.
+
+**Scope.** `corpus/score_gst.py` (two new pure measurement functions, the
+`_absent_gap_section()` renderer, and the closing-summary sentence that
+repeated the same false claim), the new `corpus/render_gst_holdout.py`,
+`corpus/GST_RESULTS.md` and `corpus/gst_results.json` (regenerated by rerun),
+`corpus/GST_HOLDOUT_RESULTS.md` and `corpus/gst_holdout_results.json`
+(re-rendered from saved JSON, not re-scored), and this entry. **No file under
+`corpus/generator/`, `matching/`, `resolver/`, `resolver_contract/` or
+`corpus/oracle.py` is touched, and no dataset is regenerated.**

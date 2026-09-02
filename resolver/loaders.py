@@ -36,6 +36,45 @@ class BankLine:
         return self.amount_paise > 0
 
 
+@dataclass(frozen=True, slots=True)
+class Gstr2bLine:
+    """One supplier invoice as the tax authority reports it.
+
+    Field-identical to `matching/loaders.py`'s line of the same name, and
+    DELIBERATELY not imported from it. `resolver/` shares no code with the
+    frozen cascade -- `tests/test_isolation.py` forbids the import outright --
+    because a resolver that reuses the engine it is being compared against is
+    being compared with itself. The duplication is the price of that, and it is
+    paid knowingly.
+
+    This is `SourceSystem.TAX_AUTHORITY` data. `EvidenceKind.GST_DOCUMENT` is
+    restricted by the contract to `Attests.ROW_EXISTENCE`: it can say an
+    invoice exists, never which rows composed a bank credit. Nothing in this
+    package may use it to license a composition.
+    """
+
+    gstin: str
+    invoice_no: str
+    invoice_date: date
+    taxable_value: int
+    igst: int
+    cgst: int
+    sgst: int
+    irn: str
+    irn_generated_at: str
+    gstr1_filing_period: str
+    supplier_gstr3b_filed: str
+    itc_availability: str
+
+    @property
+    def tax_total(self) -> int:
+        return self.igst + self.cgst + self.sgst
+
+    @property
+    def has_irn(self) -> bool:
+        return bool(self.irn.strip())
+
+
 @dataclass
 class Dataset:
     name: str
@@ -48,6 +87,13 @@ class Dataset:
     settlement_report: dict[str, dict] = field(default_factory=dict)
     erp_order_ids: frozenset[str] = frozenset()
     disputes: dict[str, dict] = field(default_factory=dict)
+    #: GSTR-2B as filed by the merchant's suppliers. EMPTY where the merchant
+    #: does not pull 2B, where the period predates e-invoicing, or where the
+    #: feed is simply not shared with reconciliation. Absence is a first-class
+    #: state here, not a degenerate one: it removes a tax FINDING and changes
+    #: nothing about which rows settled, because GST evidence never licenses a
+    #: composition in the first place.
+    gstr2b: list[Gstr2bLine] = field(default_factory=list)
 
     @property
     def rows_carry_settlement_id(self) -> bool:
@@ -115,6 +161,25 @@ def load(directory: Path) -> Dataset:
         for item in payload.get("items", payload if isinstance(payload, list) else []):
             disputes[item.get("id") or item.get("dispute_id", "")] = item
 
+    gstr2b: list[Gstr2bLine] = []
+    gstr2b_path = directory / "gstr2b.csv"
+    if gstr2b_path.exists():
+        with gstr2b_path.open(newline="") as handle:
+            for line in csv.DictReader(handle):
+                gstr2b.append(Gstr2bLine(
+                    gstin=line["gstin"].strip(),
+                    invoice_no=line["invoice_no"],
+                    invoice_date=date.fromisoformat(line["invoice_date"]),
+                    taxable_value=paise(line["taxable_value"]),
+                    igst=paise(line["igst"]),
+                    cgst=paise(line["cgst"]),
+                    sgst=paise(line["sgst"]),
+                    irn=line["irn"],
+                    irn_generated_at=line["irn_generated_at"],
+                    gstr1_filing_period=line["gstr1_filing_period"],
+                    supplier_gstr3b_filed=line["supplier_gstr3b_filed"],
+                    itc_availability=line["itc_availability"]))
+
     return Dataset(name=directory.name, rows=rows, bank=bank,
                    settlement_report=report, erp_order_ids=frozenset(orders),
-                   disputes=disputes)
+                   disputes=disputes, gstr2b=gstr2b)

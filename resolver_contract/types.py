@@ -915,8 +915,30 @@ class OpenBreak:
     #: back towards inventing reasons.
     warrant: Warrant | None = None
     provable_within_window: bool = False
+    #: The subset of `row_ids` settled in a month carrying an ITC-at-risk
+    #: finding, and which grounds applied. PURELY DESCRIPTIVE and strictly
+    #: additive: an `OpenBreak` is already a row nothing placed, so this cannot
+    #: promote, demote, or compose anything. It is annotated here rather than
+    #: folded into `reason` because *why an item is open* and *whether its
+    #: input tax credit is exposed* are independently true or false -- a
+    #: `TIMING_DIFFERENCE` in a month whose supplier never filed GSTR-3B is
+    #: both, and one field cannot say so. The routing differs too: a break goes
+    #: to the owner in `BREAK_ROUTING`, a tax exposure goes to tax ops.
+    #:
+    #: `itc_risk` is a SUBSET, never all-or-nothing by assumption.
+    itc_risk: frozenset[str] = frozenset()
+    itc_risk_grounds: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        if not self.itc_risk <= set(self.row_ids):
+            raise ContractViolation(
+                "itc_risk names rows this break does not contain: "
+                f"{sorted(self.itc_risk - set(self.row_ids))}")
+        if bool(self.itc_risk) != bool(self.itc_risk_grounds):
+            raise ContractViolation(
+                "an ITC-risk flag and its grounds must stand or fall together; "
+                "a flag with no ground is an unexplained accusation and a "
+                "ground with no rows is a finding about nothing")
         if self.reason is BreakReason.UPSTREAM_UNRESOLVED and self.caused_by is None:
             raise ContractViolation(
                 "UPSTREAM_UNRESOLVED without a causing bank line is just "

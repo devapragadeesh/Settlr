@@ -52,7 +52,9 @@ for candidate in (ROOT, ROOT / "engine"):
 from engine.simulator import IST, compute_fee                      # noqa: E402
 from corpus.generator import bank as bank_module                   # noqa: E402
 from corpus.generator.bank import Payout, build_bank_statement, rupees  # noqa: E402
+from corpus.generator.bank_side_errors import plant_mispost        # noqa: E402
 from corpus.generator.closure import enumerate_closing_subsets     # noqa: E402
+from corpus.generator import gst_population                        # noqa: E402
 from corpus.generator.ledger import (LedgerSpec, SOURCE_REF, build_ledger,   # noqa: E402
                                      make_id_factory)
 from corpus.generator.sim import CorpusConfig, simulate            # noqa: E402
@@ -107,8 +109,28 @@ class AxisPoint:
     #: true composition, chosen so the arithmetic still closes. See
     #: `plant_false_composition`.
     false_compositions: int = 0
-    #: Which directory family this point belongs to: `datasets` or
-    #: `datasets_v2`. The original fourteen are never regenerated.
+    #: Settlements whose BANK-side amount is corrupted by
+    #: `bank_side_errors.plant_mispost` -- the wrong-*bank*-side class (see
+    #: `DECISIONS.md` 51). `recon_combined.json` and `settlement_report.csv`
+    #: stay correct; only `bank_statement.csv`'s amount for that line is
+    #: wrong. Scoped to two datasets in `datasets_bankside/`.
+    wrong_bank_side: int = 0
+    #: A real, fractional ITC-at-risk population (DECISIONS.md 55), replacing
+    #: the old fixed-3-index plant. All four default to values that reproduce
+    #: today's exact fixed-index behaviour: the three fractions default to 0,
+    #: which routes `build_erp_and_gst` to the UNCHANGED legacy block rather
+    #: than to `gst_population.plant_itc_population` with a zero fraction --
+    #: see `build_erp_and_gst` for why that distinction matters. Scoped to
+    #: `corpus/datasets_gst/`.
+    gst_absent_fraction: Fraction = Fraction(0)
+    gst_no_irn_fraction: Fraction = Fraction(0)
+    gst_37a_fraction: Fraction = Fraction(0)
+    #: The vendor-noise pool multiplier in `len(gst_rows) * multiplier + 12`.
+    #: 3 reproduces today's exact hardcoded constant.
+    gst_vendor_noise_multiplier: int = 3
+    #: Which directory family this point belongs to: `datasets`,
+    #: `datasets_v2`, `datasets_bankside`, or `datasets_gst`. The original
+    #: fourteen are never regenerated.
     family: str = "datasets"
     note: str = ""
 
@@ -217,8 +239,94 @@ V2_POINTS: list[AxisPoint] = [
     for point in AXIS_POINTS
 ]
 
-ALL_POINTS = AXIS_POINTS + ABSENCE_POINTS + V2_POINTS
-AXIS_BY_NAME = {point.name: point for point in AXIS_POINTS + ABSENCE_POINTS}
+#: --- BANK-SIDE MISPOST. Seeds committed 2026-08-31, before this data existed. -
+#:
+#: Every planted record error up to this point corrupts the PSP's
+#: attestation. These two points corrupt the BANK's side instead: one
+#: settlement's bank credit is posted at the wrong amount while
+#: `recon_combined.json` and `settlement_report.csv` stay correct. Scoped to
+#: `mispost` only (DECISIONS.md 51) -- not `split-credit`, and not a grid.
+#: The frozen fourteen and their v2 counterparts are untouched.
+BANKSIDE_POINTS: list[AxisPoint] = [
+    # wrong_attestations=0, like ABSENCE_POINTS: isolates d12 from d03 so a
+    # settlement is never simultaneously the wrong-PSP-attestation candidate
+    # and the wrong-bank-side candidate, which would confound the two classes
+    # on the same row and defeat the point of testing the bank-side direction
+    # on its own.
+    _point("A20_B100_Cmax_bankside", 20, 1, "max_under_cap", 20260924,
+           wrong_bank_side=1, wrong_attestations=0, family="datasets_bankside",
+           note="spine pool size, full attestation, one bank-side mispost: "
+                "the sources agree on the PSP side and disagree on the bank "
+                "side -- the untested half of the AttestationDiscrepancy "
+                "symmetry."),
+    _point("A40_B100_Cmax_bankside", 40, 1, "max_under_cap", 20260925,
+           wrong_bank_side=1, wrong_attestations=0, family="datasets_bankside",
+           note="a larger pool where closure is measurably non-unique, so "
+                "the mispost lands where a resolver also has more room to "
+                "rationalize the wrong amount against SOME subset."),
+]
+
+#: --- GST/ITC POPULATION. Seeds committed 2026-08-31, before this data existed. -
+#:
+#: `DECISIONS.md` 55 / CORPUS_SPEC.md D9. `weeks=52` alone grows the gateway's
+#: own monthly 2B lines from ~3 to ~12 (one gateway invoice per distinct
+#: settled month -- see `build_erp_and_gst`'s monthly aggregation), which is
+#: what gives the three fractional grounds a real population to draw from
+#: instead of a fixed index. `wrong_attestations=0`, mirroring
+#: `BANKSIDE_POINTS` and `ABSENCE_POINTS`: this family isolates the GST leg
+#: from d03 rather than letting the two classes co-occur on the same
+#: dataset. Scoped to `corpus/datasets_gst/` and scored only by
+#: `corpus/score_gst.py` -- never merged into the Stage-1/2/3 comparison.
+GST_POINTS: list[AxisPoint] = [
+    _point("A20_B100_Cmax_gst", 20, 1, "max_under_cap", 20261001,
+           weeks=52, wrong_attestations=0, family="datasets_gst",
+           gst_absent_fraction=Fraction(1, 12),
+           gst_no_irn_fraction=Fraction(1, 6),
+           gst_37a_fraction=Fraction(1, 6),
+           note="a real ITC-at-risk population over ~12 gateway 2B lines "
+                "instead of the fixed 3-index plant: absent-from-2B, no-IRN "
+                "and Rule-37A grounds drawn independently, so an invoice can "
+                "carry more than one ground."),
+    # Seed 20261002 (the original, seeds-committed-before-data value) failed
+    # corpus/leakage_audit.py on d07_decoy_credit_near_collision -- an
+    # UNRELATED, pre-existing ledger.py class (near_collision_pairs, fixed at
+    # 3, no AxisPoint lever) that happened to become separable at this exact
+    # seed/scale combination. Per this repo's own established practice
+    # (DECISIONS.md 32: re-seed when the leak audit fails, don't patch the
+    # audit or an unrelated generator module), this was re-seeded to 20261003
+    # -- the first of ten candidates (20261003..20261012) tried, all of which
+    # passed cleanly. No data content was hand-edited; the seed alone moved.
+    _point("A20_B100_Cmax_gst_noisy", 20, 1, "max_under_cap", 20261003,
+           weeks=52, wrong_attestations=0, family="datasets_gst",
+           gst_absent_fraction=Fraction(1, 12),
+           gst_no_irn_fraction=Fraction(1, 6),
+           gst_37a_fraction=Fraction(1, 6),
+           gst_vendor_noise_multiplier=12,
+           note="identical population, plus a 4x larger vendor-noise pool: "
+                "isolates whether identify_supplier() still finds the true "
+                "gateway GSTIN as the haystack grows, separately from the "
+                "population question the plain _gst point asks."),
+    # --- HELD-OUT. Seed committed in corpus/SEEDS.txt's addendum, before this
+    # data existed, per DECISIONS.md 63/64. Identical population to the plain
+    # A20_B100_Cmax_gst spine point -- a comparable population, not a
+    # different experiment -- but its own family and seed, generated and
+    # scored AFTER the resolver+oracle GST code was frozen by content hash
+    # (DECISIONS.md 63), so this is the one dataset that code has never seen.
+    _point("A20_B100_Cmax_gst_holdout", 20, 1, "max_under_cap", 20261013,
+           weeks=52, wrong_attestations=0, family="datasets_gst_holdout",
+           gst_absent_fraction=Fraction(1, 12),
+           gst_no_irn_fraction=Fraction(1, 6),
+           gst_37a_fraction=Fraction(1, 6),
+           note="held-out replicate of A20_B100_Cmax_gst: same population, "
+                "generated after the resolver+oracle GST code was frozen, "
+                "seen by nobody before the frozen code is run against it "
+                "exactly once."),
+]
+
+ALL_POINTS = AXIS_POINTS + ABSENCE_POINTS + V2_POINTS + BANKSIDE_POINTS + GST_POINTS
+AXIS_BY_NAME = {point.name: point
+                for point in AXIS_POINTS + ABSENCE_POINTS + BANKSIDE_POINTS
+                + GST_POINTS}
 V2_BY_NAME = {point.name: point for point in V2_POINTS}
 
 
@@ -493,7 +601,11 @@ def _offline_reference(rng: random.Random) -> str:
 
 
 def build_erp_and_gst(rng: random.Random, ledger, result, rows, spec_window,
-                      settled_at_of: dict[str, int] | None = None):
+                      settled_at_of: dict[str, int] | None = None, *,
+                      gst_absent_fraction: Fraction = Fraction(0),
+                      gst_no_irn_fraction: Fraction = Fraction(0),
+                      gst_37a_fraction: Fraction = Fraction(0),
+                      gst_vendor_noise_multiplier: int = 3):
     """The merchant's sales ledger and the tax authority's 2B.
 
     D6: the invoice sequence is allocated for EVERY line up front and the
@@ -600,7 +712,7 @@ def build_erp_and_gst(rng: random.Random, ledger, result, rows, spec_window,
 
     # third-party vendor lines: the IGST path, and a population for the
     # gateway's own lines to hide in
-    for index in range(len(gst_rows) * 3 + 12):
+    for index in range(len(gst_rows) * gst_vendor_noise_multiplier + 12):
         state = rng.choice(["27", "07", "33", "29", "24", "06"])
         taxable = rng.randrange(50_000, 3_000_000)
         interstate = state != "29"
@@ -620,32 +732,50 @@ def build_erp_and_gst(rng: random.Random, ledger, result, rows, spec_window,
             itc_availability="Yes" if has_irn else "No"))
         gst_number += 1
 
-    # --- the three statutory grounds, applied to GATEWAY lines -----------
-    if len(gateway_invoices) >= 3:
-        # Rule 37A: supplier has not filed GSTR-3B. 2B does NOT flag this --
-        # itc_availability still reads Yes -- which is why it is the
-        # interesting exposure: the recon engine has to COMPUTE it.
-        target = gst_rows[0]
-        target["supplier_gstr3b_filed"] = "N"
-        itc_at_risk.append({"invoice_no": target["invoice_no"],
-                            "period": target["gstr1_filing_period"],
-                            "reason": "supplier_gstr3b_not_filed_rule_37a",
-                            "statute": "Rule 37A CGST"})
-        # Sec 16(2)(aa): the invoice never reached 2B at all
-        dropped = gst_rows[1]
-        gst_rows.remove(dropped)
-        itc_at_risk.append({"invoice_no": dropped["invoice_no"],
-                            "period": dropped["gstr1_filing_period"],
-                            "reason": "absent_from_gstr2b",
-                            "statute": "Sec 16(2)(aa) CGST"})
-        # Rule 48(5): no valid IRN, so it is not a tax invoice
-        no_irn = gst_rows[1]
-        no_irn["irn"] = ""
-        no_irn["itc_availability"] = "No"
-        itc_at_risk.append({"invoice_no": no_irn["invoice_no"],
-                            "period": no_irn["gstr1_filing_period"],
-                            "reason": "no_irn_on_notified_supplier_invoice",
-                            "statute": "Rule 48(5) CGST"})
+    # --- the statutory grounds, applied to GATEWAY lines ------------------
+    #
+    # DECISIONS.md 55. When all three fractions are the default (0), this is
+    # the ORIGINAL fixed-3-index plant, byte-for-byte, so every axis point
+    # that predates this change (AXIS_POINTS, ABSENCE_POINTS, V2_POINTS,
+    # BANKSIDE_POINTS) regenerates identically. Calling
+    # `gst_population.plant_itc_population` with all-zero fractions would NOT
+    # reproduce this -- it would plant nothing, since a zero fraction means
+    # "this ground is not sampled" there. The branch is the compatibility
+    # boundary, not the fraction value.
+    if (gst_absent_fraction == 0 and gst_no_irn_fraction == 0
+            and gst_37a_fraction == 0):
+        if len(gateway_invoices) >= 3:
+            # Rule 37A: supplier has not filed GSTR-3B. 2B does NOT flag this
+            # -- itc_availability still reads Yes -- which is why it is the
+            # interesting exposure: the recon engine has to COMPUTE it.
+            target = gst_rows[0]
+            target["supplier_gstr3b_filed"] = "N"
+            itc_at_risk.append({"invoice_no": target["invoice_no"],
+                                "period": target["gstr1_filing_period"],
+                                "reason": "supplier_gstr3b_not_filed_rule_37a",
+                                "statute": "Rule 37A CGST"})
+            # Sec 16(2)(aa): the invoice never reached 2B at all
+            dropped = gst_rows[1]
+            gst_rows.remove(dropped)
+            itc_at_risk.append({"invoice_no": dropped["invoice_no"],
+                                "period": dropped["gstr1_filing_period"],
+                                "reason": "absent_from_gstr2b",
+                                "statute": "Sec 16(2)(aa) CGST"})
+            # Rule 48(5): no valid IRN, so it is not a tax invoice
+            no_irn = gst_rows[1]
+            no_irn["irn"] = ""
+            no_irn["itc_availability"] = "No"
+            itc_at_risk.append({"invoice_no": no_irn["invoice_no"],
+                                "period": no_irn["gstr1_filing_period"],
+                                "reason": "no_irn_on_notified_supplier_invoice",
+                                "statute": "Rule 48(5) CGST"})
+    else:
+        gst_rows, new_itc_at_risk = gst_population.plant_itc_population(
+            gst_rows, gateway_invoices, rng,
+            absent_fraction=gst_absent_fraction,
+            no_irn_fraction=gst_no_irn_fraction,
+            filed37a_fraction=gst_37a_fraction)
+        itc_at_risk.extend(new_itc_at_risk)
 
     rng.shuffle(gst_rows)
     for index, row in enumerate(gst_rows):
@@ -712,11 +842,53 @@ def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
                for b in batches]
     reversal_positions = sorted(rng.sample(range(len(payouts)),
                                            min(point.reversals, len(payouts))))
+
+    # ---- the wrong-BANK-side class: corrupt payouts BEFORE the bank sees ---
+    # them, so bank.py itself needs no edit and no ledger-derived value can
+    # reach the corrupted line. Never the same settlement as a reversal --
+    # a reversal reverses whatever amount is on `payouts` at that index, so
+    # overlapping the two would net the mispost back out. See
+    # bank_side_errors.py and DECISIONS.md 51.
+    mispost_records: list[dict] = []
+    if point.wrong_bank_side:
+        mispost_candidates = [i for i in range(len(payouts))
+                              if i not in reversal_positions]
+        for index in sorted(rng.sample(
+                mispost_candidates,
+                min(point.wrong_bank_side, len(mispost_candidates)))):
+            payouts, truth = plant_mispost(payouts, index, rng)
+            if truth is not None:
+                mispost_records.append({
+                    "settlement_id": batches[index].settlement_id,
+                    "payout_index": truth.payout_index,
+                    "true_amount_paise": truth.true_amount_paise,
+                    "bank_reported_amount_paise": truth.bank_reported_amount_paise,
+                    "delta_paise": truth.delta_paise,
+                    "bank_line_index": None,   # filled once bank_file exists
+                })
+
     bank_file = build_bank_statement(
         payouts, rng, foreign_credits=point.foreign_credits,
         foreign_debits=point.foreign_debits, reversals=reversal_positions,
         corrupt_narrations=max(2, len(payouts) // 4),
         blank_references=max(1, len(payouts) // 8))
+
+    # a mispost changes only the AMOUNT on `payouts`; the line's position in
+    # the bank's own ordering is still discoverable by payout_index.
+    line_index_of_payout = {line.payout_index: line.line_index
+                            for line in bank_file.truth
+                            if line.kind == "settlement"}
+    for record in mispost_records:
+        record["bank_line_index"] = line_index_of_payout.get(
+            record["payout_index"])
+    bank_side_mispost_reason = (
+        "" if mispost_records else
+        ("not planted at this axis point -- wrong_bank_side is 0 here, and "
+         "this class ships only in corpus/datasets_bankside/"
+         if not point.wrong_bank_side else
+         "plant_mispost declined every candidate index at this seed: no "
+         "honest corruption could be constructed without colliding with "
+         "another settlement's true amount (see bank_side_errors.py)"))
 
     # ---- axis B: attestation coverage, applied to the PSP's REPORT -------
     settlement_reference: dict[str, str] = {}
@@ -801,7 +973,11 @@ def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
         rng, ledger, result, rows, (window[0].date(), window[1].date()),
         settled_at_of={row_id: batch_by_id[settlement].formed_at
                        for row_id, settlement in result.settled_in.items()
-                       if settlement in batch_by_id})
+                       if settlement in batch_by_id},
+        gst_absent_fraction=point.gst_absent_fraction,
+        gst_no_irn_fraction=point.gst_no_irn_fraction,
+        gst_37a_fraction=point.gst_37a_fraction,
+        gst_vendor_noise_multiplier=point.gst_vendor_noise_multiplier)
 
     # ---- the FALSE attestation, planted after ERP/GST ---------------------
     #
@@ -963,6 +1139,20 @@ def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
         "d09_itc_at_risk": {
             "planted": bool(itc_at_risk), "table": "gstr2b",
             "members": [item["invoice_no"] for item in itc_at_risk]},
+        # The wrong-BANK-side class (DECISIONS.md 51). Table is "bank",
+        # keyed by the bank statement's line index -- `leakage_audit.py`'s
+        # `load_tables` already builds that table generically. Members are
+        # the corrupted line's index, as a string, matching `_file_position`.
+        # `recon_combined.json` and `settlement_report.csv` are untouched by
+        # this class; only `bank_statement.csv`'s amount column for this one
+        # line disagrees with the true settlement payout.
+        "d12_bank_side_mispost": {
+            "planted": bool(mispost_records), "table": "bank",
+            "members": [str(item["bank_line_index"])
+                        for item in mispost_records
+                        if item["bank_line_index"] is not None],
+            "detail": mispost_records,
+            "reason": bank_side_mispost_reason},
     })
 
     truth = OrderedDict(
@@ -1018,6 +1208,24 @@ def build(point: AxisPoint, out_dir: Path | None = None) -> dict:
                           "posting_lag_histogram": bank_file.lag_histogram},
         provenance=PROVENANCE,
     )
+
+    # gst_truth: ADDITIVE ONLY, and only for datasets that actually use the
+    # new population (DECISIONS.md 55). Every axis point with all three
+    # fractions at their 0 default never gets this key, which is what keeps
+    # ground_truth.json byte-identical for the 32 datasets that predate it.
+    if (point.gst_absent_fraction or point.gst_no_irn_fraction
+            or point.gst_37a_fraction):
+        grounds_by_invoice: dict[str, list[str]] = {}
+        for item in itc_at_risk:
+            grounds_by_invoice.setdefault(item["invoice_no"], []).append(
+                item["reason"])
+        truth["gst_truth"] = {
+            "gateway_gstin": gateway_gstin,
+            "gateway_invoice_count": len(gateway_invoices),
+            "itc_at_risk_paise_total": sum(item.get("itc_paise", 0)
+                                           for item in itc_at_risk),
+            "grounds_by_invoice": grounds_by_invoice,
+        }
 
     out.mkdir(parents=True, exist_ok=True)
     _write_json(out / "recon_combined.json",
@@ -1236,6 +1444,12 @@ def main() -> int:
     parser.add_argument("--v2", action="store_true",
                         help="corpus/datasets_v2/: the same axis points at new "
                              "seeds, each with one FALSE settlement_id")
+    parser.add_argument("--bankside", action="store_true",
+                        help="corpus/datasets_bankside/: the two "
+                             "wrong-BANK-side (mispost) points")
+    parser.add_argument("--gst", action="store_true",
+                        help="corpus/datasets_gst/: the two real ITC-at-risk "
+                             "population points (DECISIONS.md 55)")
     parser.add_argument("--list", action="store_true")
     arguments = parser.parse_args()
 
@@ -1246,7 +1460,9 @@ def main() -> int:
             print(f"{point.family:<13} {point.name:<22} "
                   f"pool~{point.pool_target:<3} cov={coverage:<7}"
                   f"{point.selection_rule:<15} seed={point.seed}"
-                  f"{'  +false_settlement_id' if point.false_compositions else ''}")
+                  f"{'  +false_settlement_id' if point.false_compositions else ''}"
+                  f"{'  +bank_side_mispost' if point.wrong_bank_side else ''}"
+                  f"{'  +itc_population' if (point.gst_absent_fraction or point.gst_no_irn_fraction or point.gst_37a_fraction) else ''}")
         return 0
 
     targets: list[AxisPoint] = []
@@ -1256,11 +1472,16 @@ def main() -> int:
         targets += ABSENCE_POINTS
     if arguments.v2:
         targets += V2_POINTS
+    if arguments.bankside:
+        targets += BANKSIDE_POINTS
+    if arguments.gst:
+        targets += GST_POINTS
     if arguments.name:
         targets += [V2_BY_NAME[arguments.name] if arguments.v2
                     else AXIS_BY_NAME[arguments.name]]
     if not targets:
-        parser.error("name one axis point, or pass --all / --absence / --v2")
+        parser.error("name one axis point, or pass --all / --absence / --v2 "
+                     "/ --bankside / --gst")
     for point in targets:
         summary = build(point)
         print(json.dumps(summary))

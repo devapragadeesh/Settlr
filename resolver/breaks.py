@@ -121,6 +121,197 @@ def _age(row: dict, horizon: date) -> tuple[int, str]:
     return max(0, (horizon - seen).days), seen.isoformat()
 
 
+def _month(row: dict) -> str:
+    """The reporting month this item first became reconcilable in.
+
+    NOT `settled_at`. Every row reaching this module is a row nothing placed,
+    and an unplaced row has no settlement month the resolver is entitled to
+    read as its own -- `settled_at` is a PSP claim about an event the resolver
+    could not confirm, and for an unsettled row it is null outright. So the
+    attribution is the same clock `_age` already uses: when the item first
+    became something that COULD have settled. Where the two differ the flag is
+    conservative in the direction of the earlier month, and it is a flag on an
+    open item either way, never an assignment.
+    """
+    return datetime.fromtimestamp(first_reconcilable(row), IST).strftime("%Y-%m")
+
+
+# --------------------------------------------------------------------------
+# input tax credit exposure -- descriptive, never dispositive
+# --------------------------------------------------------------------------
+
+#: Per fee-bearing row, how far an invoiced taxable value may sit from the
+#: accrued one and still be the same invoice. One paise per row: the gap is
+#: rounding, and rounding is bounded by the number of roundings.
+_TOLERANCE_PAISE_PER_ROW = 1
+
+#: The three grounds, named once. Statutes cited for the operator, not used.
+GROUND_ABSENT = "gstr2b_absent"              # sec 16(2)(aa) CGST
+GROUND_NO_IRN = "gstr2b_no_irn"              # Rule 48(5) CGST
+GROUND_37A = "gstr2b_37a_exposure"           # Rule 37A CGST
+
+
+def _accrues_input_tax(row: dict) -> bool:
+    """Did THIS row generate a gateway fee carrying input tax the merchant
+    could claim?
+
+    Named once and used in the two places that must not disagree: the monthly
+    accrual below, which decides which months are at risk, and the per-row
+    annotation in `dispositions()`, which decides which rows may be told about
+    it. Sec 61 is the entry for what happens when they do disagree -- the flag
+    fired on four rows that had never settled, purely because they shared a
+    calendar month with the settled population the risk actually belongs to.
+
+    Every clause is load-bearing and none is a proxy for another:
+
+    * `type == "payment"` -- a refund or an adjustment is not a supply the
+      gateway invoices for;
+    * `settled_at` -- the PSP's own claim that the settlement happened. A fee
+      is charged out of a payout; no payout, no fee, no invoice, no input tax.
+      A `fee` field on an unsettled row is a PROSPECTIVE charge and every one
+      of the four false positives carried one, so gating on `fee` alone would
+      not have caught them;
+    * `fee` and `tax` -- a fee with no GST on it carries no credit to lose.
+
+    Note what this does NOT claim. `settled_at` is the PSP asserting a
+    settlement the resolver could not corroborate (which is precisely why the
+    row reached `dispositions()` at all). That is enough to make an ITC
+    exposure PLAUSIBLE, which is all a flag on an open item ever claims; it
+    would not be enough to place the row in a bank credit, and nothing here
+    does.
+    """
+    return bool(row["type"] == "payment"
+                and row.get("settled_at")
+                and row.get("fee")
+                and row.get("tax"))
+
+
+def _fee_accrual(rows: list[dict]) -> dict[str, tuple[int, int]]:
+    """`settlement month -> (taxable fee, tax)` the gateway accrued.
+
+    Rows charged a fee with no GST contribute NEITHER leg: there is no input
+    tax on them to claim, so including their fee in the taxable value would
+    manufacture a mismatch against an invoice that correctly omits them. The
+    month here IS `settled_at`, because this side of the calculation is about
+    what the gateway invoiced for, not about what the resolver could place.
+
+    A fee-bearing row with no GST on it still OPENS its month's bucket while
+    contributing nothing to either leg. That asymmetry is deliberate and is
+    load-bearing for `gstr2b_absent`: the month saw settlement activity and so
+    is a month a 2B line could be missing from, even though this particular row
+    puts no value in it.
+    """
+    accrual: dict[str, list[int]] = {}
+    for row in rows:
+        if row["type"] != "payment" or not row.get("settled_at"):
+            continue
+        if not row.get("fee"):
+            continue
+        month = datetime.fromtimestamp(row["settled_at"], IST).strftime("%Y-%m")
+        bucket = accrual.setdefault(month, [0, 0, 0])
+        if _accrues_input_tax(row):
+            bucket[0] += row["fee"] - row["tax"]
+            bucket[1] += row["tax"]
+            bucket[2] += 1
+    return {month: tuple(values) for month, values in sorted(accrual.items())}
+
+
+def gateway_gstin(dataset) -> str | None:
+    """Which supplier in 2B is the payment gateway.
+
+    Nothing in the data says. It is identified the way an accountant would: the
+    supplier whose invoiced taxable values reconcile, month by month, to the
+    fee the ledger actually shows deducted. A supplier that matches nothing
+    scores zero and `None` is returned rather than a guess -- with no gateway
+    identified there is no ITC finding to make, which is the correct answer and
+    not a degraded one.
+
+    This is an INDEPENDENT reimplementation of the logic shape in
+    `matching/stage4_exceptions.py`, which this package may not import. Two
+    implementations of one statutory rule can drift, so
+    `resolver/tests/test_gst_risk.py` asserts the two agree on every GST
+    dataset in the corpus. That test is the mitigation, not a nicety.
+    """
+    lines = getattr(dataset, "gstr2b", []) or []
+    if not lines:
+        return None
+    accrual = _fee_accrual(dataset.rows)
+    by_gstin: dict[str, list] = defaultdict(list)
+    for line in lines:
+        by_gstin[line.gstin].append(line)
+
+    best, best_hits = None, 0
+    for gstin, supplier_lines in sorted(by_gstin.items()):
+        hits = sum(
+            1
+            for line in supplier_lines
+            for month, values in accrual.items()
+            if abs(line.taxable_value - values[0])
+            <= max(1, values[2]) * _TOLERANCE_PAISE_PER_ROW)
+        # Strictly greater: a tie keeps the first supplier in GSTIN order, so
+        # the answer does not depend on dict insertion order.
+        if hits > best_hits:
+            best, best_hits = gstin, hits
+    return best
+
+
+def _itc_risk_months(dataset) -> dict[str, tuple[str, ...]]:
+    """`"YYYY-MM" -> the grounds on which that month's input tax credit is at
+    risk`. Months with no ground are absent from the mapping.
+
+    ITC risk in this data is MONTH-level and cannot honestly be made
+    row-level: the gateway invoices its fees monthly, so one 2B line stands
+    behind every settlement in a period, and no recon row carries an
+    `invoice_no` to tie it to one. A per-row citation would be a precision this
+    evidence does not have.
+
+    Three grounds, each independently determinable:
+
+    * `gstr2b_absent` -- the ledger accrued gateway fees in a month and no 2B
+      line from the gateway carries that filing period. There is no document to
+      claim the credit against (sec 16(2)(aa) CGST).
+    * `gstr2b_no_irn` -- a gateway line with no invoice reference number. An
+      e-invoice without an IRN is not a valid tax invoice (Rule 48(5) CGST).
+    * `gstr2b_37a_exposure` -- the supplier has not filed GSTR-3B. 2B still
+      reports the credit as available; the exposure is invisible in the return
+      and has to be computed, which is the entire point (Rule 37A CGST).
+
+    The last two are attributed to the line's own `gstr1_filing_period`, the
+    period the document belongs to, not to its invoice date.
+
+    Nothing here decides anything. The caller may only ANNOTATE rows it has
+    already given up on -- and a month being at risk is a NECESSARY condition
+    for annotating a row in it, never a sufficient one. The risk belongs to the
+    population that accrued the fees; `dispositions()` must additionally check
+    that the individual row is part of that population (`_accrues_input_tax`),
+    or it reports every open row in a bad month as exposed. Sec 60 measured
+    that error and sec 61 is the fix.
+    """
+    lines = getattr(dataset, "gstr2b", []) or []
+    supplier = gateway_gstin(dataset)
+    if supplier is None:
+        return {}
+
+    grounds: dict[str, set[str]] = defaultdict(set)
+    supplier_lines = [line for line in lines if line.gstin == supplier]
+    periods = {line.gstr1_filing_period for line in supplier_lines}
+
+    for month in _fee_accrual(dataset.rows):
+        if month not in periods:
+            grounds[month].add(GROUND_ABSENT)
+
+    for line in supplier_lines:
+        # Not elif: one invoice can carry both, and reporting either alone
+        # would understate the exposure.
+        if not line.has_irn:
+            grounds[line.gstr1_filing_period].add(GROUND_NO_IRN)
+        if line.supplier_gstr3b_filed.upper() == "N":
+            grounds[line.gstr1_filing_period].add(GROUND_37A)
+
+    return {month: tuple(sorted(found))
+            for month, found in sorted(grounds.items()) if found}
+
+
 # --------------------------------------------------------------------------
 # classification of everything the entailments do not cover
 # --------------------------------------------------------------------------
@@ -173,6 +364,14 @@ def dispositions(dataset, consumed: set[str], blocked: dict[str, int],
     horizon = max(line.value_date for line in dataset.bank)
     netted = netted_out_payments(dataset.rows)
     disputes = getattr(dataset, "disputes", {}) or {}
+    # The ONLY read of `dataset.gstr2b` anywhere in this resolver, and it
+    # happens here, after `resolve()` has finished every outcome that carries a
+    # composition. `EvidenceKind.GST_DOCUMENT` attests to ROW EXISTENCE and
+    # nothing else, so it must never reach a Verified/Ambiguous/Determinate/
+    # Reconstructed/AttestationDiscrepancy -- and structurally it cannot,
+    # because none of them is constructed downstream of this call.
+    at_risk = _itc_risk_months(dataset)
+    rows_by_id = {row["entity_id"]: row for row in dataset.rows}
 
     proven: dict[ProvenUnmatchedReason, list[str]] = defaultdict(list)
     breaks: dict[tuple, list[str]] = defaultdict(list)
@@ -203,10 +402,34 @@ def dispositions(dataset, consumed: set[str], blocked: dict[str, int],
     for (reason, caused_by, provable, age_days, seen), row_ids in sorted(
             breaks.items(), key=lambda kv: (kv[0][0].value, kv[0][1] or -1,
                                             kv[0][4])):
+        # Per row, not per break, and gated TWICE.
+        #
+        # `_month(...) in at_risk` alone is not sufficient and sec 60 measured
+        # exactly how insufficient: 4 flagged rows on the spine dataset, 4 of
+        # them false, precision 0.0. All four had never settled. A month is at
+        # risk on behalf of the population that actually accrued fees in it,
+        # and a row that accrued nothing does not acquire that month's exposure
+        # by sharing a calendar with it -- it has no input tax to lose. So the
+        # row must clear `_accrues_input_tax` on its OWN account, the same
+        # predicate `_fee_accrual` used to decide the month was at risk in the
+        # first place. See sec 61.
+        #
+        # The per-row loop itself stays for the reason it was written: these
+        # rows share a `first_seen` and so today share a month, but that is a
+        # property of the grouping key and not a guarantee, and assuming
+        # all-or-nothing would silently flag clean rows the day the key changes.
+        flagged = sorted(row_id for row_id in row_ids
+                         if _accrues_input_tax(rows_by_id[row_id])
+                         and _month(rows_by_id[row_id]) in at_risk)
+        found: set[str] = set()
+        for row_id in flagged:
+            found.update(at_risk[_month(rows_by_id[row_id])])
         out.append(OpenBreak(
             row_ids=tuple(sorted(row_ids)), reason=reason, age_days=age_days,
             first_seen=seen, caused_by=caused_by,
-            provable_within_window=provable))
+            provable_within_window=provable,
+            itc_risk=frozenset(flagged),
+            itc_risk_grounds=tuple(sorted(found))))
     return out
 
 

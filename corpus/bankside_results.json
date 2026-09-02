@@ -1,0 +1,176 @@
+[
+ {
+  "dataset": "datasets_bankside/A20_B100_Cmax_bankside",
+  "family": "datasets_bankside",
+  "axes": {
+   "A_pool_target": 20,
+   "A_pool_sizes": [
+    2,
+    22,
+    21,
+    25,
+    33,
+    17,
+    18,
+    14,
+    18,
+    15,
+    29,
+    16
+   ],
+   "A_pool_mean": 19.17,
+   "B_attestation_coverage_target": "1",
+   "B_attestation_coverage_achieved": "12/12",
+   "C_selection_rule": "max_under_cap",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "planted_bank_side_errors": 1,
+  "wrong_attestations": 0,
+  "seconds": 43.69,
+  "runs": 3,
+  "verdict_identical_across_runs": true,
+  "oracle_passed": true,
+  "oracle_violations_by_gate": {},
+  "oracle_violations": [],
+  "bank_side": [
+   {
+    "bank_line_index": 19,
+    "settlement_id": "setl_3GYqESSU6sVZOF",
+    "true_amount_paise": 10832146,
+    "bank_reported_amount_paise": 11205504,
+    "planted_delta_paise": 373358,
+    "resolver_outcome": "AttestationDiscrepancy",
+    "verdict": "sound",
+    "contradiction_kind": "claimed_credit_not_on_statement",
+    "names_the_true_amount": true,
+    "names_the_reported_amount": true,
+    "recovers_delta": true,
+    "attested_rows_named": 16,
+    "attested_rows_are_the_truth": true,
+    "assigned_rows": 0,
+    "recovered_delta_paise": 373358
+   }
+  ],
+  "attestation_discrepancy": {
+   "oracle_planted": 1,
+   "oracle_reported": 2,
+   "oracle_correctly_identified": 1,
+   "oracle_true_finding_of_another_kind": 1,
+   "oracle_genuinely_false": 0,
+   "oracle_genuinely_false_detail": [],
+   "bank_side_planted": 1,
+   "bank_side_correctly_identified": 1,
+   "mislabelled_by_oracle_as_genuinely_false": 0,
+   "genuinely_false_after_reattribution": 0,
+   "note": "the oracle columns are the oracle's own output. Before DECISIONS.md 56, `planted` there counted PSP-side wrong attestations only and a correct bank-side detection landed in `genuinely_false`; 56 fixed that in bank-line-index space, so `genuinely_false` should now already equal `genuinely_false_after_reattribution`. This scorer-local re-attribution is KEPT as the independent cross-check that it does. DECISIONS.md 54, 56."
+  },
+  "cascade": {
+   "ran": true,
+   "seconds": 28.37,
+   "outcomes": {
+    "Determinate": 4,
+    "Unresolved": 10,
+    "Ambiguous": 6
+   },
+   "lines": [
+    {
+     "bank_line_index": 19,
+     "outcome": "Unresolved",
+     "claimed_composition_size": null,
+     "claimed_equals_true_composition": null,
+     "candidate_count": null,
+     "can_express_disagreement": false
+    }
+   ]
+  }
+ },
+ {
+  "dataset": "datasets_bankside/A40_B100_Cmax_bankside",
+  "family": "datasets_bankside",
+  "axes": {
+   "A_pool_target": 40,
+   "A_pool_sizes": [
+    5,
+    26,
+    39,
+    43,
+    43,
+    29,
+    32,
+    40,
+    35,
+    43,
+    39,
+    42
+   ],
+   "A_pool_mean": 34.67,
+   "B_attestation_coverage_target": "1",
+   "B_attestation_coverage_achieved": "12/12",
+   "C_selection_rule": "max_under_cap",
+   "C_floor_fraction": "9/10"
+  },
+  "bank_lines": 20,
+  "settlements": 12,
+  "planted_bank_side_errors": 1,
+  "wrong_attestations": 0,
+  "seconds": 51.97,
+  "runs": 3,
+  "verdict_identical_across_runs": true,
+  "oracle_passed": true,
+  "oracle_violations_by_gate": {},
+  "oracle_violations": [],
+  "bank_side": [
+   {
+    "bank_line_index": 14,
+    "settlement_id": "setl_RfS17mVST3NimQ",
+    "true_amount_paise": 45893065,
+    "bank_reported_amount_paise": 46181976,
+    "planted_delta_paise": 288911,
+    "resolver_outcome": "AttestationDiscrepancy",
+    "verdict": "sound",
+    "contradiction_kind": "claimed_credit_not_on_statement",
+    "names_the_true_amount": true,
+    "names_the_reported_amount": true,
+    "recovers_delta": true,
+    "attested_rows_named": 38,
+    "attested_rows_are_the_truth": true,
+    "assigned_rows": 0,
+    "recovered_delta_paise": 288911
+   }
+  ],
+  "attestation_discrepancy": {
+   "oracle_planted": 1,
+   "oracle_reported": 2,
+   "oracle_correctly_identified": 1,
+   "oracle_true_finding_of_another_kind": 1,
+   "oracle_genuinely_false": 0,
+   "oracle_genuinely_false_detail": [],
+   "bank_side_planted": 1,
+   "bank_side_correctly_identified": 1,
+   "mislabelled_by_oracle_as_genuinely_false": 0,
+   "genuinely_false_after_reattribution": 0,
+   "note": "the oracle columns are the oracle's own output. Before DECISIONS.md 56, `planted` there counted PSP-side wrong attestations only and a correct bank-side detection landed in `genuinely_false`; 56 fixed that in bank-line-index space, so `genuinely_false` should now already equal `genuinely_false_after_reattribution`. This scorer-local re-attribution is KEPT as the independent cross-check that it does. DECISIONS.md 54, 56."
+  },
+  "cascade": {
+   "ran": true,
+   "seconds": 117.8,
+   "outcomes": {
+    "Determinate": 1,
+    "Ambiguous": 8,
+    "Unresolved": 11
+   },
+   "lines": [
+    {
+     "bank_line_index": 14,
+     "outcome": "Unresolved",
+     "claimed_composition_size": null,
+     "claimed_equals_true_composition": null,
+     "candidate_count": null,
+     "can_express_disagreement": false
+    }
+   ]
+  }
+ }
+]

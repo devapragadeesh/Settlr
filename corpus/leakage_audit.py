@@ -1329,7 +1329,9 @@ def main() -> int:
     if arguments.all:
         # Both families. `datasets_v2` is a SUPERSET generation at new seeds,
         # not a correction of `datasets`, and both are audited and both ship.
-        datasets = [p for family in ("datasets", "datasets_v2")
+        datasets = [p for family in ("datasets", "datasets_v2",
+                                     "datasets_bankside", "datasets_gst",
+                                     "datasets_gst_holdout")
                     if (ROOT / "corpus" / family).exists()
                     for p in sorted((ROOT / "corpus" / family).iterdir())
                     if (p / "ground_truth.json").exists()]

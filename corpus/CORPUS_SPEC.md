@@ -551,6 +551,20 @@ ITC decisions, no partially-filed-supplier population, and no IRN timing
 distribution. **Any GST claim in a headline remains substantially unearned**,
 and the fix is a fifth axis this corpus does not have.
 
+**Amended 2026-08-31 (`DECISIONS.md` §55).** That fifth axis now exists:
+`corpus/datasets_gst/` (2 datasets), built by
+`corpus/generator/gst_population.py`, varying a real fraction of the
+gateway's own 2B lines for each of the three statutory grounds (independent
+draws, so an invoice can carry more than one) plus vendor-pool noise
+independently. Scored read-only against the unmodified
+`matching/stage4_exceptions.py` filters in
+[`corpus/GST_RESULTS.md`](GST_RESULTS.md): invoice identification is exact
+on every ground measured, but the `itc_availability` shortcut still does not
+generalize and the absent-from-2B ground's rupee total still structurally
+disagrees. D9 is measured now rather than merely named; it is not closed —
+see `GST_RESULTS.md`'s own closing section for what "measured, not closed"
+means here. The paragraph above is left as originally written.
+
 **No wrong-**bank**-side class.** Axis D plants an attestation that is wrong.
 It does *not* plant a case where the two sources contradict and **truth is on
 the bank side** — a bank splitting one settlement into two credits, or posting
@@ -647,3 +661,72 @@ Nothing under `engine/data/`, `engine/ground_truth/`, `engine/simulator.py`,
 `engine/generator.py`, `engine/DATASET_HASHES.txt` or `matching/` is modified.
 The frozen generator and simulator are **imported as libraries**; the frozen
 cascade is run unmodified as the baseline the corpus must fail.
+
+## 10. `corpus/datasets_bankside/` — the wrong-*bank*-side class (`mispost`)
+
+**Seeds committed 2026-08-31** — `DECISIONS.md` §51, before this data existed.
+Two datasets, `A20_B100_Cmax_bankside` and `A40_B100_Cmax_bankside`, each the
+spine or a larger-pool axis-A point at a new seed, with `wrong_attestations=0`
+so the class below is never confounded with §6.4's `d03_wrong_attestation` on
+the same settlement.
+
+**Why this is a different independence direction, not a restatement of §6.6.**
+Every adversarial class up to this point corrupts a PSP artefact —
+`settlement_report.csv` (`d03`) or the `settlement_id` written onto recon rows
+(`d11`, §6.6). Both leave the bank's own record correct and ask whether a
+resolver catches the PSP lying. This class inverts it: `recon_combined.json`
+and `settlement_report.csv` are left **correct and untouched**, and one line
+of `bank_statement.csv` is given the wrong amount instead. It tests the other
+half of the symmetry `AttestationDiscrepancy`'s own contract text already
+claims — "the sources disagree … a finding about the record, not a claim about
+which rows settled" — which had never actually been exercised in the direction
+where the bank, not the PSP, is the one that is wrong.
+
+**The mechanism, and the constraint it stays inside.** `corpus/generator/
+bank_side_errors.py` implements `plant_mispost`, called from `build.py` on the
+`payouts` sequence **before** `build_bank_statement` runs. `bank.py` itself is
+not edited. `plant_mispost` receives exactly what `Payout` carries — an amount
+and a timestamp, nothing else — so the corrupted line can never be handed a
+settlement id, a UTR, or any other ledger-derived value. The corruption is
+framed as a bank-side deduction or miskey (a real occurrence), not an
+adversarial forgery: a delta of Rs 500–5,000, unrelated to any ledger row, is
+added to or subtracted from one settlement's true payout.
+
+**The honesty discipline, mirroring §6.6.** No row is minted. `plant_mispost`
+declines — returns no truth record, and the caller ships without the plant —
+if the corrupted amount would go non-positive or would collide with another
+settlement's true payout (which would make the wrong line look like a
+different, legitimate credit rather than a contradiction). Both new datasets'
+plants succeeded at their committed seeds; had either failed, `ground_truth
+.json`'s `d12_bank_side_mispost.reason` would say so and the dataset would ship
+without the class, exactly as `datasets_v2/A20_B0_Cmax` ships without `d11`.
+
+**What "nearby" means here, and what it does not check.**
+`bank_side_errors.py` has no access to any ledger row or batch composition —
+by design, per `Payout`'s signature — so it can only check the corrupted
+amount against other payouts' true amounts in the same file, not against every
+subset sum a solver might reconstruct. That is a narrower guarantee than "this
+amount closes to nothing," and the module's own docstring says so rather than
+implying more.
+
+**Ground truth.** `planted_classes["d12_bank_side_mispost"]` carries
+`table: "bank"`, keyed by the corrupted line's index in `bank_statement.csv`
+— compatible with `leakage_audit.py`'s `load_tables`, which already builds a
+`bank` table on `_file_position` for every other bank-keyed class. `detail`
+carries the settlement id, the true payout, the bank-reported amount, and the
+signed delta, so the oracle can check not just whether a resolver flagged
+*something* wrong but whether it named the right settlement and the right true
+amount.
+
+**Explicit scope: `mispost` only, two datasets, not folded into the 30-dataset
+aggregate.** A second shape — one settlement posted as two separate bank
+credits summing to the true amount (`split-credit`) — was considered and set
+aside; whether the outcome vocabulary can even represent "these two bank lines
+are jointly one attested settlement" is an open question for `resolver_
+contract`, and this project's rule is that a contract change is its own dated
+decision (§31, §46), never folded into corpus work that happens to provoke it.
+These two datasets are audited (`leakage_audit.py --all`, `triviality_check.py
+--all`, both extended to discover `datasets_bankside/`) and pass, but are
+scored by a dedicated `corpus/score_bankside.py` outside `three_systems.py`,
+`scorecard.py`, and `claims_ledger.py` — see `DECISIONS.md` §51 for why folding
+them in was rejected.
