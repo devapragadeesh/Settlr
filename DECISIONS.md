@@ -3637,3 +3637,251 @@ did something other than advertised.
 measurement scripts, and their outputs) and this entry. **No file under
 `resolver/`, `matching/`, `corpus/`, `engine/` or `resolver_contract/` is
 touched, and no published figure changes.**
+
+---
+
+## 68. `max_deterministic_time` in `resolver/enumerate_closures.py` — §58's fix, the mislabelled status it exposed, and a published number that was a draw — 2026-09-02
+
+**The change.** `solver.parameters.max_time_in_seconds = time_budget` becomes
+`solver.parameters.max_deterministic_time = time_budget` at the single CP-SAT
+call site. `DEFAULT_TIME_BUDGET` becomes `DEFAULT_DETERMINISTIC_BUDGET`,
+keeping the numeral 10.0 on §49's reasoning — OR-Tools publishes no conversion
+between deterministic units and wall-clock seconds, by design, so the numeral
+preserves the budget's order of magnitude without claiming equivalent search.
+`investigation/resolver_nondeterminism/PREDICTION.md` and §67 were committed
+**before** this change existed; `git log` is the evidence.
+
+**A second edit was FORCED, not chosen.** `timed_out` read
+
+```
+elapsed >= time_budget and status != cp_model.OPTIMAL
+```
+
+comparing an externally measured wall clock against the budget. That is §44's
+frame defect, instance F3, retained deliberately as evidence. Under a
+deterministic budget the two operands are **not in the same units**, so the
+mixture stops being subtle and becomes a type error. §68 does not tidy F3
+away; it makes it unstateable. The predicate now compares
+`solver.deterministic_time` against `time_budget` — both CP-SAT's own — and a
+new `Closures.deterministic_seconds` field records the consumption so the
+comparison is auditable from the output rather than re-derived from a clock.
+`wall_seconds` is kept, is still honest, and carries an explicit prohibition:
+it may inform capacity decisions and may never derive a status or a claim.
+
+**`status == UNKNOWN` alone would NOT have worked, and this was measured.**
+A solve that stops on its budget having already found solutions returns
+**`FEASIBLE`**, not `UNKNOWN`:
+
+```
+enumerate_all_solutions, max_deterministic_time = 0.05
+-> status FEASIBLE  found 3114  det_time 0.05000008  wall 0.034455
+```
+
+Replacing the wall-clock clause with a status-only test — the obvious
+simplification, and the one proposed while this work was in flight — would
+have silently relabelled every truncated-with-solutions enumeration as clean.
+
+**Which is not hypothetical: the old predicate was already doing it.**
+Across all 35 datasets, before and after:
+
+| status | before | after | delta |
+|---|---:|---:|---:|
+| `optimal` | 205 | 209 | +4 |
+| `cap_reached` | 262 | 275 | +13 |
+| `feasible` | **28** | **0** | −28 |
+| `time_budget_exceeded` | 69 | 81 | +12 |
+
+Every one of those 28 `feasible` results was a truncated enumeration reported
+as if it were not: the external clock came in just under the budget and the
+status was `FEASIBLE` rather than `UNKNOWN`, so both disjuncts failed. **This
+never reached `complete`** — which is `status == OPTIMAL` and nothing weaker
+(§39) — so no line was ever wrongly promoted to a confident answer. But the
+status string reached the `detail` text of those outcomes, and an operator
+triaging them was reading a wrong word.
+
+**Counted honestly, the fix does MORE search, not less.** True truncations
+(`time_budget_exceeded` plus the mislabelled `feasible`) fell **97 → 81**;
+`optimal` rose 205 → 209 with **no dataset losing a single one**; the full
+35-dataset sweep ran **1410.8s → 1099.3s**. §67's stated trigger for revisiting
+the numeral — clock stops moving materially in either direction — is therefore
+**not fired**: the apparent +12 is a labelling correction, not a tighter budget.
+
+**The prediction scorecard, including the miss.**
+
+| claim | verdict |
+|---|---|
+| 1. zero-clock-stop datasets identical, incl. held-out | **FALSIFIED** |
+| 2. no outcome CLASS changes anywhere | CONFIRMED — 0 of 35 |
+| 3. no composition changes anywhere | CONFIRMED — 0 lines |
+| 4. candidate-set statistics move | CONFIRMED, weakly — see below |
+| 5. no gate flips | CONFIRMED — 0 flips, 0 gate-count changes, 28/30 passing |
+| 6. post-fix runs byte-identical | CONFIRMED — 2 uncontended + 1 contended |
+
+Fields that moved between the pre- and post-fix draws, and nothing else:
+`detail` 37, `partial_candidates` 34, `rival_closure_count` 30, `warrant` 5,
+`rival_count_is_lower_bound` 4.
+
+**Claim 6 is the one the fix exists for, and it was tested the way the pre-fix
+code failed.** Three full 35-dataset outcome dumps — two on an idle machine,
+one under six concurrent resolver processes at load average 5.45 — are
+byte-identical (`seconds` excluded; wall time varies and its irrelevance to
+the ANSWER is the point). Pre-fix, that same contended comparison broke on
+`detail` and `partial_candidates`.
+
+**Claim 1 failed, and the reason is worth more than the claim was.** §67
+asserted the held-out GST dataset could not be affected because it had "zero
+clock stops, all 54 enumerations optimal". That premise was read off **pre-fix
+data corrupted by the very defect being fixed**:
+
+```
+gst_holdout  before: {feasible: 2, infeasible: 4, optimal: 48}
+             after:  {infeasible: 4, optimal: 50}
+```
+
+It never had zero truncations. It had two, wearing the `feasible` label. Under
+the fix both complete, so `rival_count_is_lower_bound` flips `True → False` on
+those lines: the resolver now makes a **stronger and correct** claim where it
+previously hedged. No outcome class or composition on that dataset changed. A
+measurement taken with a broken instrument is evidence about the instrument.
+
+**Claim 4 is confirmed but the honest form is weaker than the claim.** Against
+the previously committed `corpus/oracle_results.json`, `mean`/`max` candidate
+set size moved on exactly **1 of 30** datasets. That single dataset is also the
+one below whose committed draw disagreed with both of this pass's runs, so the
+movement cannot be cleanly attributed to the fix alone. The cleanly attributable
+statement is the field-level one: `partial_candidates` differs on 34 lines
+between this pass's pre- and post-fix runs.
+
+**A published outcome-class count was a draw, not a measurement — disclosed,
+not absorbed.** Re-scoring produced `datasets_v2/A40_B100_Cfifo` at
+`Ambiguous 1 / Unresolved 7`, where the committed `oracle_results.json` said
+`Ambiguous 2 / Unresolved 6`. This is **not** the fix: this pass's own pre-fix
+and post-fix dumps agree with each other at 1/7, and disagree with the
+committed file. The committed number was an older draw of the nondeterministic
+pre-fix code — §58's defect, live in a published figure, exactly as §58 warned
+("a claim about one draw"). The corrected figure now stands, and the previous
+one is recorded here rather than quietly replaced. No gate verdict moves with
+it; the dataset passed before and passes now.
+
+**The frozen-cascade baseline was deliberately NOT re-run.**
+`corpus/baseline_old_engine.py` drives `matching/`, which this change does not
+touch — verified by `git status matching/ engine/` returning empty, not by
+memory — and §49 already made that path deterministic. Re-running it costs ~43
+minutes for a provably byte-identical `corpus/baseline_results.json`. The
+skip is recorded so a reader does not conclude the step was forgotten.
+
+**`corpus/GST_HOLDOUT_RESULTS.md` was NOT re-scored, and claim 1's failure is
+the reason.** The resolver *would* now answer differently on that dataset. That
+makes re-running §64's single held-out run more dangerous, not less. It stays
+rendered from saved JSON per §65; the divergence is disclosed here instead.
+
+**A defect in this pass's own new code, caught by the contract.** §69's
+`composition_cardinality()` was first written with
+`getattr(outcome, "composition", None)` — the obvious defensive spelling. It
+does not work: `Ambiguous.__getattr__` raises `UnrepresentableClaim`, a
+`ContractViolation` and **not** an `AttributeError`, so `getattr`'s default
+never fires and the exception propagated and killed the re-score. Asking an
+ambiguous outcome for a composition is a bug and `resolver_contract` refuses to
+let a default paper over it. Fixed to `isinstance(outcome, (Verified,
+Reconstructed))`. Recorded because the contract catching its own author, in the
+pass that adds a legibility section, is the clearest evidence that
+`model.py`'s "unrepresentable rather than discouraged" design earns its keep.
+
+**Rejected: raise the numeral now that more enumerations complete.** Tempting,
+and it would be tuning. §67 fixed the numeral in advance precisely so this pass
+could not drift, and nothing measured shows 10.0 too small — `optimal` went up.
+
+**Rejected: delete `wall_seconds`.** Not a misnomer; it measures wall time and
+is the right field for capacity questions. The defect was deriving a *claim*
+from it. Removing it would also destroy the number showing the fix runs faster.
+
+**Rejected: re-run the whole `run_all.py` including the baseline, for tidiness.**
+A 43-minute step whose output cannot change is not rigour, it is ceremony, and
+recording the reasoning is more auditable than the runtime.
+
+**Scope.** `resolver/enumerate_closures.py` (the parameter, the constant name,
+the `budget_exhausted` derivation, the new `deterministic_seconds` field),
+`investigation/resolver_nondeterminism/` (before/after pair, three verification
+runs, four measurement scripts), and the regenerated
+`corpus/ORACLE_RESULTS.md`, `corpus/oracle_results.json`,
+`corpus/THREE_SYSTEMS.md`, `CLAIMS.md`, `SCORECARD.md` and
+`dashboard/data.json`. No file under `matching/`, `engine/`,
+`corpus/generator/`, `resolver_contract/` or `corpus/oracle.py` is touched, and
+no dataset is regenerated.
+
+**`corpus/GST_RESULTS.md` is NOT regenerated in this commit, and the reason is
+a concurrency hazard rather than a decision about GST.** A separate, concurrent
+line of work modified `resolver/loaders.py` at 01:14 (a `paise()` grammar fix
+from the adversarial pass). This pass's evidence is unaffected -- every
+before/after and verification dump was written between 22:27 and 00:52, and
+`corpus/oracle_results.json`'s process imported `loaders.py` at ~00:56, all
+before that edit. But `corpus/score_gst.py` runs as a LATER process and would
+have imported the modified loader, so its output would carry two independent
+changes under one entry's name. That is exactly the mixing this file exists to
+prevent, so the GST re-score is deferred to a pass that owns the loader change
+and can attribute its effect separately. `corpus/GST_RESULTS.md` therefore
+still reflects §66's regeneration, taken under the pre-§68 wall-clock budget;
+the resolver-derived figures in it are one draw and are superseded whenever
+that pass runs.
+
+---
+
+## 69. Composition cardinality — the one thing a reconciliation professional asks first, which this repo's output could not answer — 2026-09-02
+
+**Decision.** `corpus/score_resolver.py` gains `composition_cardinality()` and a
+report section splitting every answered bank line into **1:1** (one credit, one
+row) and **N:1** (one credit, several rows netted), broken down by outcome
+class, plus a count of lines whose composition carries at least one DEBIT row.
+`corpus/TECHNIQUES.md` assessed this as "adopt, reporting only, cheap, no
+contract change" and it was never built.
+
+**Why it is worth a numbered entry when it introduces no new measurement.**
+Every figure is a re-cut of outcomes the oracle already scores. The problem it
+solves is not measurement, it is **legibility to the reader this artifact is
+for**. `Verified 275, mean candidate set size 3.4` is a sentence in this
+repository's private dialect. A reconciliation practitioner reads an engine in
+cardinalities, and their first question is *how much of this was one-to-one?* —
+because a 1:1 match is what a `GROUP BY` on a shared key already solves, and
+this repo has measured that a fifteen-line `GROUP BY` recovers 322 of 335
+compositions. Reporting a strong headline without the split invites it to be
+read as a claim about the hard cases. The split is what makes the claim honest
+at a glance rather than after reading `THREE_SYSTEMS.md`.
+
+**N:N is reported as 0 BY CONSTRUCTION, and labelled as such.**
+`ResolverOutput` carries exactly one outcome per bank line, so no answer can
+span two credits. An unexplained `0` in a table reads as "measured, none
+found"; this one is a **design boundary**, and a reader comparing against an
+engine that re-groups bank lines needs to know the difference. §2's rejection
+of a global set-partitioning formulation (1,347 booleans returning UNKNOWN at
+60s) is why the boundary exists.
+
+**Split by outcome class rather than pooled.** A 1:1 `Verified` — two
+independent parties agreeing on a composition — and a 1:1 `Reconstructed` —
+this resolver's own arithmetic with no second party attesting anything — are
+different evidential objects. Pooling them would undo exactly the distinction
+the contract's tiers exist to draw, in a table whose purpose is to make the
+output easier to read.
+
+**`with_debits` is included because it is the narrowest honest measure of what
+netting bought.** It counts answered lines whose composition carries at least
+one debit — a refund or adjustment netted against credits inside the same
+payout. Those are the lines where a credits-only sum would have produced the
+wrong figure. `N:1` alone overstates the case: a multi-row credit-only batch is
+still just a sum.
+
+**Rejected: put this in `SCORECARD.md` instead.** `SCORECARD.md` is generated
+from `corpus/scorecard.py` and is the five-minute read; adding a fourth table
+to it dilutes the thing it is for. `score_resolver.py`'s report is where
+per-dataset detail already lives.
+
+**Rejected: derive cardinality from ground truth rather than from output.**
+It would be a statement about the corpus, not about the resolver, and the
+question being answered is what the ENGINE produced.
+
+**Rejected: report a mean composition size.** A mean over a bimodal
+distribution (mostly 1, occasionally 30) describes neither mode. The two
+buckets are the honest summary.
+
+**Scope.** `corpus/score_resolver.py` (two new functions, one report section)
+and this entry. No contract change, no corpus change, no scoring change — the
+oracle's inputs and outputs are untouched.

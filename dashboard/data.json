@@ -307,7 +307,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 28.91,
+     "seconds": 24.54,
      "gates": {}
     }
    },
@@ -359,7 +359,7 @@
      "discrepancy_planted": 0,
      "unwarranted": 0,
      "mean_k": 1.0833333333333333,
-     "seconds": 46.88,
+     "seconds": 33.45,
      "gates": {}
     }
    },
@@ -411,7 +411,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 38.51,
+     "seconds": 22.92,
      "gates": {}
     }
    },
@@ -463,7 +463,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 59.26,
+     "seconds": 34.67,
      "gates": {}
     }
    },
@@ -515,7 +515,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 61.17,
+     "seconds": 40.44,
      "gates": {}
     }
    },
@@ -567,7 +567,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 62.38,
+     "seconds": 42.91,
      "gates": {}
     }
    },
@@ -619,7 +619,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 0,
      "mean_k": 1.8181818181818181,
-     "seconds": 23.84,
+     "seconds": 22.81,
      "gates": {}
     }
    },
@@ -671,7 +671,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 66.87,
+     "seconds": 44.77,
      "gates": {}
     }
    },
@@ -706,7 +706,7 @@
      "discrepancy_planted": 0,
      "unwarranted": 0,
      "mean_k": 89.5,
-     "seconds": 86.43,
+     "seconds": 48.61,
      "gates": {
       "G3": 9,
       "G8": 9
@@ -761,7 +761,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 40.73,
+     "seconds": 33.13,
      "gates": {}
     }
    },
@@ -813,7 +813,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 52.58,
+     "seconds": 25.84,
      "gates": {}
     }
    },
@@ -865,7 +865,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 64.23,
+     "seconds": 34.72,
      "gates": {}
     }
    },
@@ -917,7 +917,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 40.22,
+     "seconds": 27.94,
      "gates": {}
     }
    },
@@ -969,7 +969,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 38.73,
+     "seconds": 30.19,
      "gates": {}
     }
    },
@@ -1004,7 +1004,7 @@
      "discrepancy_planted": 0,
      "unwarranted": 0,
      "mean_k": 0.0,
-     "seconds": 79.21,
+     "seconds": 57.09,
      "gates": {
       "G3": 11,
       "G8": 6
@@ -1059,7 +1059,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 52.7,
+     "seconds": 32.69,
      "gates": {}
     }
    },
@@ -1111,7 +1111,7 @@
      "discrepancy_planted": 2,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 32.92,
+     "seconds": 23.4,
      "gates": {}
     }
    },
@@ -1163,7 +1163,7 @@
      "discrepancy_planted": 0,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 39.51,
+     "seconds": 22.54,
      "gates": {}
     }
    },
@@ -1215,7 +1215,7 @@
      "discrepancy_planted": 2,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 16.44,
+     "seconds": 9.24,
      "gates": {}
     }
    },
@@ -1267,7 +1267,7 @@
      "discrepancy_planted": 2,
      "unwarranted": 0,
      "mean_k": 2.0,
-     "seconds": 25.98,
+     "seconds": 17.31,
      "gates": {}
     }
    },
@@ -1319,7 +1319,7 @@
      "discrepancy_planted": 2,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 50.1,
+     "seconds": 30.51,
      "gates": {}
     }
    },
@@ -1371,7 +1371,7 @@
      "discrepancy_planted": 2,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 61.44,
+     "seconds": 31.24,
      "gates": {}
     }
    },
@@ -1423,7 +1423,7 @@
      "discrepancy_planted": 2,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 23.91,
+     "seconds": 18.58,
      "gates": {}
     }
    },
@@ -1475,7 +1475,7 @@
      "discrepancy_planted": 2,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 33.51,
+     "seconds": 17.9,
      "gates": {}
     }
    },
@@ -1527,7 +1527,7 @@
      "discrepancy_planted": 2,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 60.39,
+     "seconds": 36.36,
      "gates": {}
     }
    },
@@ -1578,8 +1578,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 2,
      "unwarranted": 0,
-     "mean_k": 1.3333333333333333,
-     "seconds": 46.9,
+     "mean_k": 1.0909090909090908,
+     "seconds": 28.82,
      "gates": {}
     }
    },
@@ -1631,7 +1631,7 @@
      "discrepancy_planted": 2,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 42.52,
+     "seconds": 30.07,
      "gates": {}
     }
    },
@@ -1683,7 +1683,7 @@
      "discrepancy_planted": 2,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 82.25,
+     "seconds": 48.19,
      "gates": {}
     }
    },
@@ -1735,7 +1735,7 @@
      "discrepancy_planted": 2,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 45.17,
+     "seconds": 22.75,
      "gates": {}
     }
    },
@@ -1787,7 +1787,7 @@
      "discrepancy_planted": 2,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 42.56,
+     "seconds": 29.67,
      "gates": {}
     }
    }
@@ -1804,7 +1804,7 @@
  "hashes": null,
  "commit_ordering": {
   "available": true,
-  "count": 41,
+  "count": 43,
   "first_ten": [
    {
     "sha": "2ce40f95e1",
@@ -1859,16 +1859,6 @@
   ],
   "last_ten": [
    {
-    "sha": "2eb6c91665",
-    "date": "2026-08-28 00:49:06 +0530",
-    "subject": "Fix coverage metric + truncation announcements; STOP on frozen-cascade nondeterminism"
-   },
-   {
-    "sha": "416436557f",
-    "date": "2026-08-28 01:56:20 +0530",
-    "subject": "PREDICTION: max_deterministic_time fix, committed before matching/ is touched"
-   },
-   {
     "sha": "b39e23fdab",
     "date": "2026-08-28 14:10:19 +0530",
     "subject": "Fix: matching/stage3_solver.py uses max_deterministic_time, not max_time_in_seconds"
@@ -1907,6 +1897,16 @@
     "sha": "cd5e430dbf",
     "date": "2026-08-28 21:13:33 +0530",
     "subject": "Close the CHECKPOINT/DECISIONS staleness loop: sec50 was in future tense"
+   },
+   {
+    "sha": "62ecc72ff7",
+    "date": "2026-09-02 19:19:37 +0530",
+    "subject": "The GST/ITC and bank-side corpus legs, through DECISIONS 66"
+   },
+   {
+    "sha": "ba2b7632c1",
+    "date": "2026-09-02 19:19:58 +0530",
+    "subject": "DECISIONS 67: the 58 prediction, committed BEFORE the fix"
    }
   ]
  },

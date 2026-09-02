@@ -182,12 +182,81 @@ existing, unmodified `matching/stage4_exceptions.py` filters and against
 is one of the two honest outcomes named in advance: the filters do **not**
 fully generalize — the `itc_availability` single-column shortcut misses
 every Rule-37A-only and absent-from-2B invoice by construction, and the
-absent-from-2B ground's rupee total structurally disagrees between an
-accrued and an aggregate figure even where invoice identification is exact
-on every ground measured. Per the same governing rule as everything else in
-this document, this finding was written up, not patched into
-`matching/stage4_exceptions.py`. A read-only probe in the same file confirms
-`resolver/loaders.py` never opens `gstr2b.csv` — this pass measures the
-**benchmark** and the **existing frozen filter's** behavior against it; it
-does not and cannot license any claim that GST/ITC reasoning exists in
-`resolver/`, which remains unattempted, named as such.
+absent-from-2B ground's rupee total disagrees with ground truth even where
+invoice identification is exact on every ground measured. Per the same
+governing rule as everything else in this document, this finding was written
+up, not patched into `matching/stage4_exceptions.py`. This pass measures the
+**benchmark** and the **existing frozen filter's** behavior against it.
+
+**Two sentences of the paragraph above have since been superseded, and both
+are corrected here rather than left to age:**
+
+* This paragraph originally described the absent-from-2B rupee disagreement
+  as **structural** — "between an accrued and an aggregate figure". That is
+  false and `DECISIONS.md` §66 retracts it. The disagreement is a **defect in
+  the corpus generator**: `corpus/generator/build.py:681` puts the full fee of
+  zero-GST rows into the gateway invoice's taxable value and charges 18% on
+  it, while both consumers correctly exclude those rows. Rounding is a real
+  but secondary term of 1–8 paise. See `corpus/GST_RESULTS.md`'s decomposition
+  table.
+* This paragraph originally said a probe confirms `resolver/loaders.py`
+  **never opens** `gstr2b.csv`, and that GST reasoning in `resolver/` "remains
+  unattempted". Both were true when written and are **no longer true**:
+  `DECISIONS.md` §59 gave the resolver the tax feed, and `OpenBreak` now
+  carries `itc_risk`/`itc_risk_grounds`. The probe still runs, but its
+  question changed — it now asserts that removing `gstr2b.csv` leaves every
+  line outcome identical, i.e. that the feed may annotate an open item and may
+  never reach a composition. §60/§64 measure what the annotation achieves.
+
+---
+
+## Addendum: status of §56–§69, as of 2026-09-02
+
+The sections above describe work through `DECISIONS.md` §55. What follows is a
+**status record only** — every number lives in the artifact named beside it,
+and nothing is retyped here. It exists because this document is the map, and a
+map that stops eleven decisions short of the territory misleads more than no
+map at all.
+
+| § | what it is | status |
+|---|---|---|
+| §56–§57 | oracle bank-side attestation accounting, then narrowed to a declared per-line contradiction | **done** — `corpus/BANKSIDE_RESULTS.md` |
+| §58 | `resolver/enumerate_closures.py` budgets in WALL-CLOCK seconds — documented, deliberately not fixed | **superseded by §67/§68** |
+| §59 | GST evidence reaches `resolver/`, may only ever annotate an `OpenBreak` | **done** |
+| §60 | ITC-risk flag measured, **not gated** | **done, gate still open** — see below |
+| §61 | ITC-risk flag gated on the ROW's own settlement, not its month's | **done** |
+| §62, §65 | two generated-prose bugs in `score_gst.py`, found by reading the reports | **done** |
+| §63 | resolver+oracle GST code frozen by content hash before any held-out data existed | **done** |
+| §64 | the held-out GST run — freeze held, gates clean, `precision 1.0 / recall 0.75` | **done; the miss is diagnosed but NOT fixed** — see below |
+| §66 | `gstr2b_absent` gap is a generator defect, not the published "structural" rounding artefact | **done** — prose corrected, generator deliberately not touched |
+| §67 | the §58 prediction, committed **before** the fix | **done** — `investigation/resolver_nondeterminism/PREDICTION.md` |
+| §68 | the §58 fix: `max_deterministic_time`, and the frame-mixing predicate it forces closed | **in progress** — before/after pair captured, determinism verification running |
+| §69 | composition-cardinality reporting vocabulary (1:1 / N:1 / N:N) | **done** — `corpus/score_resolver.py` |
+
+### What is knowingly still open, stated plainly
+
+**The G10 gate on `itc_risk_flag` does not exist.** §60 chose measure-don't-gate
+because gating an untested first measurement is what G5 was withdrawn for. The
+held-out run has since supplied a reference number, so the gate is now
+*possible* — and it is still not written. It is queued behind §68's numbers
+stabilising, because a gate set against figures that are about to move is a
+gate set against noise.
+
+**The §64 false negative is diagnosed and deliberately unfixed.** The missed
+row is `rfnd_bJNvTaslE4EpW0` — a **refund**, `fee = 0`, `tax = 0`. The
+resolver declined to flag it correctly: a refund generates no gateway fee, so
+there is no input tax on it to be at risk, and
+`corpus/generator/build.py` never puts a refund into the invoice either. The
+disagreement is in `corpus/oracle.py`'s truth set, which counts every row that
+merely *settled in* an at-risk month — the exact reading §61 rejected on the
+resolver side and never applied to the measurement side.
+
+That diagnosis is recorded and **not acted on**, on purpose. Correcting the
+oracle would move a held-out number from `recall 0.75` to `1.0`, and "the
+measurement was wrong, my code was right" is the most self-serving conclusion
+available on a held-out miss. If the oracle is corrected, the corrected figure
+is published *alongside* §64's, never in place of it: §64's number stands as
+measured under the definition in force when it was taken.
+
+**The B×C grid gap and the declined global conservation test** stand exactly as
+written above. Nothing since §55 changes either.

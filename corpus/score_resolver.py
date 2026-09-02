@@ -32,6 +32,7 @@ if str(ROOT) not in sys.path:
 
 from corpus.oracle import (determined_instances, reconstructible_instances,  # noqa: E402
                            score)
+from resolver_contract.types import Reconstructed, Verified       # noqa: E402
 from resolver.loaders import load                                  # noqa: E402
 from resolver.resolve import NAME, resolve                         # noqa: E402
 
@@ -122,8 +123,119 @@ def score_one(directory: Path, *, cap: int, time_budget: float) -> dict:
         "false_settlement_id_planted": len(false_ids),
         "false_settlement_id_caught": caught,
         "bank_lines": len(truth["bank_lines"]),
+        "cardinality": composition_cardinality(output),
         "rendered": report.render(),
     }
+
+
+def composition_cardinality(output) -> dict:
+    """How many ROWS each answered bank line was explained by. §69.
+
+    This is reporting vocabulary, not a new measurement: every number here is
+    already implied by outcomes the oracle scores. It is added because the
+    accounting above is legible to this repository and almost nobody else. A
+    reconciliation practitioner reads a recon engine in cardinalities -- how
+    much of this was one-to-one, how much needed netting -- and "Verified 14,
+    Reconstructed 2, mean k 3.4" does not answer that question.
+
+    The buckets:
+
+    * **1:1** -- one bank credit, one row. The easy case, and the one a join
+      on a shared key already solves. Reporting it separately is what stops a
+      high headline rate from being read as evidence about the hard cases.
+    * **N:1** -- one bank credit, several rows netted. This is the case the
+      solver exists for and the only one where subset-sum reconstruction is
+      doing any work.
+    * **N:N** -- **structurally impossible in this contract**, and stated
+      rather than left as an absence. `ResolverOutput` carries exactly one
+      outcome per bank line, so no answer can span two credits. A reader
+      comparing this engine against one that re-groups bank lines needs to
+      know that is a design boundary and not an unmeasured gap.
+
+    Split by outcome class, because a 1:1 `Verified` (two parties agree) and a
+    1:1 `Reconstructed` (this resolver's own arithmetic, no second party) are
+    not the same evidential object and averaging them would undo contract 3's
+    whole point.
+    """
+    buckets: dict[str, Counter[str]] = {}
+    debit_bearing = 0
+    for outcome in output.line_outcomes:
+        # `isinstance`, NOT `getattr(outcome, "composition", None)`. The
+        # obvious defensive spelling does not work here and the reason is the
+        # contract doing its job: `Ambiguous.__getattr__` RAISES
+        # `UnrepresentableClaim` -- a `ContractViolation`, not an
+        # `AttributeError` -- so `getattr`'s default never fires and the
+        # exception propagates. Asking an ambiguous outcome for a composition
+        # is a bug, and the contract refuses to let it be papered over with a
+        # default. Written the wrong way first; caught by the re-score, which
+        # is the whole point of that type existing.
+        if not isinstance(outcome, (Verified, Reconstructed)):
+            continue                       # declined, or a finding -- no claim
+        composition = outcome.composition
+        rows = len(composition.credit_ids) + len(composition.debit_ids)
+        if composition.debit_ids:
+            debit_bearing += 1
+        kind = type(outcome).__name__
+        buckets.setdefault(kind, Counter())["1:1" if rows == 1 else "N:1"] += 1
+    return {
+        "by_outcome": {kind: dict(counts) for kind, counts in buckets.items()},
+        "one_to_one": sum(c["1:1"] for c in buckets.values()),
+        "many_to_one": sum(c["N:1"] for c in buckets.values()),
+        "many_to_many": 0,
+        "with_debits": debit_bearing,
+    }
+
+
+def _cardinality_section(results: list[dict]) -> list[str]:
+    """The cardinality table. §69 -- vocabulary, not a new claim."""
+    out = ["", "## Composition cardinality — how much of this was actually hard",
+           "",
+           "Every figure here is a re-cut of outcomes already scored above; no "
+           "new measurement is introduced. It exists because `Verified 14, "
+           "mean k 3.4` does not tell a reconciliation practitioner the one "
+           "thing they ask first: **how much of this was one-to-one, and how "
+           "much needed netting?** A 1:1 match is what a join on a shared key "
+           "already solves. Reporting the split is what prevents a strong "
+           "headline from being read as a claim about the hard cases.", "",
+           "`N:N` is **0 by construction, not by measurement**: "
+           "`ResolverOutput` carries exactly one outcome per bank line, so no "
+           "answer can span two credits. That is a design boundary of this "
+           "contract and is stated rather than left as an unexplained zero.",
+           "",
+           f"{'dataset':<34}{'1:1':>6}{'N:1':>6}{'N:N':>6}{'w/debits':>10}"
+           f"   by outcome class"]
+    out.append("-" * 100)
+    totals = Counter()
+    for r in results:
+        card = r.get("cardinality")
+        if not card:
+            continue
+        totals["1:1"] += card["one_to_one"]
+        totals["N:1"] += card["many_to_one"]
+        totals["debits"] += card["with_debits"]
+        by_class = ", ".join(
+            f"{kind} {dict(sorted(counts.items()))}"
+            for kind, counts in sorted(card["by_outcome"].items()))
+        out.append(f"{r['dataset']:<34}{card['one_to_one']:>6}"
+                   f"{card['many_to_one']:>6}{card['many_to_many']:>6}"
+                   f"{card['with_debits']:>10}   {by_class}")
+    out.append("-" * 100)
+    out.append(f"{'TOTAL':<34}{totals['1:1']:>6}{totals['N:1']:>6}"
+               f"{0:>6}{totals['debits']:>10}")
+    out += ["",
+            "`w/debits` counts answered lines whose composition carries at "
+            "least one DEBIT row — a refund or an adjustment netted against "
+            "credits inside the same payout. Those are the lines where a "
+            "credits-only sum would have produced the wrong figure, so it is "
+            "the narrowest honest measure of what netting bought.",
+            "",
+            "The split is reported per outcome class rather than pooled. A "
+            "1:1 `Verified` (two independent parties agree on the "
+            "composition) and a 1:1 `Reconstructed` (this resolver's own "
+            "arithmetic, with no second party attesting anything) are "
+            "different evidential objects, and averaging them would undo the "
+            "distinction the contract's tiers exist to draw."]
+    return out
 
 
 def render(results: list[dict]) -> str:
@@ -165,6 +277,8 @@ def render(results: list[dict]) -> str:
             f"{determined['determined_instances']:<2}"
             f"{determined['reconstructible_resolved']:>3}/"
             f"{determined['reconstructible_instances']:<2}")
+
+    out += _cardinality_section(results)
 
     # --- row disposition: the claim and the queue, never summed together ---
     out += ["", "## Row disposition (contract 4.7)", "",

@@ -2,7 +2,7 @@
  {
   "dataset": "datasets/A10_B100_Cmax",
   "family": "datasets",
-  "seconds": 28.91,
+  "seconds": 24.54,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -48,8 +48,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 9,
@@ -100,12 +101,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 7
+  }
  },
  {
   "dataset": "datasets/A20_B0_Cmax",
   "family": "datasets",
-  "seconds": 46.88,
+  "seconds": 33.45,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -151,8 +163,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 15,
@@ -202,12 +215,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 11
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 11,
+   "many_to_many": 0,
+   "with_debits": 10
+  }
  },
  {
   "dataset": "datasets/A20_B100_Cfifo",
   "family": "datasets",
-  "seconds": 38.51,
+  "seconds": 22.92,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -253,8 +277,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -305,12 +330,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 7
+  }
  },
  {
   "dataset": "datasets/A20_B100_Cmax",
   "family": "datasets",
-  "seconds": 59.26,
+  "seconds": 34.67,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -356,8 +392,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -408,12 +445,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 9
+  }
  },
  {
   "dataset": "datasets/A20_B100_Crandom",
   "family": "datasets",
-  "seconds": 61.17,
+  "seconds": 40.44,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -459,8 +507,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -511,12 +560,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 7
+  }
  },
  {
   "dataset": "datasets/A20_B100_Crandom0",
   "family": "datasets",
-  "seconds": 62.38,
+  "seconds": 42.91,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -562,8 +622,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 15,
@@ -613,12 +674,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 7
+  }
  },
  {
   "dataset": "datasets/A20_B50_Cmax",
   "family": "datasets",
-  "seconds": 23.84,
+  "seconds": 22.81,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -664,8 +736,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -716,12 +789,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 7
+  }
  },
  {
   "dataset": "datasets/A20_B75_Cmax",
   "family": "datasets",
-  "seconds": 66.87,
+  "seconds": 44.77,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -767,8 +851,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 15,
@@ -819,12 +904,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 7
+  }
  },
  {
   "dataset": "datasets/A20_Bnone_Cmax",
   "family": "datasets",
-  "seconds": 86.43,
+  "seconds": 48.61,
   "passed": false,
   "violations_by_gate": {
    "G3": 9,
@@ -837,9 +933,9 @@
    "G3   bank[10]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[12]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[14]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
-   "G3   bank[15]   the truth is absent from a candidate set of 10 (enumeration incomplete)",
+   "G3   bank[15]   the truth is absent from a candidate set of 8 (enumeration incomplete)",
    "G3   bank[16]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
-   "G3   bank[17]   the truth is absent from a candidate set of 191 (enumeration incomplete)",
+   "G3   bank[17]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G8   bank[1]    Ambiguous(178) on an instance with exactly one closing subset -- unattested, but exactly one subset closes and it closes nothing else in the window",
    "G8   bank[5]    Unresolved(enumeration_truncated) on a determined instance -- unattested, but exactly one subset closes and it closes nothing else in the window",
    "G8   bank[7]    Unresolved(enumeration_truncated) on a determined instance -- unattested, but exactly one subset closes and it closes nothing else in the window"
@@ -886,8 +982,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -940,12 +1037,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Reconstructed": {
+     "N:1": 1
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 1,
+   "many_to_many": 0,
+   "with_debits": 0
+  }
  },
  {
   "dataset": "datasets/A30_B100_Cmax",
   "family": "datasets",
-  "seconds": 40.73,
+  "seconds": 33.13,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -991,8 +1099,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 0,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 25,
@@ -1043,12 +1152,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 11
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 11,
+   "many_to_many": 0,
+   "with_debits": 9
+  }
  },
  {
   "dataset": "datasets/A40_B100_Cfifo",
   "family": "datasets",
-  "seconds": 52.58,
+  "seconds": 25.84,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1094,8 +1214,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 32,
@@ -1146,12 +1267,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 9
+  }
  },
  {
   "dataset": "datasets/A40_B100_Cmax",
   "family": "datasets",
-  "seconds": 64.23,
+  "seconds": 34.72,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1197,8 +1329,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 34,
@@ -1249,12 +1382,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 9
+  }
  },
  {
   "dataset": "datasets/A40_B100_Crandom",
   "family": "datasets",
-  "seconds": 40.22,
+  "seconds": 27.94,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1300,8 +1444,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 0,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 34,
@@ -1352,12 +1497,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 11
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 11,
+   "many_to_many": 0,
+   "with_debits": 10
+  }
  },
  {
   "dataset": "datasets/A40_B50_Cmax",
   "family": "datasets",
-  "seconds": 38.73,
+  "seconds": 30.19,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1403,8 +1559,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 32,
@@ -1455,12 +1612,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 10
+  }
  },
  {
   "dataset": "datasets/A40_Bnone_Cmax",
   "family": "datasets",
-  "seconds": 79.21,
+  "seconds": 57.09,
   "passed": false,
   "violations_by_gate": {
    "G3": 11,
@@ -1522,8 +1690,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 32,
@@ -1573,12 +1742,19 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {},
+   "one_to_one": 0,
+   "many_to_one": 0,
+   "many_to_many": 0,
+   "with_debits": 0
+  }
  },
  {
   "dataset": "datasets/A60_B100_Cmax",
   "family": "datasets",
-  "seconds": 52.7,
+  "seconds": 32.69,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1624,8 +1800,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 51,
@@ -1676,12 +1853,23 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 10
+  }
  },
  {
   "dataset": "datasets_v2/A10_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 32.92,
+  "seconds": 23.4,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1727,8 +1915,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 9,
@@ -1779,12 +1968,23 @@
   },
   "false_settlement_id_planted": 1,
   "false_settlement_id_caught": 1,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 9
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 9,
+   "many_to_many": 0,
+   "with_debits": 5
+  }
  },
  {
   "dataset": "datasets_v2/A20_B0_Cmax",
   "family": "datasets_v2",
-  "seconds": 39.51,
+  "seconds": 22.54,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1830,8 +2030,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -1881,12 +2082,24 @@
   },
   "false_settlement_id_planted": 0,
   "false_settlement_id_caught": 0,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "1:1": 1,
+     "N:1": 10
+    }
+   },
+   "one_to_one": 1,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 7
+  }
  },
  {
   "dataset": "datasets_v2/A20_B100_Cfifo",
   "family": "datasets_v2",
-  "seconds": 16.44,
+  "seconds": 9.24,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1932,8 +2145,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -1984,12 +2198,23 @@
   },
   "false_settlement_id_planted": 1,
   "false_settlement_id_caught": 1,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 9
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 9,
+   "many_to_many": 0,
+   "with_debits": 8
+  }
  },
  {
   "dataset": "datasets_v2/A20_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 25.98,
+  "seconds": 17.31,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2035,8 +2260,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 13,
@@ -2087,12 +2313,23 @@
   },
   "false_settlement_id_planted": 1,
   "false_settlement_id_caught": 1,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 9
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 9,
+   "many_to_many": 0,
+   "with_debits": 7
+  }
  },
  {
   "dataset": "datasets_v2/A20_B100_Crandom",
   "family": "datasets_v2",
-  "seconds": 50.1,
+  "seconds": 30.51,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2138,8 +2375,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 0,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -2190,12 +2428,23 @@
   },
   "false_settlement_id_planted": 1,
   "false_settlement_id_caught": 1,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 9
+  }
  },
  {
   "dataset": "datasets_v2/A20_B100_Crandom0",
   "family": "datasets_v2",
-  "seconds": 61.44,
+  "seconds": 31.24,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2241,8 +2490,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 13,
@@ -2293,12 +2543,24 @@
   },
   "false_settlement_id_planted": 1,
   "false_settlement_id_caught": 1,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "1:1": 1,
+     "N:1": 8
+    }
+   },
+   "one_to_one": 1,
+   "many_to_one": 8,
+   "many_to_many": 0,
+   "with_debits": 8
+  }
  },
  {
   "dataset": "datasets_v2/A20_B50_Cmax",
   "family": "datasets_v2",
-  "seconds": 23.91,
+  "seconds": 18.58,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2344,8 +2606,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 0,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -2395,12 +2658,23 @@
   },
   "false_settlement_id_planted": 1,
   "false_settlement_id_caught": 1,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 7
+  }
  },
  {
   "dataset": "datasets_v2/A20_B75_Cmax",
   "family": "datasets_v2",
-  "seconds": 33.51,
+  "seconds": 17.9,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2446,8 +2720,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 17,
@@ -2498,12 +2773,23 @@
   },
   "false_settlement_id_planted": 1,
   "false_settlement_id_caught": 1,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 9
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 9,
+   "many_to_many": 0,
+   "with_debits": 6
+  }
  },
  {
   "dataset": "datasets_v2/A30_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 60.39,
+  "seconds": 36.36,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2549,8 +2835,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 25,
@@ -2601,12 +2888,24 @@
   },
   "false_settlement_id_planted": 1,
   "false_settlement_id_caught": 1,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "1:1": 1,
+     "N:1": 8
+    }
+   },
+   "one_to_one": 1,
+   "many_to_one": 8,
+   "many_to_many": 0,
+   "with_debits": 7
+  }
  },
  {
   "dataset": "datasets_v2/A40_B100_Cfifo",
   "family": "datasets_v2",
-  "seconds": 46.9,
+  "seconds": 28.82,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2625,19 +2924,19 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 2,
-    "unresolved": 6,
+    "ambiguous": 1,
+    "unresolved": 7,
     "proven_unmatched": 30,
     "open_breaks": 127,
-    "mean_candidate_set_size": 1.3333333333333333,
-    "max_candidate_set_size": 4,
+    "mean_candidate_set_size": 1.0909090909090908,
+    "max_candidate_set_size": 2,
     "incomplete_enumerations": 0,
     "verified_non_decisive": 10
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
     "other": 1,
-    "enumeration_truncated": 2
+    "enumeration_truncated": 3
    },
    "reconstructed_accuracy": {
     "correct": 0,
@@ -2654,8 +2953,9 @@
     "planted_but_missed": [
      "setl_igkKlAiC79ERI6"
     ],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 30,
@@ -2706,12 +3006,23 @@
   },
   "false_settlement_id_planted": 1,
   "false_settlement_id_caught": 1,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 9
+  }
  },
  {
   "dataset": "datasets_v2/A40_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 42.52,
+  "seconds": 30.07,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2757,8 +3068,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 32,
@@ -2809,12 +3121,23 @@
   },
   "false_settlement_id_planted": 1,
   "false_settlement_id_caught": 1,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 9
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 9,
+   "many_to_many": 0,
+   "with_debits": 9
+  }
  },
  {
   "dataset": "datasets_v2/A40_B100_Crandom",
   "family": "datasets_v2",
-  "seconds": 82.25,
+  "seconds": 48.19,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2862,8 +3185,9 @@
     "planted_but_missed": [
      "setl_97AhUNQc71f0nz"
     ],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 32,
@@ -2914,12 +3238,23 @@
   },
   "false_settlement_id_planted": 1,
   "false_settlement_id_caught": 1,
-  "bank_lines": 19
+  "bank_lines": 19,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 9
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 9,
+   "many_to_many": 0,
+   "with_debits": 9
+  }
  },
  {
   "dataset": "datasets_v2/A40_B50_Cmax",
   "family": "datasets_v2",
-  "seconds": 45.17,
+  "seconds": 22.75,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2965,8 +3300,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 1,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 34,
@@ -3017,12 +3353,23 @@
   },
   "false_settlement_id_planted": 1,
   "false_settlement_id_caught": 1,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 9
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 9,
+   "many_to_many": 0,
+   "with_debits": 9
+  }
  },
  {
   "dataset": "datasets_v2/A60_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 42.56,
+  "seconds": 29.67,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -3068,8 +3415,9 @@
     "genuinely_false": 0,
     "genuinely_false_detail": [],
     "planted_but_missed": [],
+    "planted_but_missed_bank_side": [],
     "false_findings": 0,
-    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count"
+    "note": "FOUR-WAY. `false_findings` is retained for continuity and is MISLEADING on its own: it is reported minus planted, and a reversal corroborated by a reversal_debit line in the answer key is a true finding of a kind the corpus did not plant. `genuinely_false` is the false-alarm count. TWO FRAMES: `planted_but_missed` is settlement ids (PSP attested wrongly); `planted_but_missed_bank_side` is bank-line indices (the bank posted wrongly). DECISIONS.md 56"
    },
    "proven_unmatched": {
     "rows": 49,
@@ -3120,6 +3468,17 @@
   },
   "false_settlement_id_planted": 1,
   "false_settlement_id_caught": 1,
-  "bank_lines": 20
+  "bank_lines": 20,
+  "cardinality": {
+   "by_outcome": {
+    "Verified": {
+     "N:1": 10
+    }
+   },
+   "one_to_one": 0,
+   "many_to_one": 10,
+   "many_to_many": 0,
+   "with_debits": 9
+  }
  }
 ]

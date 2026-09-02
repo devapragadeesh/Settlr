@@ -127,3 +127,88 @@ figure on `CLAIMS.md` reproduced byte-for-byte; only a runtime measurement
 (expected to vary) did not. The repository's own "generated, cannot drift"
 claim holds under a fresh, cold-clone test, not just inside the long-lived
 development checkout.
+
+---
+
+## 9. Addendum: what §68 changes for an operator — 2026-09-02
+
+The walkthrough above was run on 2026-08-31, against a resolver whose CP-SAT
+closure enumerator budgeted in **wall-clock seconds**. `DECISIONS.md` §68
+changed that to a deterministic budget. This addendum records the operational
+consequences, because two of them contradict things §6 above implies and one
+of them is a genuine capability the operator did not previously have.
+
+### 9.1 "Byte-identical across runs" now means what it says
+
+§6 above reports accuracy/gate figures reproducing byte-for-byte in a clean
+clone. That was true as measured, and it was **luckier than it looked**. Under
+a wall-clock budget the enumerator's truncation point moved with machine load,
+so reproducibility was a property of the machine being quiet, not of the
+program. An operator re-running `run_all.py` on a busy box could have got
+different `mean_candidate_set_size` and `rival_closure_count` figures and had
+no way to tell whether the difference meant anything.
+
+`investigation/resolver_nondeterminism/` carries the measurement: three
+`resolve()` calls on the identical in-memory dataset disagreed, and a
+deliberately contended run disagreed with an idle one on a second dataset.
+After §68 the budget is spent in CP-SAT's own work units, so the same input
+produces the same output whatever else the machine is doing.
+
+**Operationally:** a differing number between two runs is now a signal worth
+investigating rather than noise to be re-run away. Before §68 the correct
+operator response to a discrepancy was "run it again on a quiet machine";
+after §68 it is "something actually changed".
+
+### 9.2 `deterministic_seconds` — auditable budget consumption per enumeration
+
+`Closures` gained a `deterministic_seconds` field alongside the existing
+`wall_seconds`. The distinction matters and is not cosmetic:
+
+| field | what it measures | what it may be used for |
+|---|---|---|
+| `wall_seconds` | real elapsed time, `time.perf_counter()`, measured OUTSIDE the solver | capacity planning, SLA timing, "is this job slow?" |
+| `deterministic_seconds` | work the solver itself consumed, same units as the budget | "did the budget bind on this line, and how close was it?" |
+
+Before §68 an operator asking *"is my time budget too tight?"* had only wall
+time, which answers a different question — a line taking 9.8s of a 10s budget
+on a loaded machine might have needed far less actual work. Now the budget and
+its consumption are in the same units and directly comparable, so the question
+is answerable from the output of a single run instead of by re-running on an
+idle box and hoping.
+
+**The rule that comes with it:** `wall_seconds` may inform capacity decisions
+and **may never derive a status or a claim**. Comparing an externally measured
+clock against the solver's internal state is precisely the defect class
+`DECISIONS.md` §39/§44/§49/§58 documents four separate instances of, and §68
+closed the last one by making the two operands different units — a frame
+mixture is now a type error rather than a subtle one.
+
+### 9.3 A status the operator was previously shown, which was wrong
+
+Under the old predicate, an enumeration that stopped on CP-SAT's internal
+budget having already found solutions returned `FEASIBLE` — not `UNKNOWN` —
+and the externally measured clock usually came in just under the budget. Both
+conditions failing, a truncated enumeration was reported with a clean
+`feasible` status.
+
+Measured across all 35 datasets before and after: **`feasible` 28 → 0.** Every
+one was a truncation reported as if it were not. This never reached
+`complete` (which is `status == OPTIMAL` and nothing weaker), so no line was
+ever wrongly promoted to a confident answer — but the status string an
+operator would have read while triaging was wrong on 28 enumerations, and it
+reached the `detail` text of those outcomes.
+
+Counted honestly, true truncations **fell from 97 to 81** under the fix,
+`optimal` rose from 205 to 209 with no dataset losing any, and the full sweep
+ran 1410.8s → 1099.3s. The deterministic budget buys more completed search per
+enumeration, not less.
+
+### 9.4 What this does NOT change
+
+Run times in §6 remain the right order of magnitude but were measured
+pre-§68 and pre-`datasets_gst`/`datasets_bankside`; treat them as a data point,
+not a target. No accuracy or gate figure in §6 is invalidated by §68: the
+before/after pair shows **zero outcome-class changes and zero composition
+changes** across all 35 datasets. What moved is `rival_closure_count`,
+`partial_candidates`, `detail`, and the `rival_count_is_lower_bound` flag —
+descriptive fields of lines that were already decided.

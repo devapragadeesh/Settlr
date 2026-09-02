@@ -68,11 +68,56 @@ datasets_v2/A20_B100_Crandom0        9   8   3   0    0    8     1.00      1  5/
 datasets_v2/A20_B50_Cmax            10   7   2   0    0    8     1.00      1  4/4   0/7 
 datasets_v2/A20_B75_Cmax             9   8   3   0    0    8     1.00      1  5/6   0/5 
 datasets_v2/A30_B100_Cmax            9   7   3   0    0    8     1.00      1  7/7   0/2 
-datasets_v2/A40_B100_Cfifo          10  10   2   0    2    6     1.33      4  4/5   0/2 
+datasets_v2/A40_B100_Cfifo          10  10   2   0    1    7     1.09      2  4/5   0/2 
 datasets_v2/A40_B100_Cmax            9   9   3   0    0    8     1.00      1  5/6   0/1 
 datasets_v2/A40_B100_Crandom         9   9   2   0    0    8     1.00      1  2/3   0/1 
 datasets_v2/A40_B50_Cmax             9   8   3   0    0    8     1.00      1  0/0   0/4 
 datasets_v2/A60_B100_Cmax           10  10   2   0    0    8     1.00      1  4/4   0/0 
+
+## Composition cardinality — how much of this was actually hard
+
+Every figure here is a re-cut of outcomes already scored above; no new measurement is introduced. It exists because `Verified 14, mean k 3.4` does not tell a reconciliation practitioner the one thing they ask first: **how much of this was one-to-one, and how much needed netting?** A 1:1 match is what a join on a shared key already solves. Reporting the split is what prevents a strong headline from being read as a claim about the hard cases.
+
+`N:N` is **0 by construction, not by measurement**: `ResolverOutput` carries exactly one outcome per bank line, so no answer can span two credits. That is a design boundary of this contract and is stated rather than left as an unexplained zero.
+
+dataset                              1:1   N:1   N:N  w/debits   by outcome class
+----------------------------------------------------------------------------------------------------
+datasets/A10_B100_Cmax                 0    10     0         7   Verified {'N:1': 10}
+datasets/A20_B0_Cmax                   0    11     0        10   Verified {'N:1': 11}
+datasets/A20_B100_Cfifo                0    10     0         7   Verified {'N:1': 10}
+datasets/A20_B100_Cmax                 0    10     0         9   Verified {'N:1': 10}
+datasets/A20_B100_Crandom              0    10     0         7   Verified {'N:1': 10}
+datasets/A20_B100_Crandom0             0    10     0         7   Verified {'N:1': 10}
+datasets/A20_B50_Cmax                  0    10     0         7   Verified {'N:1': 10}
+datasets/A20_B75_Cmax                  0    10     0         7   Verified {'N:1': 10}
+datasets/A20_Bnone_Cmax                0     1     0         0   Reconstructed {'N:1': 1}
+datasets/A30_B100_Cmax                 0    11     0         9   Verified {'N:1': 11}
+datasets/A40_B100_Cfifo                0    10     0         9   Verified {'N:1': 10}
+datasets/A40_B100_Cmax                 0    10     0         9   Verified {'N:1': 10}
+datasets/A40_B100_Crandom              0    11     0        10   Verified {'N:1': 11}
+datasets/A40_B50_Cmax                  0    10     0        10   Verified {'N:1': 10}
+datasets/A40_Bnone_Cmax                0     0     0         0   
+datasets/A60_B100_Cmax                 0    10     0        10   Verified {'N:1': 10}
+datasets_v2/A10_B100_Cmax              0     9     0         5   Verified {'N:1': 9}
+datasets_v2/A20_B0_Cmax                1    10     0         7   Verified {'1:1': 1, 'N:1': 10}
+datasets_v2/A20_B100_Cfifo             0     9     0         8   Verified {'N:1': 9}
+datasets_v2/A20_B100_Cmax              0     9     0         7   Verified {'N:1': 9}
+datasets_v2/A20_B100_Crandom           0    10     0         9   Verified {'N:1': 10}
+datasets_v2/A20_B100_Crandom0          1     8     0         8   Verified {'1:1': 1, 'N:1': 8}
+datasets_v2/A20_B50_Cmax               0    10     0         7   Verified {'N:1': 10}
+datasets_v2/A20_B75_Cmax               0     9     0         6   Verified {'N:1': 9}
+datasets_v2/A30_B100_Cmax              1     8     0         7   Verified {'1:1': 1, 'N:1': 8}
+datasets_v2/A40_B100_Cfifo             0    10     0         9   Verified {'N:1': 10}
+datasets_v2/A40_B100_Cmax              0     9     0         9   Verified {'N:1': 9}
+datasets_v2/A40_B100_Crandom           0     9     0         9   Verified {'N:1': 9}
+datasets_v2/A40_B50_Cmax               0     9     0         9   Verified {'N:1': 9}
+datasets_v2/A60_B100_Cmax              0    10     0         9   Verified {'N:1': 10}
+----------------------------------------------------------------------------------------------------
+TOTAL                                  3   273     0       227
+
+`w/debits` counts answered lines whose composition carries at least one DEBIT row — a refund or an adjustment netted against credits inside the same payout. Those are the lines where a credits-only sum would have produced the wrong figure, so it is the narrowest honest measure of what netting bought.
+
+The split is reported per outcome class rather than pooled. A 1:1 `Verified` (two independent parties agree on the composition) and a 1:1 `Reconstructed` (this resolver's own arithmetic, with no second party attesting anything) are different evidential objects, and averaging them would undo the distinction the contract's tiers exist to draw.
 
 ## Row disposition (contract 4.7)
 
