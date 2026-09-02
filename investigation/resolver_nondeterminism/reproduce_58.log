@@ -1,0 +1,36 @@
+run 0: 59 outcomes, 54 enumerations, 2 truncating [(34, 'time_budget_exceeded'), (33, 'time_budget_exceeded')]
+run 1: 59 outcomes, 54 enumerations, 2 truncating [(34, 'time_budget_exceeded'), (33, 'time_budget_exceeded')]
+run 2: 59 outcomes, 54 enumerations, 2 truncating [(34, 'time_budget_exceeded'), (33, 'time_budget_exceeded')]
+
+=== outcome equality ===
+run0 == run1: False
+run0 == run2: False
+run1 == run2: False
+
+=== per-line field-level diffs ===
+
+line 56: type=Verified differing fields=['rival_closure_count']
+    run0.rival_closure_count = 167
+    run1.rival_closure_count = 166
+    run2.rival_closure_count = 166
+
+line 58: type=Verified differing fields=['rival_closure_count']
+    run0.rival_closure_count = 133
+    run1.rival_closure_count = 130
+    run2.rival_closure_count = 132
+
+=== enumeration log equality (call order) ===
+enum log run0 == run1: False
+    first differing enumeration #0:
+      run0: {'pool_rows': 2, 'target': 12321972, 'status': 'optimal', 'complete': True, 'count': 1, 'wall': 0.002}
+      run1: {'pool_rows': 2, 'target': 12321972, 'status': 'optimal', 'complete': True, 'count': 1, 'wall': 0.001}
+enum log run0 == run2: False
+    first differing enumeration #0:
+      run0: {'pool_rows': 2, 'target': 12321972, 'status': 'optimal', 'complete': True, 'count': 1, 'wall': 0.002}
+      run2: {'pool_rows': 2, 'target': 12321972, 'status': 'optimal', 'complete': True, 'count': 1, 'wall': 0.0}
+enum log run1 == run2: False
+    first differing enumeration #0:
+      run1: {'pool_rows': 2, 'target': 12321972, 'status': 'optimal', 'complete': True, 'count': 1, 'wall': 0.001}
+      run2: {'pool_rows': 2, 'target': 12321972, 'status': 'optimal', 'complete': True, 'count': 1, 'wall': 0.0}
+
+wrote /private/tmp/claude-502/-Users-deva-razorpay/95be73d8-6474-4b1c-a249-7a3818a42db6/scratchpad/reproduce_58.json

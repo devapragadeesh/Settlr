@@ -3524,3 +3524,116 @@ repeated the same false claim), the new `corpus/render_gst_holdout.py`,
 (re-rendered from saved JSON, not re-scored), and this entry. **No file under
 `corpus/generator/`, `matching/`, `resolver/`, `resolver_contract/` or
 `corpus/oracle.py` is touched, and no dataset is regenerated.**
+
+---
+
+## 67. The §58 prediction, committed before the fix — and a correction to §58's own description of the defect — 2026-09-02
+
+**What this entry is.** §58 found that `resolver/enumerate_closures.py`
+budgets in wall-clock seconds, documented it, and deferred the fix on the
+grounds that it "needs its own dated decision, its own committed-before-the-fix
+prediction, and its own before/after pair, exactly as §49 and §50 each got."
+This entry and `investigation/resolver_nondeterminism/PREDICTION.md` are that
+prediction. **No solver parameter changes in this commit.** The ordering —
+prediction, then fix — is the evidence, and it is checkable in `git log`
+rather than asserted here.
+
+**§58's description of the defect is wrong, and the correction makes the
+defect SMALLER.** §58 records the reproduction as "bank_index=56, both
+`Verified`, different composition". Re-running that experiment with every
+field of every outcome compared — `investigation/resolver_nondeterminism/
+reproduce_58.py`, three `resolve()` calls on the identical in-memory
+`Dataset` — **no composition changed on any of the 59 lines.** The only field
+that moves is `rival_closure_count`, on exactly the two lines whose
+enumeration hit the clock:
+
+```
+line 56: Verified  rival_closure_count  167 / 166 / 166
+line 58: Verified  rival_closure_count  133 / 130 / 132
+```
+
+That is what the code permits: `Verified.composition` comes from `claimed` and
+never from `closures`, the enumeration in `_verify` feeds only
+`rival_closure_count` and `rival_count_is_lower_bound`, and `Reconstructed`
+does not consume — so a truncation cannot propagate through `state.consumed`
+into a later tier-B `claimed` set. **The nondeterministic quantity is one the
+output already self-declares as a lower bound.** Recorded because a fix whose
+writeup overstates what it repaired is the failure mode this file exists to
+prevent, and because the correction is *unflattering to the fix*.
+
+**The blast radius is measured, not estimated.** Instrumenting every
+`closing_subsets` call across all 35 datasets, uncontended:
+
+```
+_tier_c  time_budget_exceeded = 50
+_verify  time_budget_exceeded = 26
+datasets with ANY clock stop  = 30 / 35
+```
+
+`cap_reached` dominates (5–14 per dataset) and is **not** at risk:
+`num_workers = 1` with a fixed seed makes CP-SAT's solution order
+reproducible, so the first `cap` solutions are identical every run. Only the
+76 clock stops are in play. Two sweeps are preserved — one contended, one
+clean — on §49's precedent of keeping both draws.
+
+**Two experiments were run before the fix, and one of them falsified the
+prediction I had made for it.** Uncontended, three runs each: the two
+zero-clock-stop datasets were bit-identical (confirming the `cap_reached`
+half), and so was `datasets/A20_Bnone_Cmax` — the *worst* tier-C exposure in
+the corpus, which I had predicted would differ. Re-run under six concurrent
+resolver processes, the same dataset differs:
+
+```
+IDENTICAL ACROSS 3 CONTENDED RUNS: False
+  line 11 Unresolved  fields=['detail', 'partial_candidates']
+  line 15 Unresolved  fields=['detail', 'partial_candidates']
+```
+
+The uncontended result was not evidence of stability; it was evidence that an
+idle machine's clock does not vary much. **Both are recorded, including the
+miss.**
+
+**The load-bearing finding: the outcome CLASS never flipped**, in any of the
+twelve runs across three experiments. What moves is always a descriptive field
+of an already-decided line. The mechanism explains why — once the clock stops,
+`complete=False` and `_tier_c` returns `Unresolved(ENUMERATION_TRUNCATED)`
+unconditionally, so a flip needs a pool that *completes* in one run and not
+another, a narrow band; whereas the subset count varies continuously with
+available CPU. **`complete` is the stable bit; the count is the unstable one;
+only `complete` reaches an outcome class.** This is observed and argued, not
+proven, and the prediction flags it as the claim most likely to fail.
+
+**The held-out GST dataset has zero clock stops** — all 54 enumerations return
+`optimal`. §58's exposure does not reach it, so `GST_HOLDOUT_RESULTS.md` needs
+no re-scoring and §64's single-run claim is not disturbed. This is stated as a
+prediction to be *verified* by diffing unfixed against fixed on that dataset,
+not as a licence to skip the check.
+
+**The budget.** `max_deterministic_time = 10.0` replacing
+`max_time_in_seconds = 10.0`, on §49's reasoning: OR-Tools publishes no
+conversion between deterministic units and wall-clock seconds, by design, so
+keeping the numeral preserves the order of magnitude without claiming
+equivalent search. If the post-fix count of clock stops moves materially in
+either direction from 76, the value is revisited rather than accepted — that
+would mean the change quietly re-tuned search depth while claiming only to
+stabilise it.
+
+**Rejected: fold the prediction into the fix commit.** §49's `PREDICTION.md`
+was committed *with* its fix, and that is the weaker precedent — the ordering
+then rests on the file's prose rather than on `git log`. §58 explicitly asked
+for "committed-before-the-fix". Two commits cost nothing and make the claim
+checkable by a reader who trusts no prose at all.
+
+**Rejected: raise `DEFAULT_TIME_BUDGET` instead.** §58 already measured this:
+at 60.0s one pool still fails to prove completeness and another merely
+converts to `cap_reached`. It trades a five-fold slowdown for the same defect.
+
+**Rejected: predict only "output becomes reproducible" and skip the blast
+radius.** That is unfalsifiable in the direction that matters. A prediction
+that cannot be wrong about *what moves* provides no check on whether the fix
+did something other than advertised.
+
+**Scope.** `investigation/resolver_nondeterminism/` (the prediction, four
+measurement scripts, and their outputs) and this entry. **No file under
+`resolver/`, `matching/`, `corpus/`, `engine/` or `resolver_contract/` is
+touched, and no published figure changes.**
