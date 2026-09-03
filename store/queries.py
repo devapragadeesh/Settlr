@@ -92,6 +92,24 @@ def open_breaks(conn: sqlite3.Connection, run_id: str) -> dict[str, list[dict]]:
     return buckets
 
 
+def open_break_detail(conn: sqlite3.Connection, run_id: str, row_id: str) -> dict | None:
+    """Scalar fields for one open break, without deserializing the full
+    `outcome_json` -- everything `agents/break_investigator.py` needs is
+    already a column."""
+    row = conn.execute(
+        "SELECT row_id, reason, age_days, first_seen, caused_by, itc_risk "
+        "FROM row_outcomes WHERE run_id = ? AND row_id = ? AND disposition = 'OpenBreak'",
+        (run_id, row_id)).fetchone()
+    return dict(row) if row else None
+
+
+def valid_break_reasons() -> tuple[str, ...]:
+    """Every `resolver_contract.types.BreakReason` value, as plain strings --
+    the one place `agents/` may validate a proposed reclassification without
+    importing the enum itself."""
+    return tuple(sorted(r.value for r in BreakReason))
+
+
 def owner_for_reason(reason: str) -> tuple[str, str]:
     """`(owner, close_condition)` for a `row_outcomes.reason` string, per
     `resolver_contract.types.BREAK_ROUTING` -- the one place `agents/` may

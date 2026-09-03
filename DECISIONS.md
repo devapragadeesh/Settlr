@@ -6166,3 +6166,85 @@ tables), `store/db.py` (`CURRENT_VERSION`), `store/queries.py`
 `resolver/`, `resolver_contract/`, `matching/`, `engine/`, or any frozen
 dataset path touched. Full existing suite re-run and green (39 new tests,
 zero regressions) before this entry was written.
+
+## 95. `agents/`: three write-capable agents behind the approval gate -- Break Investigator, Ambiguous Batch Arbiter, ITC Exposure Drafter -- 2026-09-04
+
+**Phase 2 of the plan in Sec.94.** All three write only to
+`agent_approval_requests`/`human_resolutions` (landed in Sec.94, unused until
+now) -- never to `line_outcomes`/`row_outcomes`, which stay exactly as
+`resolver.resolve()` produced them, forever. Every write starts `pending`;
+`store/approvals.py::resolve_approval_request` (already existing) is the only
+way a request becomes `approved`/`rejected`, and it refuses to fire twice on
+the same request.
+
+**Break Investigator, rescoped again on inspection.** The original proposal's
+steps 1-3 (query the PSP API, scan the bank statement, look up the ERP order)
+assume live external connectors this repo does not have -- building them now
+would mean fabricating a response or depending on credentials this
+environment does not hold. What IS real: reading every `OpenBreak(...)`
+construction site in `resolver/breaks.py` shows `warrant` is never set for
+any reason -- only `ProvenUnmatched` gets one -- so there is no evidence
+field to summarize on an `unexplained` break. What genuinely is available:
+`age_days`, `first_seen`, `itc_risk`, and `row_history` across every run of
+the dataset, which can show a row classified differently under a different
+`(cap, time_budget)` -- a real signal nothing else in this repo surfaces.
+`agents/break_investigator.py::gather_case_facts` reads exactly these and no
+more; Claude drafts prose from them (`draft_case_file`) but never chooses
+`new_reason` -- that string is always supplied by the caller and validated
+against `store.queries.valid_break_reasons()` (new) before
+`propose_reclassification` can create a pending request. This is the one
+real path by which `mapping_issue`/`missing_source`/`true_error` -- dead code
+in the live classifier per Sec.94 -- could ever be populated: via a human's
+approved judgment call, never by the agent inventing one from data that does
+not distinguish them.
+
+**Ambiguous Batch Arbiter reads only what `Ambiguous` actually exposes.**
+`candidate_set.candidates`, `.rank_one`, `.common_rows` -- never
+`decomposition`/`composition`/`best`/`chosen`/`answer`, which raise
+`UnrepresentableClaim` by construction (`resolver_contract/types.py:785-793`).
+`agents/ambiguous_arbiter.py::record_resolution` validates the human's chosen
+row-id set against the resolver's REAL candidate set before writing anything
+-- `test_recording_a_fabricated_candidate_is_rejected` proves a made-up row
+id cannot be recorded as a resolution. The write lands in
+`human_resolutions`, and `test_recording_a_real_candidate_writes_only_to_human_resolutions`
+proves the `Ambiguous` line's own `outcome_json` is byte-identical before and
+after: a human breaking a tie the resolver correctly refused to break does
+not retroactively become a resolver-corroborated `Verified`.
+
+**ITC Exposure Drafter, the best-grounded of the three.** `itc_risk`/
+`itc_risk_grounds` are real `OpenBreak` fields, populated by
+`resolver/breaks.py::_itc_risk_months`'s actual `gstr2b.csv` read. One
+correction found only while writing the test fixture: `itc_risk` is a
+SUBSET of a break's `row_ids` (`resolver_contract/types.py:928-930`), and
+every row sharing a multi-row break carries the identical scalar `itc_risk`
+column value -- so a naive `WHERE itc_risk IS NOT NULL` query can return a
+row that is on the break but not itself in the flagged subset.
+`gather_grounds` checks `row_id not in outcome.itc_risk` explicitly, and the
+test fixture was fixed to filter the same way, not loosened to make the test
+pass. Every draft states the same architectural fact this session's
+dashboard GST panel already states -- GST evidence attests to row existence
+only and cannot license a composition -- so a reader cannot mistake an
+ITC-exposure draft for a claim about which bank credit the row belongs to.
+Statute citations (`Sec 16(2)(aa)`, `Rule 48(5)`, `Rule 37A`, all CGST) are
+copied from the comments already in `resolver/breaks.py:149-151`, not
+invented for this agent. Always requires approval -- no auto-approve path
+exists for this action at all.
+
+**Two new `store.queries` helpers**, both added so `agents/` keeps zero
+imports of `resolver_contract` (enforced by `tests/test_agent_isolation.py`):
+`open_break_detail` (scalar columns for one break, no `outcome_json`
+deserialization needed for Break Investigator) and `valid_break_reasons`
+(the live `BreakReason` values as plain strings, so a proposed
+reclassification can be validated without importing the enum).
+
+**Verification.** `pytest agents/tests store/tests tests/test_agent_isolation.py -q`:
+75 passed. Full existing suite re-run after this entry
+(`pytest tests engine/tests corpus/tests resolver/tests ingest/tests
+transport/tests service/tests store/tests agents/tests -q`): green, zero
+regressions.
+
+**Scope.** New: `agents/break_investigator.py`, `agents/ambiguous_arbiter.py`,
+`agents/itc_drafter.py`, and their tests. Modified: `store/queries.py`
+(`open_break_detail`, `valid_break_reasons` -- additive functions only).
+Nothing under `resolver/`, `resolver_contract/`, `matching/`, `engine/`, or
+any frozen dataset path touched.
