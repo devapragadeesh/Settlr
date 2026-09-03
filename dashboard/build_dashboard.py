@@ -57,7 +57,7 @@ from store.queries import (get_run, line_outcome, open_breaks,  # noqa: E402
 FLAGSHIP_DIR = ROOT / "corpus" / "datasets" / "A20_B50_Cmax"
 TEMPLATE_PATH = ROOT / "dashboard" / "web" / "template.html"
 APP_JS_PATH = ROOT / "dashboard" / "web" / "app.js"
-LOGO_PATH = ROOT / "dashboard" / "web" / "logo_mark.png"
+LOGO_PATH = ROOT / "dashboard" / "web" / "logo_lockup.png"
 OUT_PATH = ROOT / "dashboard" / "index.html"
 DASHBOARD_DATA_PATH = ROOT / "dashboard" / "data.json"
 ORACLE_RESULTS_PATH = ROOT / "corpus" / "oracle_results.json"

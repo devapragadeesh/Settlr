@@ -61,7 +61,6 @@
       el("div", { class: "meta-chip" }, "Flagship entity ", el("b", {}, D.meta.flagship_dataset)),
       el("div", { class: "meta-chip" }, D.meta.run_count + " persisted runs · code ", el("b", {}, D.meta.code_digest.slice(0, 8)))
     );
-    $("#footRunId").textContent = runShort;
   }
 
   /* ============================== HERO DONUT ============================== */
@@ -639,8 +638,11 @@
   function setupCommandBar() {
     const input = $("#cmdInput");
     const hint = $("#cmdHint");
-    input.addEventListener("focus", () => hint.classList.add("show"));
-    input.addEventListener("blur", () => setTimeout(() => hint.classList.remove("show"), 150));
+    const cmdbar = $(".cmdbar");
+    const openHint = () => hint.classList.add("show");
+    const closeHint = () => hint.classList.remove("show");
+
+    input.addEventListener("focus", openHint);
     input.addEventListener("input", () => { cmdFilter = input.value; applyFilters(); });
     $$(".chip", hint).forEach((chip) => chip.addEventListener("mousedown", (e) => {
       e.preventDefault();
@@ -648,9 +650,88 @@
       else { input.value = chip.dataset.q; cmdFilter = chip.dataset.q; }
       applyFilters();
     }));
+    // Belt-and-braces: close on any click outside the command bar (covers nav
+    // link clicks, section scrolls, and any case a plain blur doesn't fire in
+    // time), not just on input blur.
+    document.addEventListener("click", (e) => {
+      if (!cmdbar.contains(e.target)) closeHint();
+    });
+    $$(".navlinks a").forEach((link) => link.addEventListener("click", closeHint));
     document.addEventListener("keydown", (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); input.focus(); }
-      if (e.key === "Escape") closeDrilldown();
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); input.focus(); openHint(); }
+      if (e.key === "Escape") { closeDrilldown(); closeHint(); closeNotifPanel(); }
+    });
+  }
+
+  /* ============================== NOTIFICATIONS ============================== */
+  function buildNotifications() {
+    const items = [];
+    D.discrepancies.forEach((d) => items.push({
+      tone: "var(--red)", title: "Discrepancy on " + d.reference,
+      sub: d.detail, target: d.bank_index,
+    }));
+    if (D.aging["61-90"] || D.aging["90+"]) {
+      items.push({
+        tone: "var(--amber)",
+        title: (D.aging["61-90"] + D.aging["90+"]) + " breaks past 60 days",
+        sub: "Real open exceptions from the persisted run — review the aging queue.",
+        scrollTo: "#aging-section",
+      });
+    }
+    const failedEntities = D.entities.filter((e) => !e.passed);
+    failedEntities.forEach((e) => items.push({
+      tone: "var(--red)", title: e.label + " failed its oracle gate",
+      sub: e.open_breaks + " open breaks, " + e.unresolved + " unresolved lines.",
+      scrollTo: "#close",
+    }));
+    return items;
+  }
+
+  function renderNotifications() {
+    const list = $("#notifList");
+    const items = buildNotifications();
+    list.innerHTML = "";
+    if (!items.length) {
+      list.append(el("div", { class: "notif-empty" }, "Nothing needs attention right now."));
+    } else {
+      items.forEach((item) => {
+        const row = el("div", { class: "notif-item" },
+          el("span", { class: "dot", style: `background:${item.tone}` }),
+          el("div", { class: "body" },
+            el("div", { class: "title" }, item.title),
+            el("div", { class: "sub" }, item.sub)));
+        row.addEventListener("click", () => {
+          closeNotifPanel();
+          if (item.scrollTo) document.querySelector(item.scrollTo)?.scrollIntoView({ behavior: "smooth" });
+          if (item.target != null) {
+            document.querySelector("#matching")?.scrollIntoView({ behavior: "smooth" });
+            const line = D.lines[item.target];
+            if (line) { selectedLineIndex = line.index; renderMatchColumns(); openLineDrilldown(line); }
+          }
+        });
+        list.append(row);
+      });
+    }
+    $("#notifDot").style.display = items.length ? "block" : "none";
+  }
+
+  function closeNotifPanel() {
+    $("#notifPanel").classList.remove("show");
+    $("#notifBtn").setAttribute("aria-expanded", "false");
+  }
+
+  function setupNotifications() {
+    renderNotifications();
+    const btn = $("#notifBtn");
+    const panel = $("#notifPanel");
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const willShow = !panel.classList.contains("show");
+      panel.classList.toggle("show", willShow);
+      btn.setAttribute("aria-expanded", String(willShow));
+    });
+    document.addEventListener("click", (e) => {
+      if (!panel.contains(e.target) && e.target !== btn) closeNotifPanel();
     });
   }
 
@@ -664,6 +745,7 @@
   renderIngestionFull();
   renderMatchingGrid();
   setupCommandBar();
+  setupNotifications();
   $("#matchingSub").textContent =
     "Flagship entity " + D.meta.flagship_dataset + " · " + D.lines.length +
     " real bank lines. Select a line to reveal the resolver's actual suggested composition across live source columns.";

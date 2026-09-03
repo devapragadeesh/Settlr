@@ -74,11 +74,8 @@ a{color:inherit;text-decoration:none;}
   max-width:1520px;margin:0 auto;padding:14px 28px;
   display:flex;align-items:center;gap:28px;
 }
-.brand{display:flex;align-items:center;gap:11px;flex-shrink:0;}
-.brand img{width:30px;height:auto;display:block;filter:drop-shadow(0 4px 14px rgba(20,71,230,.5));}
-.brand-word{font-family:'Outfit',sans-serif;font-weight:700;font-size:20px;letter-spacing:-.02em;
-  background:linear-gradient(105deg,#fff 10%,#b9c8ff 60%,#7fa0ff 100%);
-  -webkit-background-clip:text;background-clip:text;color:transparent;}
+.brand{display:flex;align-items:center;flex-shrink:0;}
+.brand img{height:26px;width:auto;display:block;filter:drop-shadow(0 4px 14px rgba(20,71,230,.35));}
 .navlinks{display:flex;align-items:center;gap:4px;flex-shrink:0;}
 .navlinks a{padding:8px 14px;border-radius:99px;font-size:13.5px;font-weight:500;color:var(--text-2);transition:.18s var(--ease);}
 .navlinks a:hover{color:var(--text-1);background:rgba(255,255,255,.05);}
@@ -117,7 +114,25 @@ a{color:inherit;text-decoration:none;}
 .iconbtn{width:36px;height:36px;border-radius:99px;background:rgba(255,255,255,.045);border:1px solid var(--border);
   display:flex;align-items:center;justify-content:center;color:var(--text-2);transition:.18s var(--ease);position:relative;}
 .iconbtn:hover{background:rgba(255,255,255,.08);color:var(--text-1);}
-.dot-ping{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:99px;background:var(--red);box-shadow:0 0 0 2px var(--panel);}
+.dot-ping{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:99px;background:var(--red);box-shadow:0 0 0 2px var(--panel);transition:.15s;}
+.notif-wrap{position:relative;}
+.notif-panel{
+  position:absolute;top:calc(100% + 10px);right:0;width:320px;
+  background:var(--panel-2);border:1px solid var(--border-strong);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-float);opacity:0;transform:translateY(-6px);pointer-events:none;
+  transition:.18s var(--ease);z-index:75;overflow:hidden;
+}
+.notif-panel.show{opacity:1;transform:none;pointer-events:auto;}
+.notif-panel-head{padding:14px 16px;font-size:12.5px;font-weight:700;border-bottom:1px solid var(--border);color:var(--text-1);}
+.notif-list{max-height:320px;overflow-y:auto;}
+.notif-item{display:flex;gap:11px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s;}
+.notif-item:last-child{border-bottom:none;}
+.notif-item:hover{background:rgba(255,255,255,.04);}
+.notif-item .dot{width:7px;height:7px;border-radius:99px;margin-top:5px;flex-shrink:0;}
+.notif-item .body{flex:1;min-width:0;}
+.notif-item .title{font-size:12.5px;font-weight:600;color:var(--text-1);}
+.notif-item .sub{font-size:11px;color:var(--text-3);margin-top:2px;line-height:1.4;}
+.notif-empty{padding:28px 16px;text-align:center;color:var(--text-3);font-size:12px;}
 .avatar{width:34px;height:34px;border-radius:99px;background:linear-gradient(140deg,var(--blue-2),var(--blue-4));
   display:flex;align-items:center;justify-content:center;font-family:'Outfit';font-weight:600;font-size:13px;color:#fff;flex-shrink:0;}
 
@@ -305,13 +320,14 @@ a{color:inherit;text-decoration:none;}
 
 /* ============================== DISCREPANCY BANNER ============================== */
 .discrepancy-banner{
-  position:fixed;left:50%;bottom:26px;transform:translate(-50%,140%);
+  position:fixed;left:50%;bottom:26px;transform:translate(-50%,calc(100% + 60px));
   width:min(720px,92vw);background:var(--panel-3);border:1px solid var(--red-border);
   border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow-float);
   display:flex;align-items:center;gap:16px;z-index:90;
   transition:transform .4s var(--ease);
+  visibility:hidden;
 }
-.discrepancy-banner.show{transform:translate(-50%,0);}
+.discrepancy-banner.show{transform:translate(-50%,0);visibility:visible;}
 .discrepancy-icon{width:38px;height:38px;border-radius:99px;background:var(--red-bg);border:1px solid var(--red-border);
   display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--red);}
 .discrepancy-body{flex:1;min-width:0;}
@@ -326,9 +342,10 @@ a{color:inherit;text-decoration:none;}
 .btn-sm{padding:6px 12px;font-size:11.5px;}
 .discrepancy-close{width:26px;height:26px;border-radius:99px;background:none;border:none;color:var(--text-3);flex-shrink:0;}
 .discrepancy-close:hover{color:#fff;}
-.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,140%);background:var(--green);color:#04140b;
-  font-weight:700;font-size:12.5px;padding:12px 20px;border-radius:99px;box-shadow:var(--shadow-float);z-index:95;transition:transform .4s var(--ease);}
-.toast.show{transform:translate(-50%,0);}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,calc(100% + 60px));background:var(--green);color:#04140b;
+  font-weight:700;font-size:12.5px;padding:12px 20px;border-radius:99px;box-shadow:var(--shadow-float);z-index:95;transition:transform .4s var(--ease);
+  visibility:hidden;}
+.toast.show{transform:translate(-50%,0);visibility:visible;}
 
 /* ============================== DRILLDOWN SLIDEOUT ============================== */
 .scrim{position:fixed;inset:0;background:rgba(3,5,12,.6);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:.3s var(--ease);z-index:80;}
@@ -375,8 +392,6 @@ a{color:inherit;text-decoration:none;}
 .json-num{color:#f5c26b;}
 
 /* ============================== MISC ============================== */
-.footer{text-align:center;padding:50px 0 20px;color:var(--text-3);font-size:12px;display:flex;flex-direction:column;align-items:center;gap:10px;}
-.footer img{width:22px;opacity:.5;}
 .badge-not-started{background:var(--slate-bg);color:var(--slate);}
 .badge-in-progress{background:var(--amber-bg);color:var(--amber);}
 .badge-awaiting-approval{background:rgba(240,71,90,.14);color:#ff8b98;}
@@ -393,10 +408,9 @@ a{color:inherit;text-decoration:none;}
 
 <div class="topbar">
   <div class="topbar-inner">
-    <div class="brand">
+    <a class="brand" href="#overview" aria-label="Settlr — Overview">
       <img src="data:image/png;base64,__LOGO_B64__" alt="Settlr">
-      <span class="brand-word">Settlr</span>
-    </div>
+    </a>
     <div class="navlinks">
       <a href="#overview" class="active">Overview</a>
       <a href="#close">Close Progression</a>
@@ -422,7 +436,13 @@ a{color:inherit;text-decoration:none;}
       </div>
     </div>
     <div class="topbar-actions">
-      <button class="iconbtn" title="Notifications"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3a5 5 0 00-5 5v3.4c0 .6-.2 1.2-.6 1.7L5 15h14l-1.4-1.9c-.4-.5-.6-1.1-.6-1.7V8a5 5 0 00-5-5z" stroke="currentColor" stroke-width="1.7"/><path d="M9.5 18a2.5 2.5 0 005 0" stroke="currentColor" stroke-width="1.7"/></svg><span class="dot-ping"></span></button>
+      <div class="notif-wrap">
+        <button class="iconbtn" id="notifBtn" title="Notifications" aria-haspopup="true" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3a5 5 0 00-5 5v3.4c0 .6-.2 1.2-.6 1.7L5 15h14l-1.4-1.9c-.4-.5-.6-1.1-.6-1.7V8a5 5 0 00-5-5z" stroke="currentColor" stroke-width="1.7"/><path d="M9.5 18a2.5 2.5 0 005 0" stroke="currentColor" stroke-width="1.7"/></svg><span class="dot-ping" id="notifDot"></span></button>
+        <div class="notif-panel" id="notifPanel">
+          <div class="notif-panel-head">Notifications</div>
+          <div class="notif-list" id="notifList"></div>
+        </div>
+      </div>
       <div class="avatar">CF</div>
     </div>
   </div>
@@ -463,10 +483,6 @@ a{color:inherit;text-decoration:none;}
   <p class="section-sub" id="matchingSub"></p>
   <div class="panel" id="matchingPanel"></div>
 
-  <div class="footer">
-    <img src="data:image/png;base64,__LOGO_B64__" alt="Settlr">
-    <span>Settlr · generated from a live resolver run · run <span id="footRunId"></span></span>
-  </div>
 </div>
 
 <div class="scrim" id="scrim"></div>
