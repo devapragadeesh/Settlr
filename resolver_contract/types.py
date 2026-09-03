@@ -1129,6 +1129,13 @@ class OutcomeAccounting:
     #: composition. Measured, never gated -- it is a strength report, not a
     #: defect, but an unreported strength distribution is a hidden weakness.
     verified_non_decisive: int = 0
+    #: Sec 93. `Verified` whose `rival_closure_count` is a floor, not an exact
+    #: count, because its enumeration hit the deterministic budget or the
+    #: solution cap before finishing. Disjoint from `incomplete_enumerations`
+    #: (which counts only truncated `Ambiguous`) -- this is the same kind of
+    #: gap on the OTHER outcome that carries a rival count, named in
+    #: `DECISIONS.md` sec 77 and left as a hole until this field existed.
+    verified_with_truncated_rival_count: int = 0
 
     @property
     def total_lines(self) -> int:
@@ -1231,6 +1238,7 @@ class ResolverOutput:
         sizes: list[int] = []
         incomplete = 0
         non_decisive = 0
+        verified_truncated = 0
         reasons: dict[str, dict[str, int]] = {
             "unresolved": {}, "attestation_discrepancy": {},
             "correctly_unmatched": {}, "proven_unmatched": {},
@@ -1244,6 +1252,7 @@ class ResolverOutput:
                 counts["verified"] += 1
                 sizes.append(1)
                 non_decisive += not outcome.corroboration_is_decisive
+                verified_truncated += outcome.rival_count_is_lower_bound
             elif isinstance(outcome, AttestationDiscrepancy):
                 counts["attestation_discrepancy"] += 1
                 bump("attestation_discrepancy", outcome.contradiction.kind.value)
@@ -1286,4 +1295,5 @@ class ResolverOutput:
             mean_candidate_set_size=(sum(sizes) / len(sizes)) if sizes else 0.0,
             max_candidate_set_size=max(sizes) if sizes else 0,
             incomplete_enumerations=incomplete,
-            verified_non_decisive=non_decisive)
+            verified_non_decisive=non_decisive,
+            verified_with_truncated_rival_count=verified_truncated)

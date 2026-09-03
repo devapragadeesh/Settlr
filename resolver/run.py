@@ -61,6 +61,8 @@ def summarise(output, seconds: float) -> dict:
         "proven_unmatched": accounting.proven_unmatched,
         "open_breaks": accounting.open_breaks,
         "incomplete_enumerations": accounting.incomplete_enumerations,
+        "verified_with_truncated_rival_count":
+            accounting.verified_with_truncated_rival_count,
         "mean_candidate_set_size": round(accounting.mean_candidate_set_size, 3),
         "max_candidate_set_size": accounting.max_candidate_set_size,
         "unresolved_by_reason": accounting.reasons.get("unresolved", {}),

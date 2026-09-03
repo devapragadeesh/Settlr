@@ -5946,6 +5946,111 @@ non-timing diff). `CLAIMS.md` regenerated and byte-identical — no
 `pytest tests engine/tests resolver/tests corpus/tests -q`: 988 passed, 7
 skipped.
 
+---
+
+## 93. `OutcomeAccounting` had no counter for a `Verified` whose rival count is a floor — named in §77, fixed here — 2026-09-04
+
+**The gap, as §77 already stated it.** `ResolverOutput.accounting()` reports
+`incomplete_enumerations: 0` at every resolver-at-scale fixture size even
+though every `Verified` above ~5,000 rows carries
+`rival_count_is_lower_bound=True` (`scale/RESOLVER_SCALE_REPORT.md`). That
+counter is incremented only for a truncated `Ambiguous`
+(`incomplete += not outcome.candidate_set.complete`), so a summary reader
+sees `0` and can reasonably — and wrongly — conclude nothing truncated. §77
+named this and deliberately did not fix it, on the stated ground that a
+`resolver_contract` change needs its own dated decision rather than riding
+along with the measurement that provoked it. This is that decision.
+
+**The fix.** `OutcomeAccounting` gains a new field,
+`verified_with_truncated_rival_count: int = 0`, appended after
+`verified_non_decisive` (a pure addition — the one construction site,
+`ResolverOutput.accounting()`, already calls it by keyword, and no other
+site in the repo constructs `OutcomeAccounting` at all — checked directly).
+`accounting()` increments it once per `Verified` outcome where
+`outcome.rival_count_is_lower_bound` is true. Surfaced everywhere
+`incomplete_enumerations` already was: `corpus/oracle.py`'s per-dataset text
+report and its JSON `accounting` block, and `resolver/run.py`'s CLI summary.
+`corpus/scorecard.py`'s comment documenting the old gap is corrected to name
+the new field rather than left to describe a hole that no longer exists.
+
+**Deliberately kept separate from `incomplete_enumerations`, not folded in.**
+The two counters measure the same phenomenon (a rival-count enumeration that
+did not finish) on two different, mutually exclusive outcome types
+(`Ambiguous` vs. `Verified`). Summing them into one field would hide which
+population is truncating — and the whole point of §77's finding was that the
+`Ambiguous` figure was silently standing in for a population it does not
+cover.
+
+**Test.** `resolver/tests/test_verified_truncated_rival_count.py` forces the
+same shape of truncation `_verify` sees at 4,876+ rows, cheaply: `cap=1` on
+`corpus/datasets/A10_B100_Cmax` (2 rows) starves the rival-closure
+enumeration for at least one `Verified` line, and asserts
+`accounting().verified_with_truncated_rival_count` equals the count of such
+outcomes computed independently from `output.line_outcomes`. A second test
+runs the same dataset with a generous cap (`200`) and asserts the counter is
+0 whenever no `Verified` outcome is actually truncated — a regression guard
+against the counter silently degenerating into a restatement of `verified`.
+
+**No re-run of the ~26-minute `scale/RESOLVER_SCALE_REPORT.md` sweep.** That
+report already exists (§77) and this change does not alter its runtime
+figures; `corpus/scorecard.py::SCALE` stays a held constant for the same
+stated reason it already was one.
+
+**Correction, made before this entry was committed rather than after: the
+counter is NOT zero on the small corpus, and an earlier draft of this section
+said it was.** A direct measurement — `resolve()` run against every dataset
+under `corpus/datasets`, `datasets_v2`, `datasets_gst`, `datasets_bankside`
+(32 datasets, sizes in the tens of rows, none near §77's 4,876-row scale
+threshold), reading `accounting().verified_with_truncated_rival_count`
+straight off each result — found **244 total occurrences, nonzero on 31 of
+32 datasets**, typically 3-10 per dataset (e.g. `datasets/A20_B0_Cmax`: 10,
+`datasets_v2/A40_B100_Cfifo`: 10, `datasets_gst/A20_B100_Cmax_gst`: 3). This
+directly falsifies the assumption, carried over uncritically from §77's
+scale-only framing, that a `Verified` line's rival-closure enumeration only
+truncates at scale. It does not: `cap=200` is hit on ordinary-sized pools
+whenever enough rows share divisor amounts to produce more than 200 distinct
+subsets summing to one bank credit — a combinatorial property of the amount
+distribution, not of row count. §77 was about `scale/`'s *time*-budget
+truncation specifically; this field also catches `Verified`'s far more common
+*cap*-truncation on the primary corpus, which nothing previously counted at
+all. This is a materially bigger and more useful finding than the one this
+entry originally claimed, not a smaller one. `corpus/ORACLE_RESULTS.md`/
+`oracle_results.json` were not regenerated through the official
+`corpus/score_resolver.py --all` pipeline for this entry (that run did not
+complete before this correction); the 244/31-of-32 figures above come from a
+direct, reproducible `resolve()` sweep instead, and the official report
+files are unchanged by this commit — re-scoring them is left to a follow-up
+so this correction is not itself delayed on a further multi-minute run.
+
+**Rejected: gating on it.** `abstention_failures` already gates the
+resolver's honesty about whether it answered at all; this counter is a
+strength/weakness disclosure about an outcome that already answered
+correctly (`Verified`'s attestation match does not depend on the rival-count
+enumeration completing). Gating it would penalize scale rather than measure
+it, the same reasoning `verified_non_decisive` already rests on.
+
+**Rejected: reusing `incomplete_enumerations` with a type check inline at
+each call site instead of a contract field.** Every downstream consumer
+(`corpus/oracle.py`, `resolver/run.py`, any future report) would need to
+re-derive the same count from raw `line_outcomes` instead of reading one
+number off `OutcomeAccounting` — exactly the asymmetry §77 found holding
+between `Ambiguous` (counted) and `Verified` (not).
+
+**Scope.** `resolver_contract/types.py` (`OutcomeAccounting`, `accounting()`),
+`corpus/oracle.py`, `resolver/run.py`, `corpus/scorecard.py` (comment only),
+`resolver/tests/test_verified_truncated_rival_count.py` (new). Not touched:
+`resolver/resolve.py`'s outcome-construction logic (no `_verify`/`_tier_c`
+branch changes — this is a reporting addition, not a reclassification),
+`matching/`, `engine/`, `ingest/`, `transport/`, `store/`, `service/`,
+`dashboard/` — none of the new or concurrent layers read
+`OutcomeAccounting.incomplete_enumerations` or `verified_non_decisive` today
+(checked directly: neither name occurs outside `resolver_contract/`,
+`resolver/`, `corpus/oracle.py`, `corpus/scorecard.py`), so this addition has
+no consumer left to update there.
+
+`pytest resolver/tests corpus/tests -q`: 574 passed, 7 skipped (2 new tests
+added to the 572 from §92's run).
+
 ## 94. `agents/` -- Claude-narrated, read-only Phase 1 of the agent layer, after finding the proposal that motivated it targeted the frozen cascade's vocabulary, not the live resolver's -- 2026-09-04
 
 **Context.** A design document proposed seven LLM-assisted agents (a queue

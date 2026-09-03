@@ -147,6 +147,9 @@ class OracleReport:
             f"  incomplete enumerations  {accounting.get('incomplete_enumerations', 0)}",
             f"  Verified non-decisive    {accounting.get('verified_non_decisive', 0)}"
             "   (a rival composition would have passed the same check)",
+            "  Verified, rival count truncated  "
+            f"{accounting.get('verified_with_truncated_rival_count', 0)}"
+            "   (rival_closure_count is a floor, not exact -- sec 93)",
         ]
         for key, label in (
             ("unresolved_by_reason", "Unresolved by reason"),
@@ -427,6 +430,8 @@ def _measure(output, truth, by_line, bank_truth, determined,
             "max_candidate_set_size": accounting.max_candidate_set_size,
             "incomplete_enumerations": accounting.incomplete_enumerations,
             "verified_non_decisive": accounting.verified_non_decisive,
+            "verified_with_truncated_rival_count":
+                accounting.verified_with_truncated_rival_count,
         },
         "unresolved_by_reason": accounting.reasons.get("unresolved", {}),
     }

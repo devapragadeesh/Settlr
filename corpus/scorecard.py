@@ -27,9 +27,11 @@ D15 = {"correct_refusals": 15, "genuine_failures": 0, "unknown": 0,
 #: (`DECISIONS.md` §77). Held here as data for the same reason D15 is: this
 #: scorecard should not re-run an eight-point, ~26-minute sweep on every
 #: render. `incomplete_enumerations` is deliberately NOT used for this row --
-#: it reads 0 at every one of these sizes, because it is only incremented for
-#: an `Ambiguous` outcome and none of these fixtures ever produce one. The
-#: figure below comes from wrapping `closing_subsets` at the call site instead.
+#: it is only incremented for a truncated `Ambiguous` and none of these
+#: fixtures ever produce one (sec 77). `verified_with_truncated_rival_count`
+#: (sec 93) now carries the equivalent figure for `Verified`, but this row
+#: still holds the pinned sweep values rather than re-deriving them, for the
+#: same reason D15 does: the underlying measurement costs ~26 minutes.
 SCALE = {"complete_at_smallest": 6, "complete_at_largest": 0,
          "solves_at_largest": 12, "rows_at_largest": 48_566,
          "truncation_begins_rows": 4_876}
