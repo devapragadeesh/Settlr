@@ -1,0 +1,15 @@
+# Track C's service layer only. Not required to run pytest, run_all.py, or
+# any graded evaluation -- see README.md's "Run it" for the actual cold-clone
+# path, which needs no container.
+services:
+  recon-api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - recon-data:/data
+    environment:
+      STORE_DB_PATH: /data/recon.db
+
+volumes:
+  recon-data:

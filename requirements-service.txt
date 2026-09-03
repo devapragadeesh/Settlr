@@ -6,3 +6,6 @@
 # pip install -r requirements.txt -r requirements-service.txt
 paramiko>=3.4        # transport/sftp.py
 boto3>=1.34           # transport/s3.py
+fastapi>=0.110        # service/api.py
+uvicorn>=0.29         # service/api.py -- ASGI server to actually serve it
+httpx>=0.27           # service/tests/test_api.py -- FastAPI's TestClient transport

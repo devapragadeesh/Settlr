@@ -5250,3 +5250,97 @@ and `transport/`.
 Nothing under `resolver/`, `resolver_contract/`, `matching/`, `engine/`,
 `ingest/`, `transport/`, or any dataset directory changed. No published
 figure moved.
+
+## 87. `service/` -- pipeline, scheduler, read-only API -- Track C complete, and so is the three-track plan -- 2026-09-03
+
+**What was built.** Phase C3, closing Track C: `service/pipeline.py::run_pipeline`
+(the `ingest -> resolve -> persist` chain, one call), `service/poller.py::Scheduler`
+(call a poll function on an interval, stdlib only), `service/api.py`
+(read-only FastAPI over `store/queries.py`, every response built through
+`store/codec.py` rather than a second encoder), `service/asgi.py` (the
+module-level app a real deployment serves), and a `Dockerfile` +
+`docker-compose.yml`.
+
+**The pull step was deliberately left out of the pipeline, and that omission
+is a finding, not an oversight.** `transport.poller.Poller` (Phase B2) lands
+arbitrary files into a content-addressed staging directory with no notion of
+which uploaded file is `bank_statement.csv` versus `settlement_report.csv` --
+that association is not present in a file's bytes. Guessing it (by size, by
+column sniffing, by upload order) would be exactly the kind of invented
+structure `CLAUDE.md`'s D5 rule forbids for data, applied here to file
+identity. `run_pipeline` therefore takes an already-materialised six-file
+dataset directory, the same contract `ingest.load` has always read; turning a
+poller's staged output into that directory needs a manifest saying which
+digest is which artifact, which is a real, separate, deliberately-named
+follow-on rather than a heuristic shipped to look complete.
+
+**Run identity survives the extra layer.** `service/pipeline.py` computes
+`code_digest()` (every `.py` file under `resolver/` and `resolver_contract/`
+only -- deliberately excluding `ingest/`/`transport/`/`store/`, since how a
+`Dataset` gets onto disk does not change what the resolver decides about it)
+and `input_digest()` (a digest of the six artifact files' own digests), then
+calls `store.writer.write_run` with them. `test_run_pipeline_writes_a_run_and_is_idempotent`
+proves a second identical call is a no-op (one row in `runs`), and
+`test_a_different_cap_produces_a_different_run` proves the derivation is
+sensitive to the parameters that actually change behaviour.
+
+**The API is read-only by construction, not by convention.** Every route in
+`service/api.py` is a `GET`; there is no write endpoint at all, so the only
+way data enters `store/` is `run_pipeline`, called out-of-band by the
+scheduler -- a request can never mutate a run. Every response is serialised
+through `to_jsonable` (the same codec Sec.86 proved lossless), not through
+FastAPI's own `jsonable_encoder`, so there is exactly one place in the repo
+that knows how to turn an `Evidence`/`Warrant`/`Composition` into JSON.
+
+**Every test stays offline, the same discipline as Track A/B.** `service/tests/test_api.py`
+exercises the API through FastAPI's `TestClient`, which runs the ASGI app
+in-process over an in-memory transport -- no socket opens, no port binds.
+`service/tests/test_poller.py`'s `Scheduler` test injects `sleep`, running a
+three-iteration schedule in milliseconds.
+
+**`fastapi`/`uvicorn`/`httpx` join `requirements-service.txt`, not
+`requirements.txt`**, for the identical reason `paramiko`/`boto3` did in
+Sec.84: a cold clone running only `pytest`/`run_all.py` must never pay for a
+web framework it does not use.
+
+**The `Dockerfile`/`docker-compose.yml` are unverified in this environment,
+stated plainly rather than claimed.** `docker info` failed here (daemon
+unavailable in this sandbox) -- the image was never actually built or run.
+What WAS verified: `service/asgi.py` imports cleanly and constructs a real
+`FastAPI` app object (`python3 -c "from service.asgi import app"` succeeds),
+which is the piece the `CMD` in the `Dockerfile` depends on. The container
+build itself is unverified and should not be reported as tested.
+
+**Rejected: wiring the poller directly into `run_pipeline`.** Covered above --
+would require inventing a file-identity heuristic this repo's own rules argue
+against. Left as two composable, independently-tested pieces instead of one
+untrustworthy end-to-end shortcut.
+
+**Rejected: Postgres, Alembic, celery.** Restated from the plan's opening
+decision table and honoured through to the end: SQLite as the system of
+record (Sec.86), a plain interval scheduler (this entry) instead of a task
+queue, plain SQL instead of a migration framework. Production-grade
+operational behaviour -- idempotency, retry, quarantine, an offline-tested
+suite, a real (if unverified-by-build) container story -- without the
+service-and-infrastructure weight those tools bring.
+
+**This closes Track C, and the three-track plan.** Multi-format ingestion
+(Track A, Sec.79-83: CSV/JSON, `.xlsx`, CAMT.053, MT940, JSONL/paginated
+JSON), automated SFTP/S3 pulls (Track B, Sec.84-85: a pluggable transport with
+every test offline, an idempotent/quarantining/retrying poller), and a
+persistence layer (Track C, Sec.86-87: SQLite, lossless outcome replay, and
+`row_history` -- the audit-trail log `investigation/CONTROLS_MAPPING.md`
+Sec.3(b) named as absent) are now real, tested code, none of it touching
+`resolver/`, `resolver_contract/`, `matching/`, `engine/`, or any frozen
+dataset.
+
+**Measured.** `pytest service/tests -q` -- 14 passed (5 pipeline + 1 poller +
+6 API + 2 module-level). Full new-layer suite:
+`pytest ingest/tests transport/tests store/tests service/tests tests/test_layer_isolation.py -q`.
+
+**Scope.** New: `service/__init__.py`, `service/pipeline.py`,
+`service/poller.py`, `service/api.py`, `service/asgi.py`, `service/tests/*`,
+`Dockerfile`, `docker-compose.yml`. Modified: `requirements-service.txt`
+(`fastapi`/`uvicorn`/`httpx` added). Nothing under `resolver/`,
+`resolver_contract/`, `matching/`, `engine/`, `ingest/`, `transport/`,
+`store/`, or any dataset directory changed. No published figure moved.
