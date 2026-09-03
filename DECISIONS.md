@@ -4761,3 +4761,85 @@ the new reader instead of delegating), `ingest/tests/test_conformance.py`
 (docstring only -- its assertions are unchanged). Nothing under `resolver/`,
 `resolver_contract/`, `matching/`, `engine/`, or any dataset directory
 changed.
+
+## 81. `.xlsx` bank-statement ingestion, round-trip proven against all 45 datasets, no float ever multiplied into paise -- 2026-09-03
+
+**What was built.** `ingest/formats/xlsx.py::load_bank_lines(path) -> list[BankLine]`
+-- Phase A2 of the multi-format-ingestion plan, and the first format beyond
+CSV/JSON. Scope is deliberately narrow: it reads only `bank_statement.xlsx`
+into the `bank` role. Settlement report, ERP orders and GSTR-2B stay CSV/JSON;
+Sec.80's role vocabulary means widening this later is additive, not a rewrite.
+
+**The money rule is the load-bearing constraint, and it is met by never doing
+the obvious thing.** `CLAUDE.md`: *"Money is integer paise everywhere. No
+float arithmetic."* openpyxl hands back a Python `float` for a numeric amount
+cell. `int(value * 100)` -- the obvious conversion -- silently truncates on a
+value like `7612.99` that is not exactly representable in binary, which is
+precisely the D-class failure mode Sec.70 spent an entry naming ("the
+direction of the loss always favoured truncation"). The adapter instead
+formats the float to its exact two-decimal string via `format(value, ".2f")`
+(correctly rounded, never truncated) and feeds that string through the
+existing `resolver.loaders.paise` grammar -- the identical path a CSV cell's
+string takes. No new money parser exists; none was written.
+
+**Header-row detection, not row-1 assumption.** Real exports carry preamble
+rows (account name, statement period) above the header. The adapter scans the
+first 20 rows for the first one whose cells satisfy `ingest.schema.BANK_ROLES`
+via `resolve_role`, and raises if none does -- a clean, typed decline
+(`ValueError`), not a guess at row 1. `test_a_file_with_no_recognisable_header_raises`
+pins this.
+
+**Round-trip proof, not an assertion.** `ingest/tests/test_xlsx.py` generates
+an `.xlsx` from every real `bank_statement.csv` on disk -- all 45 dataset
+directories, the same set Sec.79/80 use -- using NATIVE Excel types: a
+`datetime.date` object for the date cell and a `float` for the amount, not
+text mirrors of the CSV strings. It then asserts `load_bank_lines` produces
+the identical `BankLine` list `ingest.formats.csv_json.load` does. 45/45
+passed on first run, with zero cent lost to float rounding across every real
+amount in the corpus -- the strongest available evidence the `.2f`-formatting
+approach is correct on this repo's actual data, not merely in theory.
+
+**Stated honestly: these fixtures are synthetic.** They are generated FROM
+this repo's own CSVs, which proves the adapter is self-consistent -- not that
+it correctly parses an arbitrary real bank's `.xlsx` export. `ingest/formats/xlsx.py`'s
+module docstring and `test_xlsx.py`'s docstring both say this in those words.
+A real sample file, if obtained, would be strictly better evidence than a
+round-trip against a fixture this same repo generated.
+
+**Rejected: `pandas.read_excel`.** `pandas` and `numpy` are already installed
+(as `ortools`/`scipy` transitives) but imported by zero first-party files; a
+new dependency (`openpyxl`) is added regardless, since `pandas.read_excel`
+itself requires an Excel engine. Reading directly with `openpyxl` avoids
+pulling a second heavyweight dependency into a repo whose "no float
+arithmetic" rule is exactly the kind of thing a DataFrame-shaped API makes
+easy to violate by accident (`df['amount'] * 100`).
+
+**Rejected: adapting `tests/adversarial/run_adversarial.py`'s bucket harness
+to cover this format now.** That harness is purpose-built around
+`bucket.py::classify_resolver`/`classify_matching`, which drive the resolver
+and the frozen cascade specifically -- extending it to a third package would
+be a structural change to shared test infrastructure, disproportionate to one
+new adapter, and exactly the kind of scope-creep this project's own rule
+against mixing concerns warns about. The three-bucket discipline (Sec.52) is
+still honoured directly in `ingest/tests/test_xlsx.py`: an unrecognisable
+header is bucket 1 (clean typed decline), and no case in this phase produced a
+silent, plausible-looking wrong answer (bucket 3). Formal integration into the
+shared harness is left as a named, deferred gap rather than forced to fit.
+
+**Rejected: reading every sheet / auto-detecting which sheet is the
+statement.** `workbook.worksheets[0]` only. Multi-sheet disambiguation is a
+real question a future phase can answer once a real multi-sheet export is on
+hand to test against; guessing now would be exactly the kind of invented
+structure `CLAUDE.md`'s D5 rule warns against, applied to format-detection
+instead of data.
+
+**Measured.** `pytest ingest/tests/test_xlsx.py -q` -- 47 passed (45 round-trip
++ 2 edge cases) in under 1s. `pytest ingest/tests tests/test_layer_isolation.py -q`
+-- 107 passed. Full gate re-run:
+`pytest corpus/tests tests/test_isolation.py engine/tests tests/test_scale_degradation.py resolver/tests -q`
+-- 787 passed, 7 skipped, matching Sec.79/80's baseline exactly.
+
+**Scope.** New: `ingest/formats/xlsx.py`, `ingest/tests/test_xlsx.py`.
+Modified: `requirements.txt` (`openpyxl>=3.1` added, one line). Nothing under
+`resolver/`, `resolver_contract/`, `matching/`, `engine/`, or any dataset
+directory changed. No published figure moved.

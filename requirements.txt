@@ -4,3 +4,4 @@ scipy>=1.11          # linear_sum_assignment (Hungarian) for 1:1 residuals
 rapidfuzz>=3.0       # narration similarity
 pytest>=8.0
 # anthropic          # optional: `eval/report.py --llm claude` narration only
+openpyxl>=3.1        # ingest/: .xlsx bank-statement adapter (DECISIONS.md Sec.81)
