@@ -4298,3 +4298,61 @@ prepended to a render of saved JSON; no dataset was scored.
 `investigation/BENCHMARK_EXTENSION_RESULTS.md`,
 `corpus/render_gst_holdout.py`, `corpus/GST_HOLDOUT_RESULTS.md` (re-rendered).
 No resolver, oracle, generator or dataset changed. 614 tests pass.
+
+---
+
+## 75. `CHECKPOINT.md` described a repository 24 decisions younger than the one on disk — 2026-09-03
+
+`README.md` describes `CHECKPOINT.md` as "the current state, written against the
+artefacts on disk". Its header read *"Written 2026-08-24. Branch
+`corpus-benchmark`, head `5460752`"*, its last section was dated 2026-08-28, and
+it ended at `DECISIONS.md` §50. Twenty-four entries — §51 through §74 — had
+landed since, including a wrong-bank-side class, an adversarial suite, the whole
+GST/ITC leg with a held-out run, the resolver's own nondeterminism defect and
+its fix, and four loader defects. None of it appeared.
+
+**This is a recurrence, not a first offence.** Commit `cd5e430` — "Close the
+CHECKPOINT/DECISIONS staleness loop: sec50 was in future tense" — exists because
+exactly this happened once before. It reopened the moment the decision rate
+picked up, which is the useful thing to notice: the failure is structural, not a
+lapse of attention. A hand-written summary of a generated, fast-moving corpus
+goes stale by default, and the only reason it is tolerable here is that the
+numbers all live in generated artifacts and this file cites rather than restates
+them.
+
+**§17 is appended; §0–§16 are untouched.** Per the dated-amendment convention
+the prior sections stand exactly as written on their dates, and the new header
+block says plainly that they predate §51–§74 and that several of their
+conclusions are superseded below. §17 names each supersession rather than
+leaving a reader to diff two documents.
+
+Two of those supersessions are worth stating here because they cut against
+earlier claims made in this file:
+
+- **§16 concluded the `max_deterministic_time` class was "closed, not open".**
+  True of `matching/`, premature for the repository — §58 found the identical
+  defect live in `resolver/enumerate_closures.py`, where it stayed for another
+  five days until §67/§68. A class is not closed when one instance is fixed.
+- **§14.6's ranked list treated the GST axis as an open gap.** It is now built,
+  scored, and held-out tested — and walled off from composition by the evidence
+  contract, which is a stronger outcome than the list anticipated.
+
+**Rejected: rewriting §0–§16 to be current.** It would produce a tidier document
+and destroy the only thing that makes it evidence — that each section was
+written on a date, against the artifacts of that date, and can be checked
+against `git log`. A checkpoint rewritten to agree with the present is a
+summary, not a record.
+
+**Rejected: generating `CHECKPOINT.md`.** Tempting, given this is the second
+staleness incident, and refused because the file's value is the parts that are
+*not* derivable — the "is this a worthy submission" argument, the impressive/
+disappointing split, the ranked list of what would convert it. Those are
+judgements. A generator would either drop them or fossilise them, and the
+numbers they rest on are already generated and cited.
+
+**Rejected: deleting it.** The alternative to a stale summary is not no summary.
+It is the only document that reads the corpus as a whole and argues about it.
+
+**Scope.** `CHECKPOINT.md` only — one new header block, one new section. No
+number is restated that a generated artifact does not already publish, and no
+measurement changed.

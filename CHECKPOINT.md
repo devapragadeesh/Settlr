@@ -2,6 +2,15 @@
 
 **Written 2026-08-24. Branch `corpus-benchmark`, head `5460752`.**
 
+> **Extended 2026-09-03 through `DECISIONS.md` §74, head `1228d9f`.** Sections
+> 0–16 are left exactly as written on their dates; **§17 below covers §51–§74**,
+> which sections 0–16 predate entirely. Read §17 first if you want the current
+> state — several conclusions above are superseded there, and each one says so.
+> This file is described in `README.md` as "the current state, written against
+> the artefacts on disk", and between 2026-08-28 and 2026-09-03 it was not:
+> it described a repository 24 decisions younger than the one on disk. Commit
+> `cd5e430` closed this same loop once before.
+
 Every number in this document was re-derived from the artefacts on disk while
 writing it, not copied from earlier prose. Where that re-derivation contradicted
 something this project had already published, the contradiction is reported in
@@ -1187,3 +1196,115 @@ frozen cascade's own reproducibility had never been checked, only its
 correctness (`investigation/DEFECT_REPORT.md`, D1–D3). Both are now closed,
 not open: verified deterministic under both uncontended and contended
 conditions, with each fix, its prediction, and its miss published together.
+
+
+---
+
+## 17. §51–§74: the extension passes (2026-08-31 → 2026-09-03)
+
+Sections 0–16 end at `DECISIONS.md` §50. Twenty-four entries followed in three
+clusters. This section exists because the file above claimed to be the current
+state while being 24 decisions behind it — the same staleness `cd5e430` was
+committed to fix, recurring the moment the pace picked up.
+
+### 17.1 Closing the gaps `TEST_PLAN.md` named (§51–§57)
+
+**A wrong-*bank*-side class now exists** (§51) — `corpus/datasets_bankside/`,
+two datasets, `plant_mispost` corrupting one bank credit's amount while the PSP
+records stay correct and untouched. The resolver handles both soundly:
+`AttestationDiscrepancy`, not a wrong `Verified`. §11's "no wrong-bank-side
+class" is **narrowed, not closed** — `split-credit` (one settlement posted as
+two credits) remains untested and may need a contract change.
+
+**A malformed-input suite exists** (§52) — `tests/adversarial/`, 40 cases,
+three buckets, and only a silent confident wrong answer fails the build.
+**Zero bucket-3 findings** on either package. §52 also declined to harden
+`resolver/` in that pass, a scoping rule §71 later superseded deliberately.
+
+**`scale/` was run for the frozen cascade** (§53), producing the long-missing
+`scale/SCALE_REPORT.md`: 48,566 rows in 979.87s, and `determinate` collapsing
+11 → 0 as pools grow. §53 deferred measuring the *resolver* at scale and gave a
+reason §72 later proved factually wrong.
+
+**The oracle's bank-side accounting was fixed in its own frame** (§54 → §56 →
+§57), the deferral discharged and then narrowed from a table-level to a
+declared per-line contradiction.
+
+### 17.2 The GST/ITC leg, and a held-out run (§55, §59–§66)
+
+**A real ITC population axis was built** (§55): `corpus/datasets_gst/`, varying
+invoice volume, partial-filing fraction and IRN presence over the gateway's own
+2B lines. It measured that the `itc_availability` single-column shortcut does
+**not** generalize.
+
+**GST evidence reached `resolver/` for the first time** (§59) — and may only
+ever annotate an `OpenBreak`. `EvidenceKind.GST_DOCUMENT` is bound to
+`Attests.ROW_EXISTENCE`, so a tax document cannot license a composition; the
+removal probe shows every line outcome byte-identical with and without
+`gstr2b.csv` (59 = 59). §14.6's "GST axis" item is answered: the leg is real,
+and it is walled off from the answer by the evidence contract rather than by
+convention.
+
+**The ITC-risk flag was measured before it was gated** (§60), scored **0.0
+precision**, and §61 fixed the frame — gate on the row's own settlement, not
+its month's. After the fix it fires on nothing at either spine seed.
+
+**The code was frozen by content hash, then run once against held-out data**
+(§63, §64) at seed `20261013`, committed before the dataset existed. Gates
+passed; precision 1.0, recall 0.75, one genuine false negative left
+deliberately unfixed.
+
+**§66 retracted a published explanation.** The `gstr2b_absent` rupee gap was
+called "structural"; it is a **defect in the corpus generator**
+(`corpus/generator/build.py:681` charges 18% on fee revenue its own ledger
+marks as carrying none). The prose was corrected and the generator was **not**:
+the fix would require regenerating a held-out family after seeing its score.
+**Still open, assigned to a future family at seeds committed before its data
+exists.**
+
+### 17.3 Nondeterminism, cardinality, and the loader (§58, §67–§74)
+
+**§44's reference-frame class found a fourth instance** (§58): the *resolver*'s
+CP-SAT budget was still wall-clock. Documented, not fixed, in that pass —
+§67 committed the prediction, §68 made the change. §68's **claim 1 failed**:
+the resolver *would* now answer slightly differently on the held-out GST set,
+which is why §68/§73 both decline to refresh it. §16's conclusion that the
+`max_deterministic_time` class was "closed, not open" was true of `matching/`
+and premature for the repository: the same defect was live in `resolver/` for
+another five days.
+
+**Composition cardinality is now reported** (§69) — the first thing a
+reconciliation professional asks, which the output could not previously answer.
+`1:1` is the easy case a join would also get; `N:1` — several rows netting to
+one credit — is where this engine's work actually lives; `N:N` is reported as
+**structurally impossible in this contract** rather than omitted, so the
+vocabulary states its own bound instead of leaving a reader to infer it.
+
+**Four silent loader failures were closed** (§70, §71): two `paise` parsers
+disagreeing about a third decimal digit, a duplicate `settlement_id` that
+overwrote the earlier attestation, an unrecognised `disputes.json` shape that
+became an empty dispute set, and an item with no id collapsing to the key `""`.
+Three of the four had been **pinned in place by tests asserting the defective
+behaviour persisted**. All were measured behaviour-preserving before the change:
+6,374 money cells, 5,472 dispute items, 512 report rows, zero affected.
+
+**The resolver could not read ten of forty-five dataset directories** (§72).
+`resolver/loaders.py` hardcoded `bank_reference`/`value_date`; `engine/data`,
+`holdout/data` and all eight `scale/data_*` fixtures are frozen at `utr`/`date`.
+An eleven-line alias resolver fixed it, byte-identically on everything that
+already worked. **This is why §53 recorded resolver throughput as unmeasured** —
+not the cost of new data, as §53 stated, but a `KeyError`. The resolver now runs
+on `holdout/data`; it has **not** been scored there, and doing so needs its own
+dated decision and committed-before-the-run prediction.
+
+**§73** discharged §68's deferred GST re-score — eight lines moved, all
+wall-clock. **§74** fixed four documentation-integrity defects, one of them
+introduced by the pass that fixed the previous one.
+
+### 17.4 What §17 does not change
+
+§11's standing gaps remain standing except where named above. The frozen
+cascade's D1/D2/D3 are still unpatched **on purpose**. D13 and D15 are still
+benchmark-side, not engine-side. 14 of 60 grid cells; B×C untested. The naive
+`GROUP BY` still wins outright on the original fourteen. Nothing in §51–§74
+moved a soundness gate off zero.
