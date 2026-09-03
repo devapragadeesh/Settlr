@@ -308,6 +308,14 @@ def main() -> int:
         disputes_by_id=disputes_by_id,
         row_history=history_sample,
         discrepancies=discrepancies,
+        # Full coverage-by-scope and the complete claims ledger, both already
+        # computed by corpus/claims_ledger.py and corpus/coverage.py and
+        # passed through dashboard/data.json untouched -- this is what powers
+        # the "Detailed Health Analysis" panel. Not curated/filtered here:
+        # showing all 25 claims and all 4 scopes is more honest than picking
+        # a subset that happens to look good.
+        coverage=dashboard_data["coverage"],
+        claims=dashboard_data["claims"],
     )
 
     template = TEMPLATE_PATH.read_text()

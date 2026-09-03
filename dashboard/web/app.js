@@ -88,7 +88,7 @@
       el("div", { class: "panel-head" },
         el("div", {}, el("h3", {}, "Reconciliation Health Score"),
           el("div", { class: "sub" }, "Answered ÷ determinable settlement lines")),
-        el("div", { class: "hero-arrow" }, "↗")
+        el("button", { class: "hero-arrow", title: "Detailed health analysis", onclick: openHealthDetail }, "↗")
       ),
       el("div", { class: "hero-title" }, "Instant portfolio risk read for finance leadership"),
       el("div", { class: "hero-desc" },
@@ -268,34 +268,48 @@
 
   function amountClass(paise) { return paise > 0 ? "pos" : "neg"; }
 
+  // Bug fixed here: word-tokenized matching. The previous version used
+  // q.includes("matched") to detect "verified"/"matched" queries, which is
+  // also true for the string "unmatched" (it CONTAINS "matched") -- so
+  // typing "unmatched" simultaneously kept only non-Verified lines AND
+  // required kind === "Verified", rejecting every line. Exact word
+  // membership (not substring) avoids this whole class of collision.
+  const FILTER_KEYWORDS = new Set([
+    "unmatched", "unresolved", "open", "verified", "matched",
+    "ambiguous", "discrepancy", "discrepancies", "over", "clear",
+  ]);
+
   function lineMatchesFilter(line) {
     if (agingFilter) {
-      const outcome = line.outcome;
-      if (!outcome || outcome.__type__ !== "OpenBreak") {
-        const referencedOpen = (D.aging_rows[agingFilter] || []).some((r) =>
-          (outcome && ((outcome.composition && [...outcome.composition.credit_ids, ...outcome.composition.debit_ids].includes(r.row_id))))
-        );
-        if (!referencedOpen) return false;
-      }
+      const agedIds = new Set((D.aging_rows[agingFilter] || []).map((r) => r.row_id));
+      const refs = referencedIdsFor(line);
+      if (!refs.some((id) => agedIds.has(id))) return false;
     }
     if (!cmdFilter) return true;
     const q = cmdFilter.toLowerCase();
-    if (q.includes("unmatched") || q.includes("unresolved") || q.includes("open")) {
+    const words = q.split(/\s+/).filter(Boolean);
+    const has = (...ws) => ws.some((w) => words.includes(w));
+
+    if (has("unmatched", "unresolved", "open")) {
       if (!["Unresolved", "Ambiguous", "AttestationDiscrepancy"].includes(line.kind)) return false;
     }
-    if (q.includes("verified") || q.includes("matched")) {
+    if (has("verified", "matched")) {
       if (line.kind !== "Verified") return false;
     }
-    if (q.includes("ambiguous")) { if (line.kind !== "Ambiguous") return false; }
-    if (q.includes("discrepancy")) { if (line.kind !== "AttestationDiscrepancy") return false; }
+    if (has("ambiguous")) { if (line.kind !== "Ambiguous") return false; }
+    if (has("discrepancy", "discrepancies")) { if (line.kind !== "AttestationDiscrepancy") return false; }
+
     const overMatch = q.match(/over\s*₹?\s*([\d,]+)/) || q.match(/>\s*₹?\s*([\d,]+)/);
     if (overMatch) {
       const threshold = parseInt(overMatch[1].replace(/,/g, ""), 10) * 100;
       if (Math.abs(line.amount_paise) <= threshold) return false;
     }
-    const textual = q.replace(/over\s*₹?\s*[\d,]+/, "").replace(/unmatched|unresolved|open|verified|matched|ambiguous|discrepancy/g, "").trim();
+
+    const textual = words
+      .filter((w) => !FILTER_KEYWORDS.has(w) && !/^[\d,₹>]+$/.test(w))
+      .join(" ").trim();
     if (textual && !line.reference.toLowerCase().includes(textual) && !(line.narration || "").toLowerCase().includes(textual)) {
-      if (!textual.split(" ").every((w) => !w)) return false;
+      return false;
     }
     return true;
   }
@@ -624,6 +638,56 @@
     slideout.classList.add("show");
   }
 
+  // Reached from the health-score card's ↗ button. Every figure here is
+  // read straight from dashboard/data.json (corpus/coverage.py's four
+  // scopes, corpus/claims_ledger.py's full 25-row ledger) -- nothing
+  // computed or curated client-side.
+  function openHealthDetail() {
+    const slideout = $("#slideout");
+    slideout.innerHTML = "";
+    slideout.append(
+      el("div", { class: "slideout-head" },
+        el("div", {}, el("h3", {}, "Detailed Health Analysis"),
+          el("div", { class: "sub" }, "corpus/coverage.py and corpus/claims_ledger.py, in full — nothing curated")),
+        el("button", { class: "slideout-close", onclick: closeDrilldown }, "✕"))
+    );
+
+    const body = el("div", { class: "slideout-body" });
+
+    const scopeSection = el("div", { class: "slideout-section" }, el("h4", {}, "Coverage by Scope"));
+    ["all", "non_absence", "absence", "original_14"].forEach((scopeKey) => {
+      const s = D.coverage[scopeKey];
+      if (!s) return;
+      scopeSection.append(el("div", { class: "evidence-item" },
+        el("div", { class: "evidence-dot", style: "background:var(--blue-1)" }),
+        el("div", { class: "evidence-txt" },
+          el("div", { class: "evidence-kind" }, s.scope_label),
+          el("div", { class: "evidence-detail" },
+            `${fmtNum(s.answered)} answered of ${fmtNum(s.determinable)} determinable ` +
+            `(${s.on_determinable_pct.toFixed(1)}%) — ${fmtNum(s.settlement_lines)} settlement lines total, ` +
+            `${s.datasets} dataset${s.datasets === 1 ? "" : "s"}.`))));
+    });
+    body.append(scopeSection);
+
+    const claimsSection = el("div", { class: "slideout-section" },
+      el("h4", {}, D.claims.length + " Claims in the Ledger"));
+    const claimsList = el("div", {});
+    D.claims.forEach((c) => {
+      claimsList.append(el("div", { class: "evidence-item" },
+        el("div", { class: "evidence-dot", style: "background:var(--slate)" }),
+        el("div", { class: "evidence-txt" },
+          el("div", { class: "evidence-kind" }, c.claim),
+          el("div", { class: "evidence-detail" },
+            el("b", { style: "color:var(--text-1)" }, String(c.value)), " of ", c.denom, " — ", c.scope))));
+    });
+    claimsSection.append(claimsList);
+    body.append(claimsSection);
+
+    slideout.append(body);
+    $("#scrim").classList.add("show");
+    slideout.classList.add("show");
+  }
+
   function closeDrilldown() {
     $("#slideout").classList.remove("show");
     $("#scrim").classList.remove("show");
@@ -631,15 +695,63 @@
   $("#scrim").addEventListener("click", closeDrilldown);
 
   /* ============================== COMMAND BAR ============================== */
+  const KIND_WORD = {
+    Verified: "verified", Reconstructed: "reconstructed",
+    AttestationDiscrepancy: "flagged as a discrepancy", Ambiguous: "ambiguous",
+    Unresolved: "unresolved",
+  };
+
+  // Composed live from the actual filtered set on every keystroke -- no
+  // canned strings, no server round-trip. This is what "real time, right
+  // under the search bar" means here: a sentence built from D.lines, not a
+  // scripted response.
+  function generateAnswer(lines, query) {
+    if (!query) {
+      return {
+        headline: "Ask about unmatched lines, entities, or amounts — Settlr answers from this run's real data.",
+        sub: "",
+      };
+    }
+    if (!lines.length) {
+      return {
+        headline: `No bank lines match “${query}.”`,
+        sub: "Try one of the quick filters below, or clear the search.",
+      };
+    }
+    const byKind = {};
+    let total = 0;
+    let oldest = null;
+    lines.forEach((l) => {
+      byKind[l.kind] = (byKind[l.kind] || 0) + 1;
+      total += Math.abs(l.amount_paise);
+      if (!oldest || l.value_date < oldest) oldest = l.value_date;
+    });
+    const breakdown = Object.entries(byKind)
+      .map(([k, n]) => `${n} ${KIND_WORD[k] || k.toLowerCase()}`)
+      .join(", ");
+    const headline = `${lines.length} line${lines.length === 1 ? "" : "s"} match — ${breakdown}, totaling ${inr(total)}.`;
+    const sub = oldest ? `Earliest value date in this set: ${oldest}.` : "";
+    return { headline, sub };
+  }
+
+  function renderAnswer() {
+    const lines = visibleLines();
+    const { headline, sub } = generateAnswer(lines, cmdFilter.trim());
+    const answerEl = $("#cmdAnswer");
+    answerEl.textContent = headline;
+    $("#cmdSub").textContent = sub;
+  }
+
   function applyFilters() {
     renderMatchColumns();
-    $("#cmdResultCount").textContent = visibleLines().length + " lines";
+    renderAnswer();
+    $("#cmdResultCount").textContent = visibleLines().length + " of " + D.lines.length;
   }
   function setupCommandBar() {
     const input = $("#cmdInput");
     const hint = $("#cmdHint");
     const cmdbar = $(".cmdbar");
-    const openHint = () => hint.classList.add("show");
+    const openHint = () => { renderAnswer(); hint.classList.add("show"); };
     const closeHint = () => hint.classList.remove("show");
 
     input.addEventListener("focus", openHint);

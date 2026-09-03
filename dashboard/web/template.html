@@ -75,7 +75,7 @@ a{color:inherit;text-decoration:none;}
   display:flex;align-items:center;gap:28px;
 }
 .brand{display:flex;align-items:center;flex-shrink:0;}
-.brand img{height:26px;width:auto;display:block;filter:drop-shadow(0 4px 14px rgba(20,71,230,.35));}
+.brand img{height:38px;width:auto;display:block;filter:drop-shadow(0 4px 14px rgba(20,71,230,.35));}
 .navlinks{display:flex;align-items:center;gap:4px;flex-shrink:0;}
 .navlinks a{padding:8px 14px;border-radius:99px;font-size:13.5px;font-weight:500;color:var(--text-2);transition:.18s var(--ease);}
 .navlinks a:hover{color:var(--text-1);background:rgba(255,255,255,.05);}
@@ -101,14 +101,27 @@ a{color:inherit;text-decoration:none;}
 }
 .cmdbar-field input::placeholder{color:var(--text-3);}
 .cmdbar-kbd{font-size:10.5px;color:var(--text-3);border:1px solid var(--border-strong);border-radius:5px;padding:2px 6px;font-family:'Inter';flex-shrink:0;}
-.cmdbar-hint{position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--panel-2);border:1px solid var(--border-strong);
-  border-radius:var(--radius-md);padding:10px;box-shadow:var(--shadow-float);display:none;font-size:12.5px;color:var(--text-2);z-index:70;}
-.cmdbar-hint.show{display:block;}
+.cmdbar-hint{
+  position:absolute;top:calc(100% + 10px);left:0;right:0;
+  background:linear-gradient(175deg,rgba(255,255,255,.10),rgba(255,255,255,.04));
+  backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:20px;padding:16px;box-shadow:0 30px 70px -20px rgba(5,10,30,.65), inset 0 1px 0 rgba(255,255,255,.14);
+  opacity:0;transform:translateY(-6px) scale(.98);pointer-events:none;
+  transition:.22s var(--ease);font-size:12.5px;color:var(--text-2);z-index:70;
+}
+.cmdbar-hint.show{opacity:1;transform:none;pointer-events:auto;}
 .cmdbar-hint b{color:var(--text-1);font-weight:600;}
-.cmdbar-hint .row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;}
-.cmdbar-hint .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
-.cmdbar-hint .chip{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:99px;padding:3px 10px;font-size:11.5px;cursor:pointer;transition:.15s;}
-.cmdbar-hint .chip:hover{background:rgba(61,116,255,.18);border-color:rgba(61,116,255,.4);}
+.cmdbar-answer{
+  font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;color:#fff;line-height:1.4;
+  min-height:21px;letter-spacing:-.005em;
+}
+.cmdbar-answer .accent{color:#a9c0ff;}
+.cmdbar-sub{font-size:11.5px;color:var(--text-2);margin-top:6px;}
+.cmdbar-hint .row{display:flex;justify-content:space-between;gap:10px;padding:10px 0 2px;border-top:1px solid rgba(255,255,255,.1);margin-top:10px;}
+.cmdbar-hint .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.cmdbar-hint .chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:4px 11px;font-size:11.5px;cursor:pointer;transition:.15s;}
+.cmdbar-hint .chip:hover{background:rgba(61,116,255,.28);border-color:rgba(61,116,255,.5);}
 
 .topbar-actions{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .iconbtn{width:36px;height:36px;border-radius:99px;background:rgba(255,255,255,.045);border:1px solid var(--border);
@@ -187,7 +200,8 @@ a{color:inherit;text-decoration:none;}
 }
 .hero .panel-head h3{color:rgba(255,255,255,.92);}
 .hero-arrow{width:34px;height:34px;border-radius:99px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.24);
-  display:flex;align-items:center;justify-content:center;color:#fff;}
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;cursor:pointer;transition:.18s var(--ease);flex-shrink:0;}
+.hero-arrow:hover{background:rgba(255,255,255,.28);transform:translate(1px,-1px) scale(1.04);}
 .hero-title{font-size:22px;font-weight:700;line-height:1.15;letter-spacing:-.02em;max-width:260px;}
 .hero-desc{font-size:13px;color:rgba(255,255,255,.72);margin-top:8px;max-width:270px;line-height:1.5;}
 .hero-legend{display:flex;gap:16px;margin:20px 0 6px;flex-wrap:wrap;}
@@ -424,7 +438,9 @@ a{color:inherit;text-decoration:none;}
         <span class="cmdbar-kbd">⌘K</span>
       </div>
       <div class="cmdbar-hint" id="cmdHint">
-        <div class="row"><span>Filtering</span><b id="cmdResultCount">—</b></div>
+        <div class="cmdbar-answer" id="cmdAnswer">Ask about unmatched lines, entities, or amounts — Settlr answers from this run's real data.</div>
+        <div class="cmdbar-sub" id="cmdSub"></div>
+        <div class="row"><span>Quick filters</span><b id="cmdResultCount">—</b></div>
         <div class="chips">
           <span class="chip" data-q="unmatched">unmatched</span>
           <span class="chip" data-q="verified">verified</span>
