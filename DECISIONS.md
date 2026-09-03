@@ -5066,3 +5066,71 @@ passed.
 `requirements-service.txt`. Nothing under `resolver/`, `resolver_contract/`,
 `matching/`, `engine/`, `ingest/`, or any dataset directory changed. No
 published figure moved.
+
+## 85. `transport/poller.py` -- idempotency, quarantine, atomic writes, retry with backoff -- this repo's answer to the checklist's Idempotency & Fault Tolerance item at 0% -- 2026-09-03
+
+**What was built.** Track B, Phase B2: `Poller.poll_once()` watches a
+`Transport` prefix and, for every remote file, fetches (with retry), checks
+whether its content has already been ingested, validates it, and lands it
+atomically -- or quarantines it, or dead-letters it, without ever stopping the
+batch over one bad or flaky file.
+
+**Idempotency key is the content digest, not a filename.** Accepted files
+land at `dest_dir/<sha256>_<basename>`, and the "already ingested" check
+(`self.dest_dir.glob(f"{digest}_*")`) matches on the digest prefix alone --
+proven by `test_the_same_content_under_a_different_remote_name_is_recognised_as_already_ingested`,
+which renames a file between polls and asserts it is still recognised as a
+repeat. This is `DATASET_HASHES.txt`'s own instinct (content is the identity,
+a name is not) applied to arrivals instead of frozen fixtures.
+
+**A bug the idempotency test itself caught.** The first draft matched on
+`digest_basename` as a single string -- so the SAME renamed-file test failed:
+the renamed copy carried the same digest but a different basename, produced a
+different match key, and was ingested a second time. `dest_dir.glob(f"{digest}_*")`
+replaced the exact-name check, decoupling "already have this content" from
+"already have this exact filename."
+
+**Atomic writes, proven by absence.** Every accepted file is written to a
+`.tmp-<uuid>` sibling and moved into place with `os.replace` -- a single
+atomic rename. `test_kill_and_resume_ingests_exactly_once_and_loses_nothing`
+asserts no `.tmp-` file is ever left in `dest_dir` after a poll, and that a
+brand-new `Poller` instance (not the same object remembering anything --
+fresh in-memory state, same directories) reaches the same non-duplicated
+answer on a second pass, including for a genuinely new file that arrived
+between polls.
+
+**Quarantine, not a failed batch.** `validate` is caller-supplied;
+`test_a_file_that_fails_validation_is_quarantined_and_the_poll_continues`
+proves one bad file quarantines (payload plus a `.error.txt` naming the
+exception) while a good file in the same batch still lands normally.
+
+**Retry with exponential backoff and jitter, then dead-letter rather than
+raise.** `TransientError` triggers up to `max_attempts` retries at
+`base_delay * 2**attempt` plus jitter; exhausting attempts routes the key to
+`dead_letters` instead of raising out of `poll_once`, so one permanently
+flaky remote file cannot abort an otherwise-healthy batch. Both `sleep` and
+the jitter source are injectable, so `test_a_transient_failure_retries_then_succeeds`
+and `test_a_permanently_failing_fetch_is_dead_lettered_not_raised` run in
+milliseconds against a hand-written flaky fake `Transport`, not real timers.
+
+**Rejected: recording idempotency state in a separate manifest file instead of
+on the filesystem's own listing.** A manifest is one more thing that can drift
+from what is actually on disk -- exactly the kind of second source of truth
+this project avoids everywhere else (`DATASET_HASHES.txt` is checked against
+the files, not trusted instead of them). `dest_dir` IS the manifest: what
+exists there is what was ingested, full stop.
+
+**Rejected: deleting quarantined/dead-lettered items after N failures.**
+Both are terminal states that persist, not are cleaned up -- an operator
+needs to see what a poller refused and why, and per Track C (Phase C1-C2,
+queued next) this state is exactly the kind of thing `store/` exists to make
+queryable over time rather than only visible in today's directory listing.
+
+**Measured.** `pytest transport/tests/test_poller.py -q` -- 6 passed. Full
+new-layer suite: `pytest ingest/tests transport/tests tests/test_layer_isolation.py -q`
+-- 319 passed.
+
+**Scope.** New: `transport/poller.py`, `transport/tests/test_poller.py`.
+Nothing under `resolver/`, `resolver_contract/`, `matching/`, `engine/`,
+`ingest/`, or any dataset directory changed. No published figure moved. This
+closes Track B.
