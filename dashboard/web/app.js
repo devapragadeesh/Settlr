@@ -229,6 +229,66 @@
     panel.append(grid);
   }
 
+  /* ============================== TRUST / EVIDENCE PANEL ============================== */
+  function renderTrust() {
+    const panel = $("#trustPanel");
+    const t = D.trust;
+    const grid = el("div", { class: "trust-grid" });
+
+    const SYSTEM_META = {
+      naive: { label: "Naive `GROUP BY`", tag: "no evidence model at all", color: "var(--red)" },
+      frozen: { label: "Frozen cascade", tag: "the prior engine, unmodified", color: "var(--amber)" },
+      resolver: { label: "This resolver", tag: "evidence-tiered, current", color: "var(--green)" },
+    };
+    const compareCard = el("div", { class: "panel", style: "padding:22px 24px" },
+      el("div", { class: "compare-title" }, "Wrong answers, same oracle, three systems"),
+      el("div", { class: "compare-sub" }, "Every system scored by the identical soundness gates over the same 30 datasets — " + (t.three_systems.source || "corpus/three_systems.py"))
+    );
+    const row = el("div", { class: "compare-row" });
+    ["naive", "frozen", "resolver"].forEach((key) => {
+      const s = t.three_systems[key];
+      const meta = SYSTEM_META[key];
+      const pct = s.attempted ? (s.wrong / s.attempted) * 100 : 0;
+      row.append(el("div", { class: "compare-item" },
+        el("div", { class: "compare-name" }, meta.label, el("span", { class: "tag" }, meta.tag)),
+        el("div", { class: "compare-track" },
+          el("div", { class: "compare-fill", style: `width:${Math.max(pct, s.wrong ? 2 : 0)}%;background:${meta.color}` })),
+        el("div", { class: "compare-stat" }, s.wrong + " / " + s.attempted, el("small", {}, " wrong"))));
+    });
+    compareCard.append(row);
+    grid.append(compareCard);
+
+    const cards = el("div", { class: "trust-cards" });
+    if (t.d15) {
+      cards.append(el("div", { class: "trust-card" },
+        el("div", { class: "k" }, "Ambiguity soundness — D15"),
+        el("div", { class: "v", style: "color:var(--green)" }, t.d15.correct_refusals + " / " + t.d15.instances + " correct refusals"),
+        el("div", { class: "d" }, "Every abstention on a reconstructible instance was proven correct by exhaustive enumeration — " + t.d15.genuine_failures + " genuine failures.")));
+    }
+    if (t.commit_count) {
+      cards.append(el("div", { class: "trust-card" },
+        el("div", { class: "k" }, "Ordering is the evidence"),
+        el("div", { class: "v" }, fmtNum(t.commit_count) + " commits"),
+        el("div", { class: "d" }, "The contract was committed before any corpus data existed, and seeds before datasets — verifiable in git log, not asserted. First: “" + (t.first_commit.subject || "") + "”.")));
+    }
+    if (t.self_correction) {
+      cards.append(el("div", { class: "trust-card" },
+        el("div", { class: "k" }, "Self-correction record"),
+        el("div", { class: "v", style: "font-size:14px;line-height:1.4" }, "Not a count — by design"),
+        el("div", { class: "d" }, t.self_correction.reason + " (" + t.self_correction.citation + ").")));
+    }
+    cards.append(el("div", { class: "trust-card" },
+      el("div", { class: "k" }, "Dataset integrity"),
+      el("div", { class: "v", style: t.hashes_verified ? "color:var(--green)" : "color:var(--text-3)" },
+        t.hashes_verified ? "Verified this export" : "Not verified in this snapshot"),
+      el("div", { class: "d" }, t.hashes_verified
+        ? "SHA-256 of every frozen dataset matched at export time."
+        : "This export ran with hash verification skipped (--skip-hashes) for speed — the check itself is real and lives in corpus/export_dashboard.py::verify_hashes, just not re-run for every dashboard build.")));
+    grid.append(cards);
+
+    panel.append(grid);
+  }
+
   /* ============================== KANBAN ============================== */
   function renderKanban() {
     const panel = $("#kanbanPanel");
@@ -855,6 +915,7 @@
   renderIngestionSmall();
   renderKanban();
   renderIngestionFull();
+  renderTrust();
   renderMatchingGrid();
   setupCommandBar();
   setupNotifications();

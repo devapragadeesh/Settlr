@@ -250,6 +250,38 @@ def build_discrepancies(lines: list[dict]) -> list[dict]:
     return out
 
 
+def build_trust_panel(dashboard_data: dict) -> dict:
+    """Real data that already exists in `dashboard/data.json` but was never
+    surfaced anywhere in the UI: the three-system comparison, the D15
+    soundness measurement, the commit-ordering evidence, the self-correction
+    citation, and dataset-integrity hashes. Aggregated here, not re-derived
+    -- every number traces back to `corpus/three_systems.py`/`scorecard.py`/
+    live `git log`, exactly as `corpus/export_dashboard.py` computed it."""
+    ts = dashboard_data.get("three_systems", {}).get("per_dataset", [])
+
+    def _agg(system: str) -> dict:
+        ran = [r[system] for r in ts if r.get(system, {}).get("ran")]
+        return dict(wrong=sum(r["wrong"] for r in ran),
+                    attempted=sum(r["attempted"] for r in ran),
+                    datasets=len(ran))
+
+    three_systems = dict(naive=_agg("naive"), frozen=_agg("frozen"),
+                          resolver=_agg("resolver"),
+                          source=dashboard_data.get("three_systems", {}).get("source"))
+
+    commit_ordering = dashboard_data.get("commit_ordering") or {}
+    hashes = dashboard_data.get("hashes")
+
+    return dict(
+        three_systems=three_systems,
+        d15=dashboard_data.get("d15"),
+        self_correction=dashboard_data.get("self_correction_record"),
+        commit_count=commit_ordering.get("count"),
+        first_commit=(commit_ordering.get("first_ten") or [{}])[0],
+        hashes_verified=hashes,
+    )
+
+
 def main() -> int:
     dataset = ingest_load(FLAGSHIP_DIR)
 
@@ -316,6 +348,7 @@ def main() -> int:
         # a subset that happens to look good.
         coverage=dashboard_data["coverage"],
         claims=dashboard_data["claims"],
+        trust=build_trust_panel(dashboard_data),
     )
 
     template = TEMPLATE_PATH.read_text()
