@@ -85,3 +85,38 @@ CREATE TABLE IF NOT EXISTS break_history (
     closed_at TEXT,
     close_run_id TEXT
 );
+
+-- Agent layer (DECISIONS.md Sec.94). A proposal FROM an agent ABOUT a row,
+-- never a mutation OF that row: `row_outcomes`/`line_outcomes` stay exactly
+-- as `resolver.resolve()` produced them, forever. Resolving a request only
+-- ever inserts here -- it does not go back and edit the run it is about.
+CREATE TABLE IF NOT EXISTS agent_approval_requests (
+    request_id TEXT PRIMARY KEY,
+    agent TEXT NOT NULL,
+    action TEXT NOT NULL,
+    run_id TEXT NOT NULL REFERENCES runs(run_id),
+    row_ids TEXT NOT NULL,
+    proposed_change TEXT NOT NULL,
+    evidence_summary TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TEXT NOT NULL,
+    resolved_at TEXT,
+    resolved_by TEXT
+);
+
+-- A human's resolution of an `Ambiguous` line -- deliberately its own table,
+-- never written into `line_outcomes`. `Ambiguous.candidate_set` stays exactly
+-- as the resolver computed it: resolver_contract makes a refusal-to-decide
+-- unrepresentable as a confident answer (`Ambiguous` has no `decomposition`),
+-- and a human picking one candidate does not retroactively turn that refusal
+-- into a resolver-corroborated `Verified`. Read this table alongside the
+-- line, never instead of it.
+CREATE TABLE IF NOT EXISTS human_resolutions (
+    resolution_id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL REFERENCES runs(run_id),
+    bank_index INTEGER NOT NULL,
+    chosen_candidate_row_ids TEXT NOT NULL,
+    rationale TEXT NOT NULL,
+    resolved_by TEXT NOT NULL,
+    resolved_at TEXT NOT NULL
+);

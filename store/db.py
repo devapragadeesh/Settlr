@@ -15,7 +15,7 @@ import sqlite3
 from pathlib import Path
 
 SCHEMA_PATH = Path(__file__).resolve().parent / "schema.sql"
-CURRENT_VERSION = 1
+CURRENT_VERSION = 2  # 2: agent_approval_requests, human_resolutions (Sec.94)
 
 
 def connect(path: str | Path) -> sqlite3.Connection:

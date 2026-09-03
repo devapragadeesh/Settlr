@@ -12,7 +12,8 @@ from __future__ import annotations
 import json
 import sqlite3
 
-from resolver_contract.types import AGE_BUCKETS, ResolverOutput, age_bucket
+from resolver_contract.types import (AGE_BUCKETS, BREAK_ROUTING, BreakReason,
+                                      ResolverOutput, age_bucket)
 from store.codec import outcome_from_jsonable
 
 
@@ -89,6 +90,14 @@ def open_breaks(conn: sqlite3.Connection, run_id: str) -> dict[str, list[dict]]:
         bucket = age_bucket(row["age_days"])
         buckets[bucket].append(dict(row))
     return buckets
+
+
+def owner_for_reason(reason: str) -> tuple[str, str]:
+    """`(owner, close_condition)` for a `row_outcomes.reason` string, per
+    `resolver_contract.types.BREAK_ROUTING` -- the one place `agents/` may
+    learn a break's routing without importing `resolver_contract` itself
+    (`tests/test_agent_isolation.py` enforces that boundary)."""
+    return BREAK_ROUTING[BreakReason(reason)]
 
 
 def break_lifecycle(conn: sqlite3.Connection, row_id: str) -> dict | None:

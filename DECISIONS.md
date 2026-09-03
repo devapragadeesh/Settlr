@@ -5945,3 +5945,119 @@ non-timing diff). `CLAIMS.md` regenerated and byte-identical — no
 
 `pytest tests engine/tests resolver/tests corpus/tests -q`: 988 passed, 7
 skipped.
+
+## 94. `agents/` -- Claude-narrated, read-only Phase 1 of the agent layer, after finding the proposal that motivated it targeted the frozen cascade's vocabulary, not the live resolver's -- 2026-09-04
+
+**Context.** A design document proposed seven LLM-assisted agents (a queue
+cleaner, an SLA watchdog, a break investigator, an ERP gap resolver, an ITC
+drafter, an ambiguous-batch arbiter, a chat answerer), a connector-onboarding
+UI, and a transaction-flow UI, on top of `resolver/`/`store/`/`service/`.
+Before writing any of it, every factual claim in the proposal was checked
+against the live code, not assumed.
+
+**Finding: the proposal conflates two separate, non-interoperating
+pipelines.** `service/pipeline.py:30,75` calls `resolver.resolve.resolve()`
+directly, and only that output ever reaches `store/schema.sql` -- the only
+data any agent, `service/api.py`, or the dashboard can see. `matching/` is
+the legacy cascade, frozen at `81c04e0` per `CLAUDE.md`, and never writes to
+`store`. The proposal's `subset_sum_rolled_forward`/`not_yet_eligible`/
+`netted_out_by_full_refund`/`failed_payment_never_settles` reasons, its
+`is_actionable` property, its `finance-ops`/`tax-ops`/`disputes-ops`/
+`treasury` owner labels, and its separate `erp_gap_no_order`/
+`erp_gap_no_payment` types all live in `matching/stage4_exceptions.py` --
+none of them exist in the live `resolver_contract.types.BreakReason`
+(`missing_source`, `timing_difference`, `mapping_issue`, `unexpected_change`,
+`true_error`, `upstream_unresolved`, `unexplained`) or its `BREAK_ROUTING`
+(`resolver_contract/types.py:582-598`, owners `"data ops"`/`"none -- carry
+forward"`/`"integrations"`/`"disputes ops"`/`"finance"`/`"whoever owns the
+causing finding"`/`"investigation"`). An agent built against the proposal's
+vocabulary would query fields the real store never populates.
+
+A second, narrower finding: `resolver/breaks.py:_break_reason` only ever
+constructs `UPSTREAM_UNRESOLVED`, `TIMING_DIFFERENCE`, `UNEXPECTED_CHANGE`, or
+falls through to `UNEXPLAINED`. `MISSING_SOURCE`, `MAPPING_ISSUE`, and
+`TRUE_ERROR` are contract-defined and routed, but dead code today -- no
+agent's design should assume rows classified into them currently exist.
+
+**Decision.** Rescope the seven agents against the verified, live fields
+(table in this session's plan; not reproduced here), fold the "ERP Gap
+Resolver" into "Break Investigator" (there is no live, separate reason for
+it to key off), and ship in two phases: Phase 1 is read-only (Chat Answerer,
+SLA Watchdog notify-only, Queue Cleaner surfacing-only); Phase 2 adds the
+three write-capable agents (Break Investigator, Ambiguous Batch Arbiter, ITC
+Exposure Drafter) behind a new approval gate. This entry covers Phase 1,
+landed now: `agents/base.py`, `agents/sql_safety.py`, `agents/chat_answerer.py`,
+`agents/sla_watchdog.py`, `agents/queue_cleaner.py`, plus the schema and
+isolation groundwork both phases need.
+
+**Claude, not Ollama.** The proposal specified Ollama (`llama3.1:8b`). This
+repo already has one narration-only LLM integration,
+`matching/llm.py::ClaudeExplainer` (`anthropic`, `claude-sonnet-5`,
+degrade-to-template on any failure) with its own adversarial test
+(`test_narration_is_the_only_field_an_explainer_can_touch`, Sec.11).
+`agents/base.py::call_claude` is the same integration, reused, not a second
+LLM dependency with its own installation/pull story for a cold clone --
+`anthropic` stays commented-out-optional in `requirements.txt`, exactly like
+the existing use, so every test here runs the deterministic fallback path
+with no API key configured, which is what actually ran in this environment
+(confirmed: `ModelUnavailable` raised cleanly, no crash, on every call made
+during development).
+
+**Rejected: Queue Cleaner as originally proposed (auto-close, zero
+approval, `is_actionable=False` on four reasons).** No live analogue exists.
+The nearest live route, `BreakReason.TIMING_DIFFERENCE` ->
+`"none -- carry forward"`, is exactly one reason, not four, and
+`OpenBreak.provable_within_window` -- the only per-row signal available for
+it -- carries its own contract warning against being "promoted to a
+permanent proof" (`resolver_contract/types.py:899-902`). Auto-closing on it
+would contradict the contract `agents/` is supposed to sit downstream of, not
+extend it. `agents/queue_cleaner.py::group_carry_forward` reads and labels
+only; it writes nothing.
+
+**Rejected: a `confidence >= 1.0` auto-approval gate**, as the proposal's
+`ApprovalRequest.auto_approvable` specified. No `confidence` field exists on
+`OpenBreak`/`row_outcomes`, and `RESOLVER_CONTRACT.md:695-701` explicitly
+rejects a float confidence score as an alternative to typed outcomes. Phase 2
+will gate on typed conditions instead (an approval status, not a threshold).
+
+**New: `agents/sql_safety.py::safe_select`.** Agent 7 (Chat Answerer) asks
+Claude to draft a `SELECT` over the store schema and executes it -- so unlike
+every other read in this repo, the query text itself is untrusted input.
+Two independent layers: a text-level single-`SELECT`-statement check, and a
+live `sqlite3.Connection.set_authorizer` denying every action but
+`SQLITE_SELECT`/`SQLITE_READ`/`SQLITE_FUNCTION`, so a statement that gets
+past the text check on a technicality is still denied when SQLite actually
+tries to execute it. `agents/tests/test_chat_answerer.py`'s adversarial tests
+substitute a fake Claude that returns `"DELETE FROM row_outcomes; SELECT 1"`
+and `"DROP TABLE runs"` and assert every table's row count is identical
+before and after -- this does not wait for a real model to misbehave.
+
+**New schema, additive only:** `agent_approval_requests` and
+`human_resolutions` (`store/schema.sql`, `store/approvals.py`,
+`store/db.py::CURRENT_VERSION` 1 -> 2). Neither is written by anything in
+this Phase 1 commit -- Phase 1 has nothing to approve yet -- but the schema
+lands now so Phase 2 does not need a second migration decision. A human's
+eventual resolution of an `Ambiguous` line goes into `human_resolutions`,
+never into `line_outcomes`: `Ambiguous.candidate_set` stays exactly as the
+resolver computed it forever, because a human picking a candidate does not
+retroactively turn a refusal-to-decide into a resolver-corroborated
+`Verified` -- that would fabricate precisely the unearned confidence this
+repo's whole thesis (`README.md`'s "says what it does not know") refuses to
+produce.
+
+**New isolation coverage.** `tests/test_agent_isolation.py`, symmetrical to
+`tests/test_layer_isolation.py`: AST-scans every `agents/` module and
+confirms none imports `resolver`, `resolver_contract`, `matching`, or
+`engine`, plus a live-import-graph check. `store.queries.owner_for_reason`
+was added specifically so `agents/sla_watchdog.py` never needs
+`resolver_contract.types.BREAK_ROUTING` directly -- the boundary this test
+enforces is not just "no import today," it is "no path exists to import."
+
+**Scope.** New: `agents/` (package, 5 modules + tests),
+`tests/test_agent_isolation.py`, `store/approvals.py`,
+`store/tests/test_approvals.py`. Modified: `store/schema.sql` (two new
+tables), `store/db.py` (`CURRENT_VERSION`), `store/queries.py`
+(`owner_for_reason`), `requirements.txt` (comment only). Nothing under
+`resolver/`, `resolver_contract/`, `matching/`, `engine/`, or any frozen
+dataset path touched. Full existing suite re-run and green (39 new tests,
+zero regressions) before this entry was written.
