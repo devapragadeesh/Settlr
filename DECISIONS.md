@@ -4681,3 +4681,83 @@ engine/tests tests/test_scale_degradation.py resolver/tests -q` -- 787 passed,
 `ingest/tests/test_conformance.py`, `tests/test_layer_isolation.py`. Nothing
 under `resolver/`, `resolver_contract/`, `matching/`, `engine/`, or any dataset
 directory changed. No published figure moved.
+
+## 80. `ingest/`'s CSV/JSON reader is rebuilt as an independent second implementation, on a role vocabulary -- reversing Sec.72's rejection of a mapping layer -- 2026-09-03
+
+**What changed.** `ingest.load`'s `fmt="auto"`/`"csv_json"` path no longer
+delegates to `resolver.loaders.load` (Phase A0, Sec.79). It now goes through
+`ingest/formats/csv_json.py`, a second, independently-written reader of the
+same six-file contract, built on two new modules:
+
+- `ingest/schema.py` -- a `Role` vocabulary (name, `SourceSystem`, accepted
+  spellings, required/optional) for every artifact: `bank_statement.csv`,
+  `settlement_report.csv`, `erp_orders.csv`, `gstr2b.csv`. `resolve_role`
+  generalises `resolver/loaders.py::_bank_column` from two hardcoded columns
+  to any number of roles, and keeps both of its rules unchanged: a role
+  missing entirely raises `RoleMissing`, two spellings present at once raises
+  `RoleConflict` -- never a preference order.
+- `ingest/normalize.py` -- the one canonical builder every format converges
+  through (`build_bank_line`, `build_settlement_entry`, `build_gstr2b_line`,
+  `build_dataset`), so a defect in one future adapter cannot silently diverge
+  from another's `Dataset` shape. Every builder calls `resolver.loaders.paise`
+  for money and `date.fromisoformat` for dates -- no parser is re-implemented,
+  per Sec.70.
+
+`ingest/tests/test_conformance.py` (Sec.79) needed no changes to its
+assertions and now proves something stronger than it did: not "does a wrapper
+agree with what it wraps" but "do two separately-written readers of the same
+contract agree" -- on all 45 dataset directories, unchanged.
+
+**This reverses Sec.72's rejection, and says so rather than quietly
+contradicting it.** Sec.72 rejected a general header-normalisation layer:
+*"there are exactly two spellings of exactly two columns in one file... A
+configurable mapping layer would be a new surface with no second consumer."*
+That reasoning was correct at the time -- the only variance in the whole repo
+was `bank_reference`/`utr` and `value_date`/`date`. It stops being correct the
+moment a second format exists to consume the same abstraction: Phase A2's
+`.xlsx` adapter and Phase A3's CAMT.053/MT940 adapters (both queued next) are
+that second consumer, and they need somewhere to converge that is not four
+more copies of `_bank_column`.
+
+**What Sec.72 got right and this keeps unchanged.** Its other two rules are
+not reopened: (1) two spellings of one role present in the same source is
+still refused, never resolved by preference -- `resolve_role` is a direct,
+tested port of `_bank_column`'s exact behaviour
+(`ingest/tests/test_schema.py::test_resolve_role_agrees_with_the_frozen_bank_column_helper`
+parametrizes over both real header shapes on disk and asserts byte-for-byte
+agreement with `_bank_column` itself); (2) no frozen dataset is rewritten to
+suit a reader -- `engine/data`, `holdout/data` and `scale/data_*` are
+untouched.
+
+**Rejected: modifying `resolver/loaders.py` to use the new role vocabulary
+too.** `resolver/loaders.py` is the sole I/O door `resolver/tests/test_isolation.py`
+grants `resolver/`, and it is covered by DECISIONS Sec.63's content-hash
+freeze together with `resolve.py`, `breaks.py` and three `corpus/` modules --
+unchanged "until the held-out run... has executed and reported," which it
+already has, but changing a frozen-and-hashed file for a refactor with no
+behavioural motive is not the kind of "genuine, unrelated reason" that entry
+contemplates. `resolver/loaders.py` stays exactly as it is; `ingest/` grew a
+second implementation next to it instead, which is the more informative
+outcome anyway -- two implementations that agree are stronger evidence than
+one file trusting itself.
+
+**Rejected: deleting the Phase A0 delegation instead of keeping it as the
+comparison target.** `resolver.loaders.load` remains the fixed point
+`ingest/tests/test_conformance.py` checks against precisely because it is
+frozen and hashed -- an unmoving target is what makes the convergence proof
+meaningful. If both sides could change, agreement would prove nothing.
+
+**Measured.** `pytest ingest/tests tests/test_layer_isolation.py -q` -- 60
+passed (45 conformance + 1 count guard + 5 new schema tests + 9
+layer-isolation cases). Full gate re-run:
+`pytest corpus/tests tests/test_isolation.py engine/tests tests/test_scale_degradation.py resolver/tests -q`
+-- 787 passed, 7 skipped, matching Sec.79's re-run exactly. No published
+figure moved.
+
+**Scope.** New files: `ingest/schema.py`, `ingest/normalize.py`,
+`ingest/formats/__init__.py`, `ingest/formats/csv_json.py`,
+`ingest/tests/test_schema.py`. Modified: `ingest/__init__.py` (routes through
+the new reader instead of delegating), `ingest/tests/test_conformance.py`
+(docstring only -- its assertions are unchanged). Nothing under `resolver/`,
+`resolver_contract/`, `matching/`, `engine/`, or any dataset directory
+changed.

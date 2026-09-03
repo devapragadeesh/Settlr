@@ -2,10 +2,13 @@
 
 Modelled on `corpus/tests/test_conformance.py`, which holds
 `corpus/generator/sim.py` to the same standard against the frozen simulator.
-This is Phase A0 of `DECISIONS.md` Sec.79: before any new format is added, the
-new reader and the old one must be provably in lock-step on the two schema
-families that already exist (`utr,date` frozen-engine spelling and
-`bank_reference,value_date` corpus spelling -- Sec.72).
+Phase A0 (`DECISIONS.md` Sec.79) proved this as a straight delegation. Phase
+A1 (Sec.80) rebuilt `ingest.load`'s CSV/JSON path as an independent second
+reader on the role vocabulary in `ingest/schema.py`, so this test is now a
+convergence proof between two separately-written implementations of the same
+six-file contract on the two schema families that exist (`utr,date`
+frozen-engine spelling and `bank_reference,value_date` corpus spelling --
+Sec.72), not a tautology about a wrapper agreeing with what it wraps.
 
 Ground truth is not touched: this test loads `ground_truth.json` for NOTHING,
 compares only what both loaders return from the frozen `resolver.loaders`
