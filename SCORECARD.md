@@ -43,6 +43,9 @@ Full provenance for each number, including the command that reproduces it: [`CLA
 | `Verified` that are non-decisive | 239 | of 275 — a rival composition would have passed the same check |
 | `Reconstructed` wrong | 0 | of 1 — **a count, not a rate**; the population is too small for one |
 | resolver runtime, 30 datasets | 923s | one full scoring run |
+| | | |
+| **Resolver at scale — enumerations completing** |  |  |
+| at 48,566 rows | **0/12** | every solve truncates from ~4,876 rows up; `rival_closure_count` becomes a lower bound, silently -- `scale/RESOLVER_SCALE_REPORT.md`, `DECISIONS.md` §77 |
 
 ## The one-paragraph version
 

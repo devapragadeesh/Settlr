@@ -4565,3 +4565,57 @@ scanner being over-sensitive rather than under.
 `scale/RESOLVER_SCALE_REPORT.md`, `scale/resolver_scale_results.json`. No
 existing artifact modified, no dataset generated, no resolver or contract line
 changed. 614 tests pass.
+
+---
+
+## 78. §77's scale finding surfaced into the three documents a reader actually opens first — 2026-09-03
+
+**§77 measured that resolver enumerations stop completing above ~5,000 rows,
+and wrote it up in full in `DECISIONS.md` and
+`scale/RESOLVER_SCALE_REPORT.md`.** Neither is where a reader looks first.
+`README.md`'s Limitations section is the five-minute read this repository
+points to explicitly; `SCORECARD.md` and `CLAIMS.md` are the two documents that
+each claim to hold every quantitative figure in the repository. All three said
+nothing about this. A true finding that only a reader who already knows to
+look in `DECISIONS.md` §77 will find is one dated-section-number away from
+being as undiscoverable as the stale claims §74 closed.
+
+**`README.md`.** A new limitation paragraph follows the wrong-bank-side one,
+in the same voice and the same dated-amendment style: states the finding (zero
+completions at 48,566 rows, truncation from ~4,876 up), the mechanism
+(`rival_closure_count` becomes a silent lower bound), the specific trap
+(`incomplete_enumerations` reads 0 at every one of these sizes and always will,
+because it only counts `Ambiguous` and none of these fixtures produce one), and
+links `scale/RESOLVER_SCALE_REPORT.md` rather than restating its table.
+
+**`SCORECARD.md` and `CLAIMS.md` are both generated, so the generators were
+fixed, never the files.** `corpus/scorecard.py` gains a `SCALE` held constant
+— same pattern as the existing `D15` constant two sections above it, and for
+the identical reason: an ~26-minute sweep should not re-run on every render,
+and a one-time measurement reported as data rather than re-derived prose is
+this project's convention, not an exception to it. `corpus/claims_ledger.py`
+gains a genuinely traceable row — `eval/resolver_scale_report.py`, unlike the
+D15 measurement, has a command that reproduces it, so it belongs in the main
+table rather than in `UNTRACEABLE`.
+
+**Measured before publishing, not asserted:** `git diff --numstat` on all
+three regenerated files shows insertions only — `SCORECARD.md` +3/-0,
+`CLAIMS.md` +1/-0 — confirming no existing figure moved.
+
+**A rendering bug caught and fixed before it shipped.** The first draft of
+`_scale_completion()` wrapped its return value in `**bold**`; `claims_ledger.py`'s
+`render()` already wraps every `value` cell in `**` itself, so the row would
+have published as `****0/12****`. Caught by reading the regenerated output
+rather than trusting the diff was empty of new problems just because it was
+short.
+
+**Rejected: restating the scale numbers by hand in all three documents.**
+Would create three more places a future change to the sweep has to remember to
+update — precisely the failure §74 spent an entire entry closing. Two of the
+three cite the report; the third (`SCORECARD.md`) holds a small typed constant
+sourced from it, matching `D15`'s existing precedent rather than inventing a
+new one.
+
+**Scope.** `README.md`, `corpus/scorecard.py`, `SCORECARD.md` (regenerated),
+`corpus/claims_ledger.py`, `CLAIMS.md` (regenerated). No resolver, oracle,
+generator or dataset changed; no existing figure moved. 614 tests pass.

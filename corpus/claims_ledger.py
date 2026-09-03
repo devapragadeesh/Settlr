@@ -38,9 +38,24 @@ def load(name: str):
     return json.loads(path.read_text()) if path.exists() else None
 
 
+def _scale_completion(point: dict | None) -> str:
+    """`complete = solves - budget-truncated - cap-truncated`. `None` on a
+    fixture the sweep has not (yet) run rather than a fabricated zero."""
+    if point is None:
+        return "not yet run"
+    complete = (point["solves"] - point["solves_hitting_budget"]
+                - point["solves_hitting_cap"])
+    return f"{complete}/{point['solves']}"
+
+
 def rows() -> list[dict]:
     oracle = load("oracle_results.json") or []
     baseline = load("baseline_results.json") or []
+    scale_path = ROOT / "scale" / "resolver_scale_results.json"
+    scale = (json.loads(scale_path.read_text())["points"]
+             if scale_path.exists() else [])
+    scale_at = lambda rows_target: next(
+        (p for p in scale if p["rows"] == rows_target), None)
     total = lambda p: sum(_dig(r["measured"], p) for r in oracle)
     gate = lambda g: sum(r["violations_by_gate"].get(g, 0) for r in oracle)
 
@@ -58,6 +73,13 @@ def rows() -> list[dict]:
              value=gate("G9"), denom=f"{total(('proven_unmatched','rows'))} proven rows",
              scope="30 datasets, gate G9 — the gate that did not exist before contract §4.7",
              artefact="`corpus/oracle.py`", how=ORACLE),
+        dict(claim="resolver enumerations completing at 48,566 rows",
+             value=_scale_completion(scale_at(48566)),
+             denom="12 CP-SAT solves, the largest `scale/data_*` fixture",
+             scope="runtime only, no accuracy claim -- `tests/test_scale_degradation.py`",
+             artefact="`eval/resolver_scale_report.py`",
+             how="`python3 eval/resolver_scale_report.py` (~26 min, resume-cached "
+                 "per point)"),
         dict(claim="`Verified` that are non-decisive",
              value=total(("accounting","verified_non_decisive")),
              denom=f"{total(('accounting','verified'))} `Verified`",

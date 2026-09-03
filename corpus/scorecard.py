@@ -23,6 +23,17 @@ if str(ROOT) not in sys.path:
 D15 = {"correct_refusals": 15, "genuine_failures": 0, "unknown": 0,
        "instances": 18}
 
+#: The resolver-at-scale verdict, measured in `scale/RESOLVER_SCALE_REPORT.md`
+#: (`DECISIONS.md` §77). Held here as data for the same reason D15 is: this
+#: scorecard should not re-run an eight-point, ~26-minute sweep on every
+#: render. `incomplete_enumerations` is deliberately NOT used for this row --
+#: it reads 0 at every one of these sizes, because it is only incremented for
+#: an `Ambiguous` outcome and none of these fixtures ever produce one. The
+#: figure below comes from wrapping `closing_subsets` at the call site instead.
+SCALE = {"complete_at_smallest": 6, "complete_at_largest": 0,
+         "solves_at_largest": 12, "rows_at_largest": 48_566,
+         "truncation_begins_rows": 4_876}
+
 
 def dig(payload, path):
     for key in path:
@@ -148,6 +159,13 @@ def main() -> int:
          f"of {total(('reconstructed_accuracy', 'correct')) + total(('reconstructed_accuracy', 'wrong'))} "
          "— **a count, not a rate**; the population is too small for one"),
         ("resolver runtime, 30 datasets", f"{seconds:.0f}s", "one full scoring run"),
+        ("", "", ""),
+        ("**Resolver at scale — enumerations completing**", "", ""),
+        (f"at {SCALE['rows_at_largest']:,} rows",
+         f"**{SCALE['complete_at_largest']}/{SCALE['solves_at_largest']}**",
+         f"every solve truncates from ~{SCALE['truncation_begins_rows']:,} rows "
+         "up; `rival_closure_count` becomes a lower bound, silently -- "
+         "`scale/RESOLVER_SCALE_REPORT.md`, `DECISIONS.md` §77"),
     ]
 
     out = ["# SCORECARD", "",

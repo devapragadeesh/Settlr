@@ -427,6 +427,29 @@ document otherwise cites, by a dedicated `corpus/score_bankside.py` — see
 closed: `split-credit`, and any wrong-bank-side interaction with the other
 axes, remain untested.
 
+**Above ~5,000 rows, the resolver's confidence claims stop being provable —
+and until 2026-09-03 this was never measured.** `eval/resolver_scale_report.py`
+runs the resolver against all eight `scale/data_*` fixtures (246 to 48,566
+rows) and finds that **every CP-SAT enumeration truncates once the eligible
+pool passes roughly 5,000 rows** — no solve completes, all stop on the search
+budget or the solution cap. The resolver still answers, and each answer is
+still warranted by an independent attestation match; what breaks is its
+ability to state *how many rival compositions would have passed the same
+check* — every `rival_closure_count` at those sizes is a lower bound, silently.
+Wall clock is not the problem (48,566 rows in 511s). The `incomplete_enumerations`
+figure this document and `SCORECARD.md` cite is **structurally 0 at every one
+of these sizes**, because it is only incremented for an `Ambiguous` outcome and
+none of these fixtures ever produce one — so a reader trusting that field would
+conclude nothing truncated, at every size where everything did. Full numbers,
+including the first measurement in this repository of how many wall-clock
+seconds one deterministic search-budget unit actually buys (it is not close to
+one second, and the ratio worsens ~8.5× across the sweep): **[`scale/RESOLVER_SCALE_REPORT.md`](scale/RESOLVER_SCALE_REPORT.md)**,
+`DECISIONS.md` §77. Runtime only — no accuracy claim is made or computed on
+these fixtures, enforced by `tests/test_scale_degradation.py`. Fixing the
+missing aggregate counter is a `resolver_contract` change and is intentionally
+not made here, per this project's rule that a contract change is its own dated
+decision.
+
 **Other named gaps.** The foreign-credit class is a rare-event class as built —
 amounts are drawn independently of the ledger, so a subset almost never nets to
 them, and the frozen engine adopted 1 of 112. 14 of 60 grid cells are run; B × C
