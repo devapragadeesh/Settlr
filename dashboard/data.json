@@ -1028,7 +1028,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 12,
      "mean_k": 1.0,
-     "seconds": 0.0
+     "seconds": 0.01
     },
     "frozen": {
      "ran": true,
@@ -1804,7 +1804,7 @@
  "hashes": null,
  "commit_ordering": {
   "available": true,
-  "count": 44,
+  "count": 45,
   "first_ten": [
    {
     "sha": "2ce40f95e1",
@@ -1859,11 +1859,6 @@
   ],
   "last_ten": [
    {
-    "sha": "d21a1fc8dd",
-    "date": "2026-08-28 14:11:15 +0530",
-    "subject": "Reconcile the stable baseline: prediction not confirmed, downstream figures recomputed"
-   },
-   {
     "sha": "d464a3ebdf",
     "date": "2026-08-28 14:13:13 +0530",
     "subject": "PREDICTION: the truncated-flag fix, committed before matching/ is touched"
@@ -1907,6 +1902,11 @@
     "sha": "462ced6cb4",
     "date": "2026-09-03 01:33:30 +0530",
     "subject": "DECISIONS 68 and 69: the 58 fix, verified, and cardinality reporting"
+   },
+   {
+    "sha": "0f6a7f70de",
+    "date": "2026-09-03 05:24:27 +0530",
+    "subject": "DECISIONS 70-73: loader silent-failure fixes, and 68's deferred GST re-score"
    }
   ]
  },

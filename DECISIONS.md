@@ -4214,3 +4214,87 @@ dataset, which is a reason to leave it alone, not a reason to refresh it.
 
 **Scope.** `corpus/GST_RESULTS.md`, `corpus/gst_results.json` (timings only)
 and this entry. No code changed in this pass.
+
+---
+
+## 74. Four documentation-integrity defects, one of them mine, and a freeze block that stopped verifying — 2026-09-03
+
+Four statements this repository publishes as authoritative were false or
+missing. None changes a measurement; all four change what a reader is told is
+true, which in a repo whose entire argument is "our claims are checked" is the
+failure mode that matters most.
+
+**(a) A false claim I introduced myself, four hours earlier.**
+`investigation/BENCHMARK_EXTENSION_RESULTS.md` said "The oracle's PSP-side-only
+accounting, `DECISIONS.md` §54, remains open." §56 closed it — "This entry is
+that owed change" (`DECISIONS.md:2585`). The sentence was written while
+amending a *different* stale claim in the same file, in the same pass, by
+someone who had just verified five other citations and did not verify that one.
+Recorded with attribution rather than quietly corrected, because "a true-
+sounding status line nobody re-checked" is the exact defect class the document
+it appeared in is about, and an anonymous fix would lose that.
+
+**(b) `CLAIMS.md` and `SCORECARD.md` directly contradicted each other.**
+`CLAIMS.md` listed "closure count over the DERIVED pool at the 18
+reconstructible instances" as **"NOT MEASURED … Named as a gap, deliberately
+not built."** It was measured: `investigation/D15_MEASUREMENT.md` §2.2 tabulates
+all 18 instances with their derived-pool closure counts, and `SCORECARD.md`
+publishes the result — **15/15 correct refusals**, one of them
+(`A20_Bnone_Cmax` line 1) proven exhaustively at 178 subsets with the
+enumeration complete. Two documents each claiming to be the single place every
+number lives, disagreeing about whether a measurement exists.
+
+The row stays in `CLAIMS.md`'s "no generating artefact" table, because that is
+still true — `corpus/scorecard.py` carries the figure as a held constant from a
+one-time enumeration and no command regenerates it. What was wrong is the
+conflation: **not reproducible is not the same as not measured**, and the row
+asserted the second from the first. Fixed in `corpus/claims_ledger.py`, which
+generates the file; `CLAIMS.md` was regenerated, and the diff is one line.
+
+**(c) `corpus/GST_HOLDOUT_RESULTS.md` stated neither its seed nor its freeze.**
+For a held-out artifact those two facts *are* the claim. Without them the
+document asks to be taken on trust — the one thing this repository declines to
+ask for anywhere else. A reader had to already know to go and read §63 and §64.
+
+Fixed through `corpus/render_gst_holdout.py` **only**, which never calls
+`resolve()`, `score_one()` or `corpus.oracle.score()` and refuses to write if a
+backfill alters a scored field. The re-render is **38 insertions, 0 deletions**;
+`corpus/gst_holdout_results.json` is untouched and does not appear in the diff.
+Every scored figure is bit-for-bit §64's.
+
+**(d) §63's hash block no longer verifies, and nothing said so.** Two of six
+files have changed: `corpus/score_gst.py` (§65/§66) and `resolver/loaders.py`
+(§70–§72). **This is not a broken freeze.** §63's constraint ran "until the
+held-out run (§64 onward) has executed and reported"; §64 executed on
+2026-08-31 and both changes came after. The freeze expired as designed. But
+§63 presents the block as verifiable with `shasum -a 256 -c`, and it silently
+stopped matching.
+
+The new provenance header **recomputes the six hashes at render time** and
+prints each as `unchanged` or `changed after §64`, with the expiry explained
+inline. A restated block would have been the same defect again, one generation
+later — this one cannot go stale, because nothing about it is typed.
+
+**Rejected: editing §63 to update its hashes.** `DECISIONS.md` is append-only.
+§63's block is a true record of state at freeze time and must stay exactly as
+written; what was missing was a *later* statement that the window had closed.
+
+**Rejected: putting the provenance header in the shared `render()`.**
+`corpus/score_gst.py` and `render_gst_holdout.py` share it, so the header would
+have appeared on `GST_RESULTS.md` too — where it would be wrong. The spine
+datasets were developed against, not held out; they have no freeze claim to
+make and stamping one on them would manufacture a guarantee that does not
+exist.
+
+**Rejected: hand-editing `CLAIMS.md`.** It is generated, and its own header
+says so. Editing the artifact instead of the generator is how a generated file
+starts lying.
+
+**Rejected: re-scoring the held-out set while touching its report.** §64/§65/
+§68/§73 all decline it and this entry does not reopen it. The header is
+prepended to a render of saved JSON; no dataset was scored.
+
+**Scope.** `corpus/claims_ledger.py`, `CLAIMS.md` (regenerated),
+`investigation/BENCHMARK_EXTENSION_RESULTS.md`,
+`corpus/render_gst_holdout.py`, `corpus/GST_HOLDOUT_RESULTS.md` (re-rendered).
+No resolver, oracle, generator or dataset changed. 614 tests pass.

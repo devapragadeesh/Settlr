@@ -166,8 +166,15 @@ every wrong-shaped finding (the oracle's PSP-side-only accounting, the four
 loader asymmetries) is written up and left for its own change, per this
 repo's own rule that discovering a defect while doing something else is not
 a license to fix it there. (The four loader asymmetries have since had
-that change: `DECISIONS.md` §70 and §71, 2026-09-03. The oracle's
-PSP-side-only accounting, `DECISIONS.md` §54, remains open.)
+that change: `DECISIONS.md` §70 and §71, 2026-09-03.
+
+**Correction, same date.** The first version of this parenthetical also said
+the oracle's PSP-side-only accounting "remains open". That was wrong when it
+was written: §56 closed it -- "This entry is that owed change" -- and the
+sentence above it in this document already described §54 as a finding awaiting
+its own pass, which it had already had. The error was introduced while
+amending a *different* stale claim in this file, which is the failure mode
+this whole document is about: a true-sounding status line nobody re-checked.)
 
 What remains open, by design: the GST/ITC axis, the full B×C grid,
 `split-credit`, resolver throughput at scale, and any global financial-
