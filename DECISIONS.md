@@ -4843,3 +4843,99 @@ instead of data.
 Modified: `requirements.txt` (`openpyxl>=3.1` added, one line). Nothing under
 `resolver/`, `resolver_contract/`, `matching/`, `engine/`, or any dataset
 directory changed. No published figure moved.
+
+## 82. CAMT.053 and MT940 bank-feed adapters, stdlib only -- the two formats a payments panel will actually recognise -- 2026-09-03
+
+**What was built.** `ingest/formats/camt053.py::load_bank_lines` (ISO 20022,
+namespace-agnostic XML) and `ingest/formats/mt940.py::load_bank_lines` (SWIFT
+`:61:`/`:86:` line format), both stdlib-only -- `xml.etree.ElementTree` and
+`re`, no new dependency. Both populate the `bank` role exclusively, same as
+Sec.81's `.xlsx` adapter; the other five artifacts stay CSV/JSON.
+
+**XXE and entity-expansion refused before parsing, proven with a real
+payload.** Untrusted input arriving over Track B's network transport makes
+this a live threat, not a theoretical one. `xml.etree.ElementTree` does not
+resolve external entities by default but IS vulnerable to internal entity
+expansion ("billion laughs") -- a few hundred bytes that expand to gigabytes
+in memory. `camt053.py::load_bank_lines` refuses any document declaring a
+`<!DOCTYPE`, full stop, before it ever reaches `ET.fromstring`: a CAMT.053
+statement legitimately never carries one, so nothing real is narrowed.
+`test_a_doctype_declaration_is_refused_before_parsing` feeds a textbook
+billion-laughs payload and asserts the refusal fires -- not a mocked
+assertion, an actual malicious document that would hang or exhaust memory if
+it reached the parser.
+
+**Round-trip proof on all 45 datasets, and two bugs the proof caught before
+they shipped.** Both adapters were checked against fixtures generated from
+every real `bank_statement.csv` on disk, mirroring Sec.81's method:
+
+1. **CAMT.053: narration `.strip()` lost real trailing whitespace.** Five of
+   45 round-trips failed on `A20_B100_Crandom` and similar datasets whose
+   narration text (e.g. `"NEFT RET RATN27025407279 - "`) carries a genuine
+   trailing space that `resolver.loaders`'s own CSV reader never strips
+   (`line.get("narration", "")`). The adapter's first draft called `.strip()`
+   on `<AddtlNtryInf>` text; removed, matching the CSV reader's behaviour
+   exactly rather than "cleaning up" a field this repo does not clean up
+   anywhere else.
+2. **MT940: the test generator, not the adapter, misplaced the reference.**
+   SWIFT field 61's reference subfield is `{owner_ref}[//{bank_ref}]` --
+   owner reference first, optional bank-assigned reference after `//`. The
+   first fixture generator wrote `NTRF//{ref}`, putting the only reference
+   this repo's data has into the bank-assigned slot and leaving the owner
+   slot empty; the adapter correctly read that as `""`, per spec. Every
+   round-trip case failed identically and consistently, which is what pointed
+   at the generator rather than the parser -- a real parsing bug would not
+   have produced a uniform failure shape across all 45 cases. Fixed by
+   writing the reference where this data actually belongs, in the owner-ref
+   position, per the format's own semantics -- not by changing the parser to
+   match a malformed fixture.
+3. **MT940: an unrecognised `:61:` line was silently dropped, not refused.**
+   `test_an_unrecognised_mark_raises` initially failed with "did not raise" --
+   the parsing loop matched `:61:` lines by regex success alone, so a line
+   that started with `:61:` but failed the full grammar (bad debit/credit
+   mark) was invisible rather than flagged. Fixed to check the `:61:` prefix
+   first and raise by name on a match failure, while every OTHER SWIFT field
+   tag (`:20:`, `:25:`, `:28C:`, ...) is still silently skipped, as it must be
+   -- those are real, valid fields this adapter does not need.
+
+**The century ambiguity in `YYMMDD`, disclosed rather than hidden.** MT940
+carries no century digit. The adapter applies the standard SWIFT convention
+(`00`-`79` -> `20xx`) -- correct for every date in this repository (2026-2028,
+confirmed by scanning all `bank_statement.csv` files) but a real, stated
+limit: a genuinely 19xx-dated statement would be misread, and no dataset here
+exercises that branch to prove it either way. `ingest/formats/mt940.py`'s
+module docstring says this in those words rather than leaving it implicit in
+the arithmetic.
+
+**Fields both formats discard, named rather than silently dropped.** CAMT.053:
+`Ccy` (no second-currency field exists), the `CdtDbtInd` flag as a standalone
+value (folded into the amount's sign instead), non-`Ntry` statement-level
+data. MT940: the funds code, the transaction type code (`NTRF` etc.), the
+bank-assigned `//` reference when an owner reference is present, and `:86:`
+structured subfield tags -- the whole continuation line is kept as one
+narration string. Both docstrings state this explicitly, per this project's
+standing rule against silently narrowing a richer source.
+
+**Rejected: `defusedxml` or another third-party XML-hardening library.** The
+DOCTYPE refusal removes the entity machinery's only on-ramp with zero new
+dependencies; `defusedxml` would be one more package to vet and pin for a
+threat this single check already closes completely for this format (CAMT.053
+never legitimately needs a DOCTYPE).
+
+**Rejected: adapting `tests/adversarial/run_adversarial.py`'s bucket harness
+to these formats now**, for the identical reason given in Sec.81 -- that
+harness is purpose-built around `bucket.py`'s resolver/matching classifiers,
+and extending it to a third and fourth format is a disproportionate,
+structural change to shared infrastructure. The three-bucket discipline is
+honoured directly in each format's own test file instead; formal harness
+integration is a named, deferred gap.
+
+**Measured.** `pytest ingest/tests/test_camt053.py ingest/tests/test_mt940.py -q`
+-- 94 passed (45+45 round-trips + 4 edge cases). Full ingest suite:
+`pytest ingest/tests tests/test_layer_isolation.py -q` -- 201 passed.
+
+**Scope.** New: `ingest/formats/camt053.py`, `ingest/formats/mt940.py`,
+`ingest/tests/test_camt053.py`, `ingest/tests/test_mt940.py`. No dependency
+added -- both are stdlib. Nothing under `resolver/`, `resolver_contract/`,
+`matching/`, `engine/`, or any dataset directory changed. No published figure
+moved.
