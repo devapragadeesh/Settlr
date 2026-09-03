@@ -5345,6 +5345,189 @@ dataset.
 `resolver_contract/`, `matching/`, `engine/`, `ingest/`, `transport/`,
 `store/`, or any dataset directory changed. No published figure moved.
 
+---
+
+## 88. `corpus/oracle.py::_itc_risk_flag`'s `actual` set counted refunds as at-risk payments — the truth-side mirror of §61's bug, diagnosed independent of the score it moves — 2026-09-03
+
+**The bug.** `_itc_risk_flag` (`corpus/oracle.py:670-`) built its truth set at
+what was lines 749-761:
+
+```python
+universe = sorted({row_id for item in output.open_breaks
+                   for row_id in item.row_ids})
+...
+actual = {(row_id, ground) for row_id in universe
+          for ground in at_risk.get(truth_month(row_id) or "", ())}
+```
+
+`universe` is every row in any `OpenBreak`, of any type — payment, refund, or
+adjustment. `actual` crossed the whole set against every statutory ground
+active in the row's settled month, with no check that the row itself could
+have generated a gateway fee. The oracle measured the resolver against a
+truth population the resolver's own contract does not recognise as at-risk in
+the first place — the same shape §61 already fixed once, resolver-side:
+`resolver/breaks.py::_accrues_input_tax` requires `type=="payment" and
+settled_at and fee and tax` before a row may carry ITC risk, and its own
+docstring names the mechanism directly — *"a refund or an adjustment is not a
+supply the gateway invoices for."* The oracle's `actual` was never given the
+equivalent guard.
+
+**This is diagnosable by reading those two functions side by side, with no
+dataset and no score in hand at all** — the same standalone-correctness
+argument §61 made for its own fix. It is recorded here because the diagnosis
+that led to this entry was made that way, before the held-out figure below was
+looked at again.
+
+**The one instance this bug has ever produced a visible effect:** `DECISIONS.md`
+§64's held-out run — `precision 1.0 / recall 0.75`, one false negative,
+`rfnd_bJNvTaslE4EpW0`. A refund, no gateway fee, hence no input tax at risk.
+The resolver correctly declined to flag it. `actual` counted it as a true
+finding anyway, because it merely settled into an at-risk month.
+
+## Why this is not the held-out-tuning move §64 forbade
+
+§64 stated plainly: *"Rejected: fixing the recall-0.75 gap now that it's
+visible... it does not permit fixing resolver/ or corpus/oracle.py in
+response to a score, however tempting a single false negative is to chase."*
+This fix's entire motivation is that exact score, more directly than any
+other entry in this chain. Answered here, concretely, not by reassurance:
+
+- **The bug is diagnosable with no dataset in hand.** Comparing
+  `_accrues_input_tax` against `actual`'s construction finds it without
+  running anything.
+- **The fix is a structural ceiling, not a patch shaped to the score.**
+  `corpus/oracle.py::score()` receives only a `ResolverOutput` and the parsed
+  `ground_truth.json` — verified, not assumed: `grep -n '"fee"\|"tax"\|\.rows\b'
+  corpus/oracle.py` matched nothing before this change. The fix can replicate
+  ONLY the `type == "payment"` leg of `_accrues_input_tax`, via the id-prefix
+  convention `corpus/generator/build.py:386/409/429` mints rows under
+  (`pay_`/`rfnd_`/`adj_`) — never the `settled_at`/`fee`/`tax` legs, which
+  this module has no data to check. It cannot be widened to fit the score
+  further even if someone wanted to; the ceiling was stated in
+  `investigation/itc_risk_actual_population/PREDICTION.md` before the fix
+  existed, and holds.
+- **Blast radius on everything an implementer could have iterated against is
+  provably zero, measured before the fix.** Both live-scored spine datasets
+  (`datasets_gst/A20_B100_Cmax_gst[_noisy]`) already had `TP=FP=FN=0,
+  precision=recall=None` — the entire at-risk-and-open subpopulation was
+  empty. A stricter `actual` can only ever remove pairs from an
+  already-empty set. There was nothing there to have tuned against.
+- **The held-out artifact is never touched.** `corpus/GST_HOLDOUT_RESULTS.md`
+  and `corpus/gst_holdout_results.json` are unmodified by this change —
+  verified by SHA-256 before and after running the diagnostic script below,
+  both files identical. §64's published `TP=3/FP=0/FN=1, precision
+  1.0/recall 0.75` stands exactly as published, forever.
+- **Prediction preceded fix, verifiable in `git log`.**
+  `investigation/itc_risk_actual_population/PREDICTION.md` was committed in
+  its own commit before any line of `corpus/oracle.py` changed.
+- **The old 0.75 was not wrong.** It correctly measured the resolver against
+  the *old* definition of `actual`. This fix changes what future runs
+  measure, not the truth of what was measured before — conflating "the
+  number changes" with "the old number was wrong" is precisely the
+  rhetorical move a hostile reviewer would flag, so it is named and rejected
+  here rather than left implicit.
+
+## The fix
+
+`corpus/oracle.py` gains `_is_a_payment_row(row_id)` — `row_id.startswith("pay_")`
+— applied only to `actual`'s construction, not to `universe` (which stays
+type-agnostic; it feeds purely descriptive counts like
+`open_break_rows_settled_in_truth` that are legitimately about every
+open-break row). A new key, `open_break_rows_payment_type`, exposes the
+narrowing. `corpus/tests/test_conformance.py::
+test_itc_risk_actual_only_admits_payment_row_ids` pins the id-prefix
+convention against a real built dataset (`corpus/datasets_gst/A20_B100_Cmax_gst`)
+rather than the string literal, so a future rename of the convention fails
+loudly instead of silently degrading the predicate into a no-op or an
+over-broad filter.
+
+## What the fix does to the numbers — predicted, then measured
+
+**Live-scored datasets: predicted zero change, measured zero change.**
+`corpus/score_gst.py --all` regenerated `corpus/GST_RESULTS.md`/
+`gst_results.json`. The diff is wall-clock timing fields, one grep-count bump
+(27→28 lines, the new function), and the additive `open_break_rows_payment_type`
+key. **Every `true_positive`/`false_positive`/`false_negative`/`precision`/
+`recall` figure is byte-identical** on both `datasets_gst/A20_B100_Cmax_gst`
+and `..._noisy` — `None`/`None`, as predicted. G10 (§76) reads
+`false_positive = |predicted − actual|`; `predicted` is empty on both, so it
+was structurally unable to move either way, and it did not.
+
+**The held-out dataset, diagnostic only — not a re-score.**
+`investigation/itc_risk_actual_population/diagnostic_holdout_rescore.py`
+loads `datasets_gst_holdout/A20_B100_Cmax_gst_holdout`, calls `resolve()` once
+(safe and reproducible per §68's proven determinism on this exact dataset —
+the same precedent `investigation/resolver_nondeterminism/PREDICTION.md`'s
+and §68's own diagnostic re-runs already used against it), and calls the
+*fixed* `_itc_risk_flag` against that output. It never imports
+`corpus.score_gst.score_one` and never opens any path under `corpus/` in
+write mode. Result, written only to
+`investigation/itc_risk_actual_population/holdout_diagnostic_result.json`
+and `HOLDOUT_DIAGNOSTIC.md`:
+
+```
+                official (§64, frozen)   diagnostic (§88, today)
+true_positive          3                        3
+false_positive         0                        0
+false_negative         1                        0
+precision             1.0                      1.0
+recall                0.75                     1.0
+```
+
+**The prediction's §4 forecast — `TP=3/FP=0/FN=0`, made without having
+enumerated every row in the dataset's universe by type, and named
+falsifiable if the enumeration found otherwise — held exactly.** No other
+refund or adjustment in that dataset's universe was contributing a hidden
+effect. `open_break_rows`: 16 total, 13 payment-type, 4 settled in truth.
+
+## Rejected alternatives
+
+**Plumbing the resolver's `Dataset` into `oracle.score()` to replicate
+`_accrues_input_tax` in full.** Would let `actual` also gate on `fee`/`tax`,
+closing the ceiling above. Rejected: (a) `_itc_risk_flag`'s own docstring
+already argues the resolver's frame and truth's frame are "two frames,
+deliberately not reconciled" — a `Dataset` parameter would let the oracle
+re-derive facts from the same source the resolver used, the exact
+"measurement becomes circular with what it measures" pattern §44/§56/§60
+each rejected once; (b) not needed — the diagnosed bug is fully closed by the
+`type`-only leg; (c) doing it now, in response to the held-out score, would
+be far closer to the forbidden tuning pattern than the type-only fix is,
+since it would visibly widen the fix's reach specifically because a number
+was seen.
+
+**Touching `resolver/breaks.py`.** Not needed, not touched. The resolver-side
+predicate is already correct per §61; this is purely a truth-construction fix.
+
+**Regenerating `corpus/GST_HOLDOUT_RESULTS.md` / `gst_holdout_results.json`.**
+Forbidden by §64/§65/§68/§73's precedent chain and by this fix's own
+motivating risk. The diagnostic file exists precisely so the corrected number
+is knowable without ever touching the official artifact.
+
+**Gating the corrected recall.** §76 already declined to gate recall over a
+four-row population ("a threshold on noise"); nothing here changes that
+population or that reasoning.
+
+**Deriving row type from `batches[].composition` instead of the id prefix.**
+Checked directly: that field mixes all three prefixes and carries no type tag
+of its own — the id prefix is genuinely the only signal `ground_truth.json`
+carries. Any other derivation would need a `Dataset` (rejected above) or would
+be inventing a signal not actually present in truth.
+
+## Scope
+
+`corpus/oracle.py` (`_is_a_payment_row`, the `actual` call site, the docstring
+addition), `corpus/tests/test_oracle.py` (two new tests, one negative
+control), `corpus/tests/test_conformance.py` (one conformance test),
+`investigation/itc_risk_actual_population/` (`PREDICTION.md`, committed first
+in its own commit; `diagnostic_holdout_rescore.py`,
+`holdout_diagnostic_result.json`, `HOLDOUT_DIAGNOSTIC.md`), `corpus/GST_RESULTS.md`
+and `corpus/gst_results.json` (regenerated, byte-identical scoring figures).
+**`corpus/GST_HOLDOUT_RESULTS.md`, `corpus/gst_holdout_results.json`,
+`resolver/breaks.py`, and every file under `resolver_contract/` are untouched
+— verified by SHA-256 for the two held-out files, by `git diff --stat` for
+the rest.** `pytest tests engine/tests resolver/tests corpus/tests -q`: 984
+passed, 7 skipped.
+
 ## 89. Phase D -- CI, a generated ingestion report, and the new layer surfaced into README/SCORECARD/CLAIMS/CHECKPOINT -- 2026-09-03
 
 **What was built.** The closing phase of the multi-format-ingestion /

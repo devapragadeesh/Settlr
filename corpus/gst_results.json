@@ -82,12 +82,13 @@
    ],
    "note": "absent-from-2B invoices are excluded from this comparison on both sides -- they are not IN the file for a column filter to read at all. That exclusion is itself part of the answer: the shortcut cannot even see that ground."
   },
-  "resolver_seconds": 31.66,
+  "resolver_seconds": 32.76,
   "oracle_passed": true,
   "oracle_violations_by_gate": {},
   "oracle_violations": [],
   "oracle_itc_risk_flag": {
    "open_break_rows": 22,
+   "open_break_rows_payment_type": 20,
    "open_break_rows_settled_in_truth": 4,
    "flagged_rows": 0,
    "flagged_rows_that_never_settled": 0,
@@ -113,7 +114,7 @@
    "gate": "G10 gates false_positive at zero. VACUOUS where flagged_rows is 0: no prediction can be false. Recall is NOT gated"
   },
   "resolver_gstr2b_probe": {
-   "seconds": 62.91,
+   "seconds": 65.36,
    "outputs_byte_identical": true,
    "line_outcome_count_with_file": 59,
    "line_outcome_count_without_file": 59
@@ -202,12 +203,13 @@
    ],
    "note": "absent-from-2B invoices are excluded from this comparison on both sides -- they are not IN the file for a column filter to read at all. That exclusion is itself part of the answer: the shortcut cannot even see that ground."
   },
-  "resolver_seconds": 55.62,
+  "resolver_seconds": 57.49,
   "oracle_passed": true,
   "oracle_violations_by_gate": {},
   "oracle_violations": [],
   "oracle_itc_risk_flag": {
    "open_break_rows": 18,
+   "open_break_rows_payment_type": 15,
    "open_break_rows_settled_in_truth": 6,
    "flagged_rows": 0,
    "flagged_rows_that_never_settled": 0,
@@ -233,7 +235,7 @@
    "gate": "G10 gates false_positive at zero. VACUOUS where flagged_rows is 0: no prediction can be false. Recall is NOT gated"
   },
   "resolver_gstr2b_probe": {
-   "seconds": 111.42,
+   "seconds": 115.43,
    "outputs_byte_identical": true,
    "line_outcome_count_with_file": 59,
    "line_outcome_count_without_file": 59

@@ -116,12 +116,12 @@ Nothing above is gated on any of it, and no resolver code was changed in respons
 
 ## Oracle interaction
 
-A grep of `corpus/oracle.py` for `gst`/`itc`/`2b` (case-insensitive) now matches **27 lines** — it returned zero when this file was first generated, and §60's `_itc_risk_flag` block above is the whole of the difference. That block was measured and ungated until 2026-09-03; **its precision is now gated by G10** (`DECISIONS.md` §76), while its recall stays measured and ungated because the population is far too small for a miss to mean anything. **G10 is VACUOUS on this family and that is stated rather than left to be discovered:** the flag fires on nothing here, so no prediction can be false and the gate cannot fail. It guards a future `resolver/breaks.py` that flags more aggressively. The other GATED checks (G1-G9, all composition/closure/warrant checks) remain untouched by anything GST-related; none of them can fail or pass on a tax finding, because none of them look.
+A grep of `corpus/oracle.py` for `gst`/`itc`/`2b` (case-insensitive) now matches **28 lines** — it returned zero when this file was first generated, and §60's `_itc_risk_flag` block above is the whole of the difference. That block was measured and ungated until 2026-09-03; **its precision is now gated by G10** (`DECISIONS.md` §76), while its recall stays measured and ungated because the population is far too small for a miss to mean anything. **G10 is VACUOUS on this family and that is stated rather than left to be discovered:** the flag fires on nothing here, so no prediction can be false and the gate cannot fail. It guards a future `resolver/breaks.py` that flags more aggressively. The other GATED checks (G1-G9, all composition/closure/warrant checks) remain untouched by anything GST-related; none of them can fail or pass on a tax finding, because none of them look.
 
 | dataset | gates | verdict | resolver seconds |
 |---|---|---|---:|
-| `datasets_gst/A20_B100_Cmax_gst` | all zero | PASS | 31.66 |
-| `datasets_gst/A20_B100_Cmax_gst_noisy` | all zero | PASS | 55.62 |
+| `datasets_gst/A20_B100_Cmax_gst` | all zero | PASS | 32.76 |
+| `datasets_gst/A20_B100_Cmax_gst_noisy` | all zero | PASS | 57.49 |
 
 ## The `gstr2b.csv` removal probe: can the tax feed move a line outcome?
 
@@ -129,8 +129,8 @@ When this probe was first written it asked whether `resolver/` opened `gstr2b.cs
 
 | dataset | line outcomes identical | line outcomes (with file) | line outcomes (without file) | seconds |
 |---|---|---:|---:|---:|
-| `datasets_gst/A20_B100_Cmax_gst` | **True** | 59 | 59 | 62.91 |
-| `datasets_gst/A20_B100_Cmax_gst_noisy` | **True** | 59 | 59 | 111.42 |
+| `datasets_gst/A20_B100_Cmax_gst` | **True** | 59 | 59 | 65.36 |
+| `datasets_gst/A20_B100_Cmax_gst_noisy` | **True** | 59 | 59 | 115.43 |
 
 ## The answer
 

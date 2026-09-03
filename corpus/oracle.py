@@ -666,6 +666,42 @@ _REASON_TO_GROUND = {
     "supplier_gstr3b_not_filed_rule_37a": "gstr2b_37a_exposure",
 }
 
+#: `corpus/generator/build.py:386/409/429` mints row ids under exactly these
+#: three prefixes for payment/refund/adjustment rows respectively. Not an
+#: asserted contract anywhere else in this module before 88 --
+#: `corpus/tests/test_conformance.py::
+#: test_itc_risk_actual_only_admits_payment_row_ids` pins it against a real
+#: generated fixture so a future rename fails loudly here rather than
+#: silently turning `_is_a_payment_row` into a no-op or an over-broad filter.
+_PAYMENT_PREFIX = "pay_"
+
+
+def _is_a_payment_row(row_id: str) -> bool:
+    """Did this row-id come from a PAYMENT, as opposed to a refund or an
+    adjustment? DECISIONS.md 88.
+
+    This is the oracle-side mirror of ONE leg of
+    `resolver/breaks.py::_accrues_input_tax` (61) -- the `type == "payment"`
+    leg, and ONLY that leg. `corpus/oracle.py::score()` receives a
+    `ResolverOutput` and the parsed `ground_truth.json` and nothing else; no
+    row's `fee` or `tax` ever reaches this module (verified: `grep -n
+    '"fee"\\|"tax"' corpus/oracle.py` matches nothing outside this
+    docstring). A refund or adjustment settling into an at-risk month
+    therefore cannot be told apart from a payment by the `settled_at`/`fee`/
+    `tax` legs `_accrues_input_tax` also checks -- this predicate is a
+    CEILING, not an approximation of the full resolver-side check, and
+    88 records that ceiling as a deliberate, not-yet-closed gap rather than
+    something this predicate quietly papers over.
+
+    A refund never carries a gateway fee -- there is no supply for the
+    gateway to invoice -- so a refund settling into an at-risk month carries
+    no input tax at risk regardless of which statutory ground the month
+    carries. Same reasoning for an adjustment. 61 made the identical argument
+    resolver-side, applied to `predicted`; this is its mirror, applied to
+    `actual`.
+    """
+    return row_id.startswith(_PAYMENT_PREFIX)
+
 
 def _itc_risk_flag(output, truth) -> dict:
     """Precision/recall of `OpenBreak.itc_risk` / `.itc_risk_grounds`.
@@ -718,6 +754,16 @@ def _itc_risk_flag(output, truth) -> dict:
     months' grounds to every flagged row in it; `breaks_straddling_months`
     counts how often that could have happened, so the reader can see whether
     the cross-product is lossy on this data rather than trusting that it isn't.
+
+    `actual` is additionally scoped to rows `_is_a_payment_row` admits
+    (`DECISIONS.md` 88). This mirrors 61's fix on the `predicted` side, but
+    reaches only the `type` leg of `_accrues_input_tax` -- this module has no
+    access to `fee`/`tax` truthy-ness. A refund or adjustment that settled
+    into an at-risk month is therefore never counted as a true finding here,
+    matching the resolver's own inability to flag it. `universe` itself is
+    left type-agnostic -- it feeds purely descriptive counts
+    (`open_break_rows_settled_in_truth`, `flagged_rows_that_never_settled`)
+    that are legitimately about every open-break row regardless of type.
     """
     gst_truth = truth["gst_truth"]
     # invoice -> filing period. Same source `corpus/score_gst.py` already uses
@@ -748,6 +794,7 @@ def _itc_risk_flag(output, truth) -> dict:
 
     universe = sorted({row_id for item in output.open_breaks
                        for row_id in item.row_ids})
+    payment_universe = sorted(r for r in universe if _is_a_payment_row(r))
     predicted: set[tuple[str, str]] = set()
     straddling = 0
     for item in output.open_breaks:
@@ -757,7 +804,7 @@ def _itc_risk_flag(output, truth) -> dict:
         for row_id in item.itc_risk:
             for ground in item.itc_risk_grounds:
                 predicted.add((row_id, ground))
-    actual = {(row_id, ground) for row_id in universe
+    actual = {(row_id, ground) for row_id in payment_universe
               for ground in at_risk.get(truth_month(row_id) or "", ())}
 
     tp = len(predicted & actual)
@@ -766,6 +813,7 @@ def _itc_risk_flag(output, truth) -> dict:
     flagged = {row_id for item in output.open_breaks for row_id in item.itc_risk}
     return {
         "open_break_rows": len(universe),
+        "open_break_rows_payment_type": len(payment_universe),
         "open_break_rows_settled_in_truth":
             sum(1 for r in universe if truth_month(r) is not None),
         "flagged_rows": len(flagged),

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -24,11 +25,11 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from corpus.oracle import (determined_instances, reconstructible_instances,   # noqa: E402
-                           score)
+                           _itc_risk_flag, score)
 from resolver_contract.types import (                           # noqa: E402
-    Ambiguous, CandidateSet, Composition, Evidence, EvidenceKind, Reconstructed,
-    ResolverOutput, SourceSystem, Unresolved, UnresolvedReason, Verified,
-    Warrant, arithmetic_closure_over,
+    Ambiguous, BreakReason, CandidateSet, Composition, Evidence, EvidenceKind,
+    OpenBreak, Reconstructed, ResolverOutput, SourceSystem, Unresolved,
+    UnresolvedReason, Verified, Warrant, arithmetic_closure_over,
 )
 
 DATASETS = ROOT / "corpus" / "datasets"
@@ -253,3 +254,81 @@ def test_balance_identity_violations_are_not_reported(truth):
     rendered = score(_perfect(truth), truth).render().lower()
     assert "balance-identity" not in rendered
     assert "balance identity" not in rendered
+
+
+# --------------------------------------------------------------------------
+# `_itc_risk_flag`'s `actual` set -- DECISIONS.md 88
+# --------------------------------------------------------------------------
+
+
+def _at_risk_month_truth() -> dict:
+    """The smallest `truth` shape `_itc_risk_flag` reads: one invoice, one
+    ground, one batch, both a payment and a refund settled into it."""
+    formed_at = int(datetime(2027, 1, 15, tzinfo=timezone.utc).timestamp())
+    return {
+        "gst_truth": {"grounds_by_invoice": {"INV1": ["absent_from_gstr2b"]}},
+        "itc_at_risk": [{"invoice_no": "INV1", "period": "2027-01"}],
+        "batches": [{"settlement_id": "setl_1", "formed_at": formed_at}],
+        "settled_in": {"pay_1": "setl_1", "rfnd_1": "setl_1"},
+    }
+
+
+def _one_open_break_flagging_only_the_payment() -> ResolverOutput:
+    """What a correct resolver produces on the fixture above: `pay_1` and
+    `rfnd_1` land in one break (same reason/age/first_seen), but only
+    `pay_1` -- the row that could have generated a gateway fee -- is
+    annotated `itc_risk`. `rfnd_1` sits in the break, unflagged, exactly as
+    `resolver/breaks.py::_accrues_input_tax` would produce (61)."""
+    break_ = OpenBreak(
+        row_ids=("pay_1", "rfnd_1"), reason=BreakReason.MISSING_SOURCE,
+        age_days=3, first_seen="2027-01-15",
+        itc_risk=frozenset({"pay_1"}), itc_risk_grounds=("gstr2b_absent",))
+    return ResolverOutput(resolver="fixture", dataset="fixture",
+                          line_outcomes=(), unmatched=(break_,))
+
+
+def test_a_refund_settled_in_an_at_risk_month_is_not_counted_as_a_true_finding():
+    """Oracle-side mirror of `resolver/tests/test_gst_risk.py::
+    test_a_row_that_never_settled_is_not_flagged_by_its_break_mate` (61). Same
+    bug shape, opposite side: that test pins the RESOLVER's `predicted`; this
+    one pins the ORACLE's `actual`.
+
+    Before 88, `actual` counted every row settled into an at-risk month
+    regardless of type -- `rfnd_1` would have been counted as a true finding
+    the resolver should have flagged, producing a false negative on a row
+    that could never have carried input tax risk at all. `_is_a_payment_row`
+    excludes it from `actual` the same way `_accrues_input_tax` already
+    excludes it from `predicted`.
+    """
+    truth = _at_risk_month_truth()
+    output = _one_open_break_flagging_only_the_payment()
+
+    result = _itc_risk_flag(output, truth)
+
+    assert result["true_positive"] == 1
+    assert result["false_positive"] == 0
+    assert result["false_negative"] == 0
+    assert result["precision"] == 1.0
+    assert result["recall"] == 1.0
+    assert result["open_break_rows"] == 2
+    assert result["open_break_rows_payment_type"] == 1
+
+
+def test_the_refund_test_is_not_vacuous(monkeypatch):
+    """Negative control. If `actual` were still built from the untyped
+    `universe` -- i.e. if `_is_a_payment_row` degraded to an always-True
+    no-op -- `rfnd_1` would reappear in `actual` as a pair `predicted` never
+    named, and recall would drop below 1.0. Proves the test above is
+    exercising the fix, not passing on an already-empty set."""
+    import corpus.oracle as oracle_module
+
+    truth = _at_risk_month_truth()
+    output = _one_open_break_flagging_only_the_payment()
+
+    monkeypatch.setattr(oracle_module, "_is_a_payment_row", lambda row_id: True)
+    result = oracle_module._itc_risk_flag(output, truth)
+
+    assert result["false_negative"] == 1, (
+        "forcing every row to count as a payment should resurrect the "
+        "pre-88 false negative on rfnd_1")
+    assert result["recall"] == 0.5

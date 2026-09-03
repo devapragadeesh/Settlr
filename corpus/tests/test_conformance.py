@@ -196,3 +196,43 @@ def test_cpsat_rule_is_recorded_when_it_is_used():
     assert all(b.sampler == "cpsat_exact" for b in degraded)
     assert all(b.selection_fallback == "meet_in_the_middle_intractable"
                for b in degraded)
+
+
+def test_itc_risk_actual_only_admits_payment_row_ids():
+    """`corpus/oracle.py::_is_a_payment_row` (`DECISIONS.md` 88) relies on the
+    `pay_`/`rfnd_`/`adj_` id-prefix convention `corpus/generator/build.py`
+    mints rows under (lines 386/409/429). Nothing in `corpus/oracle.py`
+    imports `build.py` or asserts this convention anywhere else -- if a
+    future change to id minting silently drops or renames a prefix,
+    `_is_a_payment_row` degrades into either an always-True no-op (which
+    resurrects the defect 88 fixes) or an always-False one (which would zero
+    out `actual` on every dataset, including ones that currently show
+    nonzero recall). This test checks the assumption against real generated
+    output, not against the string literal alone.
+    """
+    import json
+
+    from corpus.oracle import _is_a_payment_row
+
+    directory = ROOT / "corpus" / "datasets_gst" / "A20_B100_Cmax_gst"
+    if not (directory / "ground_truth.json").exists():
+        pytest.skip("no corpus/datasets_gst dataset built yet")
+    truth = json.loads((directory / "ground_truth.json").read_text())
+    ids = set(truth.get("settled_in", {}).keys())
+
+    by_prefix = {"payment": [i for i in ids if i.startswith("pay_")],
+                "refund": [i for i in ids if i.startswith("rfnd_")],
+                "adjustment": [i for i in ids if i.startswith("adj_")]}
+    assert all(by_prefix.values()), (
+        "fixture must contain all three row types for this test to mean "
+        "anything -- an empty bucket would make one branch below vacuous")
+
+    for row_id in by_prefix["payment"]:
+        assert _is_a_payment_row(row_id)
+    for row_id in by_prefix["refund"] + by_prefix["adjustment"]:
+        assert not _is_a_payment_row(row_id)
+
+    # no id anywhere in the real fixture falls outside the three known
+    # prefixes -- if one did, `_is_a_payment_row` would silently classify it
+    # as "not a payment" with no signal that a fourth type now exists.
+    assert all(row_id.startswith(("pay_", "rfnd_", "adj_")) for row_id in ids)
