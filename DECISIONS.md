@@ -4446,3 +4446,122 @@ commit, and a file kept appearing in it that nothing in the pass had touched.
 "nothing here is gated" paragraphs), `corpus/GST_RESULTS.md` and
 `corpus/gst_results.json` (regenerated; both datasets still PASS, all gates
 zero), `corpus/tests/test_dashboard_export.py`. 614 tests pass.
+
+---
+
+## 77. The resolver at scale — §53's deferred measurement, and the finding is not the timings — 2026-09-03
+
+§53 deferred measuring resolver throughput and gave a reason §72 proved wrong.
+`eval/resolver_scale_report.py` now measures it over all eight `scale/data_*`
+fixtures, writing `scale/RESOLVER_SCALE_REPORT.md` and
+`scale/resolver_scale_results.json`. **No new data was generated.**
+`scale/SCALE_REPORT.md` and `scale/scale_results.json` — the frozen cascade's
+artifacts — are untouched.
+
+**Runtime only. No accuracy metric is computed**, per §53's framing and
+`tests/test_scale_degradation.py`, which fails the build over one.
+
+### The headline is the completion column
+
+| rows | wall | pool max | complete solves |
+|---:|---:|---:|---:|
+| 246 | 67.4s | 40 | 6/12 |
+| 505 | 66.9s | 83 | 2/12 |
+| 997 | 90.2s | 163 | 1/12 |
+| 2,452 | 156.0s | 383 | 1/12 |
+| 4,876 | 147.3s | 768 | **0/12** |
+| 9,732 | 211.4s | 1,527 | **0/12** |
+| 24,298 | 349.2s | 3,799 | **0/12** |
+| 48,566 | 510.6s | 7,526 | **0/12** |
+
+**Above ~5,000 rows not one enumeration completes.** Every solve stops on the
+deterministic budget or the solution cap, so every `rival_closure_count` at
+those sizes is a lower bound with `rival_count_is_lower_bound` set. The
+resolver still answers and its answers are still warranted — tier B's
+attestation match does not depend on the enumeration. What degrades is its
+ability to say *how many rival compositions would have passed the same check*,
+which is the whole of `Verified`'s honesty about its own strength. 510 seconds
+for 48,566 rows is unremarkable; twelve lower-bounded rival counts is the
+result.
+
+### `incomplete_enumerations` reads 0 at every one of those sizes
+
+`ResolverOutput.accounting()` reports `incomplete_enumerations: 0` even where
+no solve completed. Not a bug and nothing is hidden at the outcome level:
+`resolver_contract/types.py:1256` increments it only for `Ambiguous`
+(`incomplete += not outcome.candidate_set.complete`), and these fixtures
+produce zero `Ambiguous`. Each `Verified` carries its own
+`rival_count_is_lower_bound`.
+
+What is missing is an **aggregate**: no counter exists for `Verified` whose
+rival count was truncated, so a summary reader sees `0` and can reasonably
+conclude nothing truncated. On this family that inference is wrong from 4,876
+rows upward.
+
+**Named, not fixed.** Adding a counter to `Accounting` is a
+`resolver_contract` change, and this project's rule is that a contract change
+gets its own dated decision and never rides along with the work that provoked
+it. The report measures at the `closing_subsets` call site instead, which needs
+no contract change — which is precisely why it could state the finding.
+
+### What this measurement is not
+
+**It exercises tier B only, at every size.** No `scale/data_*` ships a
+`settlement_report.csv`, so tier A is dead; recon rows carry `settlement_id`,
+so tier B resolves all 12 credits; tier C — the reconstruction search — is
+never reached. This measures `_verify`'s mandatory rival-count enumeration, not
+reconstruction. **"12/12 `Verified` at 48,566 rows" is not evidence the hard
+path scales**, and the report says so above its own table. Measuring tier C
+needs a fixture whose rows carry no `settlement_id`: new data, not a flag.
+
+**`max_deterministic_time` is not wall-clock**, and the report publishes the
+first measurement of the ratio in this repository: **1.21 seconds per
+deterministic unit at pool 40, 10.3 at pool 3,799** — an 8.5× spread across the
+sweep. Reading `DEFAULT_DETERMINISTIC_BUDGET = 10.0` as "about ten seconds" is
+wrong by an order of magnitude at the top end. §68 chose determinism over
+predictable wall time deliberately; this quantifies what that costs.
+
+**Rejected: repointing `eval/scale_report.py`.** It imports `matching.*`
+throughout, reads `stage3.reconstructions` fields no `ResolverOutput` has, and
+writes the frozen cascade's published artifact in place. `resolver/tests/
+test_isolation.py` also bans `matching` from the resolver's import path. Two
+engines, two reports.
+
+**Rejected: scoring the fixtures.** `scale/truth_*` is a real key but uses the
+frozen generator's schema, which `corpus/score_resolver.py` cannot read; and
+`tests/test_scale_degradation.py` fails the build on an accuracy claim here.
+Scoring would need an adapter and its own dated decision.
+
+**Rejected: recomputing pools from `pool_at`.** Without consumption it
+over-reports by ~4.5× at the small sizes (129.9 mean vs the measured 28.4).
+Publishing that beside a timing would misattribute the cost. Pools are recorded
+at the call site.
+
+### Two corrections to this pass's own conduct
+
+**§76's stated scope is wrong, and this entry is the correction.** §76 lists
+its scope as five `corpus/` files. Its commit `7ba27be` also contains
+`eval/resolver_scale_report.py`, `scale/RESOLVER_SCALE_REPORT.md` and
+`scale/resolver_scale_results.json` — three Phase-4 files swept in by
+`git add -A` while they sat unstaged in the tree. The commit message does not
+mention them either. No content is wrong and nothing was lost; the *description*
+of what landed is inaccurate, in a pass whose entire subject is inaccurate
+descriptions. Recorded rather than rebased away: `git log` is cited as evidence
+throughout this repository, and quietly rewriting it to look tidier costs more
+than the error does.
+
+**`engine/tests/test_no_leakage.py` caught this pass's new module on a
+docstring.** The scan is `if "ground_truth" in path.read_text()` — a bare
+substring — and an earlier draft of `eval/resolver_scale_report.py` tripped it
+by *describing* the answer key while never opening it. The fix was to reword
+the prose, **not** to add the module to `GROUND_TRUTH_ALLOWLIST`: that list
+means "this module reads the key", and adding one that does not would weaken
+the only guarantee it makes. Noted because the imprecision runs both ways —
+`tests/test_isolation.py` already carries an AST-based check with the docstring
+"Text matching is defeated by `'ground' + '_truth.json'`", and this is the same
+scanner being over-sensitive rather than under.
+
+**Scope.** New: `eval/resolver_scale_report.py`,
+`scale/RESOLVER_SCALE_REPORT.md`, `scale/resolver_scale_results.json`. No
+existing artifact modified, no dataset generated, no resolver or contract line
+changed. 614 tests pass.

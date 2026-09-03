@@ -206,31 +206,73 @@ def write_report(points) -> None:
         "",
         "## 1. The measurements",
         "",
-        "| rows | bank lines | wall clock | rows/s | solves | pool mean | "
-        "pool max | worst solve | budget-bound | Verified |",
-        "|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| rows | wall clock | rows/s | pool mean | pool max | worst solve "
+        "| budget-bound | cap-bound | **COMPLETE** |",
+        "|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for p in points:
+        complete = p["solves"] - p["solves_hitting_budget"] - p["solves_hitting_cap"]
         out.append(
-            f"| {p['rows']:,} | {p['bank_lines']} | {p['wall_clock_seconds']:.2f}s "
-            f"| {p['rows_per_second']:,.0f} | {p['solves']} "
+            f"| {p['rows']:,} | {p['wall_clock_seconds']:.2f}s "
+            f"| {p['rows_per_second']:,.0f} "
             f"| {p['pool_mean']:,.0f} | {p['pool_max']:,} "
             f"| {p['worst_solve_seconds']:.2f}s "
-            f"| {p['solves_hitting_budget']}/{p['solves']} | {p['verified']} |")
+            f"| {p['solves_hitting_budget']}/{p['solves']} "
+            f"| {p['solves_hitting_cap']}/{p['solves']} "
+            f"| **{complete}/{p['solves']}** |")
 
     out += [
         "",
-        "`pool mean`/`pool max` are the pools each CP-SAT solve **actually "
-        "faced**, recorded by wrapping `closing_subsets` at the call site — "
-        "not recomputed from `pool_at`, which without consumption is an upper "
-        "bound that over-reports badly at the top sizes. They are a different "
+        "12 bank lines and so 12 solves at every size; all lines are credits "
+        "and all resolve `Verified`.",
+        "",
+        "### The result is the last column, not the timings",
+        "",
+        "**Above ~5,000 rows, not one enumeration completes.** Every solve "
+        "stops early — on `max_deterministic_time` or on the solution cap — "
+        "so every `rival_closure_count` the resolver reports at those sizes "
+        "is a **lower bound**, and `rival_count_is_lower_bound` is set on all "
+        "of them. The resolver still answers, and its answers are still "
+        "warranted by tier B's attestation match; what degrades is its "
+        "ability to say *how many rival compositions would have passed the "
+        "same check*. That number is the whole of `Verified`'s honesty about "
+        "its own strength, and past 5k rows it becomes 'at least N'.",
+        "",
+        "The wall-clock curve is the less interesting half of this report. "
+        "510s for 48,566 rows is fine. Twelve lower-bounded rival counts is "
+        "the finding.",
+        "",
+        "### `incomplete_enumerations` reads 0 here and must not be believed",
+        "",
+        "`ResolverOutput.accounting()` reports `incomplete_enumerations: 0` at "
+        "every size above, including the rows where **no solve completed at "
+        "all**. That is not a contradiction and not a bug: "
+        "`resolver_contract/types.py` increments that counter only for "
+        "`Ambiguous` outcomes (`incomplete += not "
+        "outcome.candidate_set.complete`), and these fixtures produce zero "
+        "`Ambiguous` — every line is `Verified` via tier B. The field is "
+        "structurally 0 here regardless of what the solver did.",
+        "",
+        "Nothing is hidden at the outcome level: each `Verified` carries its "
+        "own `rival_count_is_lower_bound`. What is missing is an **aggregate** "
+        "— the accounting has no counter for `Verified` whose rival count was "
+        "truncated, so a reader of the summary sees `incomplete_enumerations: "
+        "0` and can reasonably conclude nothing truncated. On this family "
+        "that inference is wrong at every size from 4,876 rows up.",
+        "",
+        "**This report does not fix that.** Adding a counter to `Accounting` "
+        "is a `resolver_contract` change, and this repository's rule is that "
+        "a contract change is its own dated decision and never rides along "
+        "with the work that provoked it. The numbers above are measured at "
+        "the `closing_subsets` call site instead, which needs no contract "
+        "change and is why this report can state the finding at all.",
+        "",
+        "`pool mean`/`pool max` are the pools each solve **actually faced**, "
+        "recorded by wrapping `closing_subsets` — not recomputed from "
+        "`pool_at`, which without consumption is an upper bound that "
+        "over-reports by ~4.5× at the small sizes. They are a different "
         "quantity from `scale/SCALE_REPORT.md`'s column, which is "
         "`matching/`'s per-batch pool. **The two must not be compared.**",
-        "",
-        "`budget-bound` counts solves that stopped on "
-        "`max_deterministic_time` rather than finishing or hitting the "
-        "solution cap — i.e. where `rival_closure_count` is a lower bound "
-        "and `rival_count_is_lower_bound` is set.",
         "",
         "## 2. The scaling curve",
         "",
