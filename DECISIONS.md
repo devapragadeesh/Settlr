@@ -5134,3 +5134,119 @@ new-layer suite: `pytest ingest/tests transport/tests tests/test_layer_isolation
 Nothing under `resolver/`, `resolver_contract/`, `matching/`, `engine/`,
 `ingest/`, or any dataset directory changed. No published figure moved. This
 closes Track B.
+
+## 86. `store/` -- SQLite persistence for `ResolverOutput`, run identity derived rather than generated, every outcome lossless-round-trippable -- 2026-09-03
+
+**What was built.** Track C, Phases C1-C2 together: `store/schema.sql` (plain
+SQL, `runs`/`sources`/`line_outcomes`/`row_outcomes`/`break_history`, applied
+by a tiny forward-only migrator in `store/db.py` -- no Alembic, no ORM),
+`store/codec.py` (a generic, lossless dataclass<->JSON codec for every
+`LineOutcome`/`RowOutcome` variant in `resolver_contract.types`),
+`store/writer.py` (`ResolverOutput` -> rows, one transaction, idempotent on
+`run_id`), and `store/queries.py` (the read side, including `row_history` --
+the actual point of this track).
+
+**Run identity is derived, not generated -- the load-bearing design choice
+for the whole track.** `run_id = sha256(input_digest || code_digest || cap ||
+time_budget)`. Identical inputs and identical code therefore produce the
+IDENTICAL `run_id`, which is simultaneously the reproducibility check and the
+write-side idempotency key: `write_run` on an already-present `run_id` is a
+no-op, proven by `test_rewriting_the_same_inputs_is_a_no_op_not_a_duplicate`
+-- one row in `runs`, the original line-outcome count, not doubled. Wall
+clock lives ONLY in `runs.started_at`/`finished_at`, as data in one table.
+This is the constraint that makes the rest of the track safe: a timestamp
+reaching a `LineOutcome`/`RowOutcome` would break
+`resolver/tests/test_gst_risk.py`'s `repr()`-based equality and
+`test_the_resolver_is_deterministic` (both cited in the plan before this
+track started); `store/`'s tables never let one in, because `resolve()`
+itself never produces one -- confirmed again by this track:
+`datetime.now`/`date.today` return zero hits across `resolver/` and
+`resolver_contract/`, and `resolver/breaks.py:364` derives its aging horizon
+from `max(line.value_date for line in dataset.bank)`, not the clock.
+
+**A generic codec, not eight hand-written (de)serialisers.** `store/codec.py`
+walks `dataclasses.fields` and `typing.get_type_hints` to convert any
+dataclass in `resolver_contract.types` to/from a JSON-safe dict, tagged with
+`__type__` for polymorphic dispatch. Deliberately not one hand-written pair
+per `Verified`/`AttestationDiscrepancy`/`Reconstructed`/`Ambiguous`/
+`Unresolved`/`ProvenUnmatched`/`OpenBreak`/`CorrectlyUnmatched`: eight
+variants times a hand-written encode+decode function each is exactly the
+duplication that drifts silently when the contract gains a ninth variant or
+an existing one gains a field. One codec driven by the dataclass definitions
+themselves cannot drift from them by construction.
+
+**Correctness is proven by `==`, not by `repr()` -- and that is itself a
+finding, not a stylistic choice.** The round-trip test's first draft asserted
+`repr(reconstructed) == repr(original)`, matching the language the plan used
+before this track started ("compared by `repr()`"). It was FLAKY: passing on
+some process runs and failing on others, on the identical dataset and code.
+Cause: several outcome fields are `frozenset`s (`Evidence.derived_from`,
+`IndependenceDetermination.sources`, `OpenBreak.itc_risk`), and CPython's
+`frozenset` internal table is small and open-addressed, so two frozensets
+with IDENTICAL elements can iterate -- and therefore repr -- in different
+orders depending on insertion sequence, whenever two elements collide.
+`store/tests/test_codec.py::test_frozensets_with_identical_elements_can_repr_differently`
+demonstrates the underlying instability directly (finds an order-sensitive
+case in the first of 200 tries), rather than asserting it only in prose. The
+round-trip proof was switched to plain `==`, which does not have this
+problem: `frozenset.__eq__` compares contents, not iteration order. This
+matters beyond this track: `resolver/tests/test_gst_risk.py`'s existing
+`repr()`-based check happens to avoid the unstable fields by narrowing its
+comparison to `row_ids, reason, age_days, first_seen, caused_by,
+provable_within_window` -- deliberately excluding `warrant` and `itc_risk` --
+which this track's finding suggests was the right call for reasons that test
+did not itself document.
+
+**Measured on real resolver output, not synthetic instances.** One-time check
+during development: every outcome across all 30 datasets in
+`corpus/datasets` and `corpus/datasets_v2` (1,977 outcomes total) round-tripped
+through `to_jsonable`/`from_jsonable`/an actual `json.dumps`/`json.loads`
+cycle with zero mismatches. The routine test suite keeps a representative
+subset of six datasets (`store/tests/test_codec.py`) rather than re-running
+all 30 on every invocation -- the full 30-dataset run took 4:44, too slow for
+the routine gate; the six-dataset subset takes ~1:44 and is the regression
+guard.
+
+**`row_history` is this track's actual payoff.**
+`investigation/CONTROLS_MAPPING.md` Sec.3(b) names the absent control in its
+own words: *"no log of an outcome changing from `Ambiguous` to `Verified` as
+new evidence arrived... nothing in `resolver/` or `corpus/oracle.py` persists
+a decision log across runs."* `store/queries.py::row_history(dataset, row_id)`
+is that log, reconstructed from what `write_run` persisted across multiple
+runs -- not a new field added to `resolver_contract.types` (the contract is
+untouched), but a real answer built entirely downstream of it.
+`test_row_history_across_a_break_opening_then_closing` proves it end to end:
+an `OpenBreak` in run 1, a `Verified` for the same row in run 2, and
+`row_history` correctly reports `["OpenBreak", "Verified"]` with
+`break_lifecycle` showing the break's `closed_at`/`close_run_id`.
+
+**Rejected: full third-normal-form tables for `Warrant`/`Evidence`/
+`Contradiction`/`Composition`/`CandidateSet`.** The schema stores each
+outcome twice: scalar columns for the queries `store/queries.py` actually
+needs (kind, reason, aging, candidate counts), and one `outcome_json` blob
+(via the codec) that reconstructs the object losslessly. A fully normalised
+schema would need five to eight more tables and a join path for every read,
+for nested structures this repo's own queries do not filter or aggregate
+over -- `row_history` and `open_breaks` never need to query INSIDE a
+`Warrant`'s evidence list by SQL predicate, only to read it back whole. This
+is the honest tradeoff, stated rather than silently made: this schema
+optimises for lossless replay and the two query shapes the plan actually
+named, not for arbitrary SQL analytics over evidence internals.
+
+**Rejected: dataset-scoped `break_history` keys.** `break_history` is keyed
+on `row_id` alone. A real multi-merchant deployment would need
+`(dataset, row_id)`; not needed here because `entity_id` is engine-generated
+as an effectively-unique opaque identifier and every fixture in this repo is
+one self-contained dataset. `store/writer.py::_record_break_history`'s
+docstring states this limitation rather than silently assuming it away.
+
+**Measured.** `pytest store/tests -q` -- 19 passed (12 codec round-trip +
+7 writer/queries). `pytest tests/test_layer_isolation.py -q` -- 9 passed,
+confirming `store/` is now covered by the vacuity guard alongside `ingest/`
+and `transport/`.
+
+**Scope.** New: `store/__init__.py`, `store/schema.sql`, `store/db.py`,
+`store/codec.py`, `store/writer.py`, `store/queries.py`, `store/tests/*`.
+Nothing under `resolver/`, `resolver_contract/`, `matching/`, `engine/`,
+`ingest/`, `transport/`, or any dataset directory changed. No published
+figure moved.
