@@ -4939,3 +4939,54 @@ integration is a named, deferred gap.
 added -- both are stdlib. Nothing under `resolver/`, `resolver_contract/`,
 `matching/`, `engine/`, or any dataset directory changed. No published figure
 moved.
+
+## 83. JSONL and paginated-JSON item readers, round-trip proven against every `recon_combined.json` on disk -- 2026-09-03
+
+**What was built.** `ingest/formats/jsonl.py`, closing Phase A4 of the
+multi-format-ingestion plan and Track A of the three-track plan. Two readers:
+
+- `load_items(path) -> list[dict]` -- accepts a bare JSON array, an
+  `{"items": [...]}` envelope (the shape `recon_combined.json` and
+  `disputes.json` already use everywhere in this repo), or JSONL (one object
+  per line), auto-detected by content rather than file extension. A `.json`
+  file holding one object per line and a `.jsonl` file holding one array both
+  parse correctly -- refusing a working file over its extension would be
+  exactly the invented rule this project does not add.
+- `load_paginated_items(paths) -> list[dict]` -- merges an ordered sequence of
+  `{"items": [...], "has_more": bool}` pages (the shape a live paginated API,
+  including the ones probed in `spike/raw/004_mcp_tool_fetch_all_settlements.json`,
+  actually returns) and enforces the one invariant that makes "ordered
+  sequence" meaningful: every page but the last must claim `has_more=true`,
+  the last must claim `has_more=false`. Violated either way, it raises rather
+  than silently merging a sequence that might be missing a page, duplicating
+  one, or out of order.
+
+**Round-trip proof, same method as Sec.81/82.** Every `recon_combined.json`
+on disk (all 45 dataset directories) was re-encoded as JSONL and as a
+three-page paginated sequence, and both reconstructions were asserted equal
+to the original `items` list, item-for-item. 90/90 passed (45 datasets x 2
+representations) on first run -- no bug this time, unlike Sec.82's two, likely
+because JSON round-tripping through `json.dumps`/`json.loads` carries none of
+the type-coercion risk XML text nodes or Excel numeric cells do.
+
+**Not wired into the six-file `Dataset` contract.** `recon_combined.json` is
+read as one complete file by `ingest/formats/csv_json.py` and by the frozen
+`resolver.loaders.load`; nothing in this repo's actual data ever arrives
+paginated or as JSONL today. This module is deliberately a general-purpose
+reader proven against the shapes that exist, not wired into `ingest.load`'s
+fixed six-file path -- doing so would invent a consumer that does not exist
+yet, the same instinct `CLAUDE.md`'s D5 rule names for data and applies here
+to code structure.
+
+**This closes Track A.** Four formats now sit behind `ingest/`: CSV/JSON
+(Sec.79-80, the original two), `.xlsx` (Sec.81), CAMT.053/MT940 (Sec.82), and
+JSONL/paginated JSON (this entry) -- covering the three format families named
+worth adapting at the plan's outset. Track B (SFTP/S3 pulls) and Track C
+(persistence) remain.
+
+**Measured.** `pytest ingest/tests/test_jsonl.py -q` -- 95 passed. Full ingest
+suite: `pytest ingest/tests tests/test_layer_isolation.py -q` -- 296 passed.
+
+**Scope.** New: `ingest/formats/jsonl.py`, `ingest/tests/test_jsonl.py`.
+Nothing under `resolver/`, `resolver_contract/`, `matching/`, `engine/`, or
+any dataset directory changed. No published figure moved.
