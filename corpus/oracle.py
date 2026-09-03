@@ -120,6 +120,7 @@ class OracleReport:
             "G7": "ABSTENTION on a determined instance (attested)",
             "G8": "ABSTENTION on a reconstructible instance (unattested)",
             "G9": "ProvenUnmatched rows that actually settled",
+            "G10": "ITC-risk FALSE POSITIVES (vacuous where nothing is flagged)",
         }
         counts = self.by_gate()
         for gate, description in gates.items():
@@ -590,9 +591,34 @@ def _measure(output, truth, by_line, bank_truth, determined,
                 "asserts nothing. `rows_that_did_settle` is descriptive: those "
                 "rows are correctly OPEN, not correctly explained"}
 
-    # --- ITC risk annotation on OpenBreak: MEASURED, never gated ----------
+    # --- ITC risk annotation on OpenBreak ---------------------------------
+    # Precision is GATED by G10; recall is measured and deliberately not.
+    # `DECISIONS.md` 60 refused to gate this at all, on the grounds that
+    # gating an untested reimplementation's FIRST numbers is the G5 mistake.
+    # That objection expired: 61 fixed the frame the 0.0 exposed, and 68/73
+    # stabilised the budget the numbers were queued behind.
+    #
+    # READ THE VACUITY WARNING BELOW BEFORE QUOTING THIS GATE. On both
+    # `datasets_gst` points the flag fires on NOTHING -- 0 of 22 and 0 of 18
+    # open-break rows -- so there are no predictions to be false and G10
+    # cannot fail there. It is a REGRESSION GUARD against a future
+    # `resolver/breaks.py` that flags more aggressively, not a check the
+    # current implementation passes on its merits. Recall stays ungated
+    # because the population is far too small for a miss to mean anything:
+    # the held-out run's recall of 0.75 is three true positives and one
+    # false negative.
     if "gst_truth" in truth:
-        measured["itc_risk_flag"] = _itc_risk_flag(output, truth)
+        flag = _itc_risk_flag(output, truth)
+        measured["itc_risk_flag"] = flag
+        flag["gate"] = ("G10 gates false_positive at zero. VACUOUS where "
+                        "flagged_rows is 0: no prediction can be false. "
+                        "Recall is NOT gated")
+        for _ in range(flag.get("false_positive", 0)):
+            report.violations.append(Violation(
+                "G10", None,
+                f"ITC risk flagged a (row, ground) pair the key does not "
+                f"carry -- {flag['false_positive']} false positive(s) over "
+                f"{flag['flagged_rows']} flagged row(s)"))
 
     # --- foreign bank lines: can the resolver say "not ours"? -------------
     foreign = [index for index, line in bank_truth.items()

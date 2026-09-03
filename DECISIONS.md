@@ -4356,3 +4356,93 @@ It is the only document that reads the corpus as a whole and argues about it.
 **Scope.** `CHECKPOINT.md` only — one new header block, one new section. No
 number is restated that a generated artifact does not already publish, and no
 measurement changed.
+
+---
+
+## 76. G10 gates the ITC-risk flag's precision at zero — and it is VACUOUS on the family it runs against — 2026-09-03
+
+**The blocker expired.** §60 measured the ITC-risk flag and deliberately did not
+gate it: "gating an untested reimplementation's FIRST measured numbers is
+exactly the mistake G5 was withdrawn for." §61 then fixed the frame that the
+0.0 exposed, and §60's addendum queued the gate behind §68's numbers
+stabilising. §68 landed and §73 discharged its deferral, so the stated
+condition is met.
+
+`corpus/oracle.py` now emits a **G10** violation per false positive.
+`OracleReport.passed` is `not self.violations`, so G10 fails a dataset the same
+way G1–G9 do. Recall stays measured and ungated: the whole at-risk-and-open
+subpopulation is 4 rows across both spine datasets, and a recall gate over that
+would be a threshold on noise.
+
+### The gate cannot fail on the datasets it runs against, and the report says so
+
+On both `datasets_gst` points the flag fires on **nothing** — 0 flagged of 22
+and 0 of 18 open-break rows, precision reported as `None`, never as 1.0. A
+zero-false-positive gate over an empty denominator is **vacuous**: there are no
+predictions, so none can be wrong.
+
+This is stated in three places rather than left to be discovered — the gate's
+own description in `corpus/oracle.py`, the `gate` field on the measured block,
+and two paragraphs of `corpus/GST_RESULTS.md` — because **publishing a gate
+that cannot fail, without saying that it cannot fail, is the G5 mistake in a
+new costume.** G5 was withdrawn for enforcing a false theorem; a vacuous gate
+enforces nothing at all while adding a row to the gate table. The difference
+between those two failures is not large enough to be relaxed about.
+
+What G10 is: a **regression guard**. If a future `resolver/breaks.py` flags
+more aggressively — the exact change §61 made in the opposite direction — G10
+converts a silent precision drop into a failing dataset.
+
+### Its only non-vacuous evidence predates it by three days
+
+The held-out GST run (§64, 2026-08-31) flagged **3 rows with 0 false
+positives**, precision 1.0 over a non-empty denominator. G10 would have passed
+there, on evidence collected before the gate was designed and by a run that
+cannot be repeated. That is the strongest thing available about this gate and
+it is worth exactly what it is: one dataset, three predictions.
+
+**`corpus/GST_HOLDOUT_RESULTS.md` is not re-scored to add G10 to it.** Per
+§64/§65/§68/§73 it is rendered from saved JSON, and that JSON predates the
+gate. The `gate` field is absent there and correctly so.
+
+### Blast radius, verified rather than assumed
+
+G10 fires only inside `if "gst_truth" in truth`. Exactly **3** ground-truth
+files in the repository carry that key — the two spine GST datasets and the
+held-out one. The 30-dataset aggregate is structurally unreachable by this
+gate, so `corpus/score_resolver.py --all` was not re-run to prove it; the
+enumeration is the proof.
+
+**Rejected: gating recall too.** Recall on the held-out set is 0.75 — three
+true positives and one false negative, a refund carrying no fee and so no input
+tax (§64's diagnosis). Gating a rate whose denominator is four would make the
+gate an artifact of which rows happened to settle.
+
+**Rejected: waiting for a dataset where the flag fires.** It would keep the
+gate honest at the cost of leaving the regression unguarded for however long
+that takes, and the vacuity is disclosable in one sentence. Disclosed beats
+deferred here.
+
+**Rejected: reporting the vacuous precision as 1.0.** `_itc_risk_flag` already
+returns `None` for an empty denominator and §60 chose that deliberately. A
+gate is not a reason to start rounding an absence up to a perfect score.
+
+### A second finding, from checking G10's scope
+
+`corpus/tests/test_dashboard_export.py`'s fixture ran the exporter with no
+`--out`, so **every test run overwrote the tracked `dashboard/data.json`**.
+Two real consequences: `git status` came back dirty after any suite run, which
+makes a pre-commit scope check useless; and because `commit_ordering.count` is
+a live `git log` count, the committed artifact went stale on every commit and
+was silently rewritten by the next test run. `export_dashboard.py` already
+accepted `--out`; the fixture simply was not passing one. It now exports to a
+`tmp_path_factory` directory. Regenerating the real artifact stays a deliberate
+act.
+
+Found because this pass's own discipline is to check `git diff` before every
+commit, and a file kept appearing in it that nothing in the pass had touched.
+
+**Scope.** `corpus/oracle.py` (G10), `corpus/score_gst.py` (two now-false
+"nothing here is gated" paragraphs), `corpus/GST_RESULTS.md` and
+`corpus/gst_results.json` (regenerated; both datasets still PASS, all gates
+zero), `corpus/tests/test_dashboard_export.py`. 614 tests pass.

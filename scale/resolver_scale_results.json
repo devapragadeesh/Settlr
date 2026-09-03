@@ -1,0 +1,136 @@
+{
+ "deterministic_budget": 10.0,
+ "note": "RUNTIME ONLY -- no accuracy claim. Tier B only; tier C is never reached on these fixtures.",
+ "points": [
+  {
+   "dataset": "data_250",
+   "verified": 12,
+   "verified_non_decisive": 8,
+   "attestation_discrepancy": 0,
+   "reconstructed": 0,
+   "ambiguous": 0,
+   "unresolved": 0,
+   "proven_unmatched": 16,
+   "open_breaks": 15,
+   "incomplete_enumerations": 0,
+   "mean_candidate_set_size": 1.0,
+   "max_candidate_set_size": 1,
+   "unresolved_by_reason": {},
+   "discrepancy_by_kind": {},
+   "rows_assigned": 215,
+   "seconds": 67.43,
+   "directory": "data_250",
+   "rows": 246,
+   "bank_lines": 12,
+   "wall_clock_seconds": 67.43,
+   "rows_per_second": 3.6,
+   "solves": 12,
+   "pool_mean": 28.4,
+   "pool_max": 40,
+   "worst_solve_seconds": 12.13,
+   "solves_hitting_budget": 6,
+   "solves_hitting_cap": 0,
+   "worst_solve_pool": 36,
+   "worst_solve_deterministic": 10.0,
+   "seconds_per_deterministic_unit": 1.21,
+   "per_solve": [
+    {
+     "pool": 9,
+     "wall_seconds": 0.003,
+     "deterministic_seconds": 0.0,
+     "status": "optimal",
+     "complete": true,
+     "subsets": 1
+    },
+    {
+     "pool": 22,
+     "wall_seconds": 0.031,
+     "deterministic_seconds": 0.0162,
+     "status": "optimal",
+     "complete": true,
+     "subsets": 2
+    },
+    {
+     "pool": 24,
+     "wall_seconds": 0.001,
+     "deterministic_seconds": 0.0,
+     "status": "optimal",
+     "complete": true,
+     "subsets": 1
+    },
+    {
+     "pool": 18,
+     "wall_seconds": 0.006,
+     "deterministic_seconds": 0.0037,
+     "status": "optimal",
+     "complete": true,
+     "subsets": 1
+    },
+    {
+     "pool": 21,
+     "wall_seconds": 0.002,
+     "deterministic_seconds": 0.0004,
+     "status": "optimal",
+     "complete": true,
+     "subsets": 1
+    },
+    {
+     "pool": 36,
+     "wall_seconds": 9.251,
+     "deterministic_seconds": 8.7893,
+     "status": "optimal",
+     "complete": true,
+     "subsets": 88
+    },
+    {
+     "pool": 40,
+     "wall_seconds": 4.615,
+     "deterministic_seconds": 10.0001,
+     "status": "time_budget_exceeded",
+     "complete": false,
+     "subsets": 1
+    },
+    {
+     "pool": 36,
+     "wall_seconds": 12.13,
+     "deterministic_seconds": 10.0,
+     "status": "time_budget_exceeded",
+     "complete": false,
+     "subsets": 184
+    },
+    {
+     "pool": 33,
+     "wall_seconds": 11.368,
+     "deterministic_seconds": 10.0011,
+     "status": "time_budget_exceeded",
+     "complete": false,
+     "subsets": 62
+    },
+    {
+     "pool": 34,
+     "wall_seconds": 9.9,
+     "deterministic_seconds": 10.0,
+     "status": "time_budget_exceeded",
+     "complete": false,
+     "subsets": 177
+    },
+    {
+     "pool": 34,
+     "wall_seconds": 9.929,
+     "deterministic_seconds": 10.0,
+     "status": "time_budget_exceeded",
+     "complete": false,
+     "subsets": 114
+    },
+    {
+     "pool": 34,
+     "wall_seconds": 10.186,
+     "deterministic_seconds": 10.0,
+     "status": "time_budget_exceeded",
+     "complete": false,
+     "subsets": 108
+    }
+   ]
+  }
+ ]
+}

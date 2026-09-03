@@ -116,12 +116,12 @@ Nothing above is gated on any of it, and no resolver code was changed in respons
 
 ## Oracle interaction
 
-A grep of `corpus/oracle.py` for `gst`/`itc`/`2b` (case-insensitive) now matches **23 lines** — it returned zero when this file was first generated, and §60's `_itc_risk_flag` block above is the whole of the difference. That block is measured and ungated. The GATED checks (G1-G9, all composition/closure/warrant checks) remain untouched by anything GST-related and are reported below; none of them can fail or pass on a tax finding, because none of them look.
+A grep of `corpus/oracle.py` for `gst`/`itc`/`2b` (case-insensitive) now matches **27 lines** — it returned zero when this file was first generated, and §60's `_itc_risk_flag` block above is the whole of the difference. That block was measured and ungated until 2026-09-03; **its precision is now gated by G10** (`DECISIONS.md` §76), while its recall stays measured and ungated because the population is far too small for a miss to mean anything. **G10 is VACUOUS on this family and that is stated rather than left to be discovered:** the flag fires on nothing here, so no prediction can be false and the gate cannot fail. It guards a future `resolver/breaks.py` that flags more aggressively. The other GATED checks (G1-G9, all composition/closure/warrant checks) remain untouched by anything GST-related; none of them can fail or pass on a tax finding, because none of them look.
 
 | dataset | gates | verdict | resolver seconds |
 |---|---|---|---:|
-| `datasets_gst/A20_B100_Cmax_gst` | all zero | PASS | 31.02 |
-| `datasets_gst/A20_B100_Cmax_gst_noisy` | all zero | PASS | 55.18 |
+| `datasets_gst/A20_B100_Cmax_gst` | all zero | PASS | 31.66 |
+| `datasets_gst/A20_B100_Cmax_gst_noisy` | all zero | PASS | 55.62 |
 
 ## The `gstr2b.csv` removal probe: can the tax feed move a line outcome?
 
@@ -129,12 +129,12 @@ When this probe was first written it asked whether `resolver/` opened `gstr2b.cs
 
 | dataset | line outcomes identical | line outcomes (with file) | line outcomes (without file) | seconds |
 |---|---|---:|---:|---:|
-| `datasets_gst/A20_B100_Cmax_gst` | **True** | 59 | 59 | 62.01 |
-| `datasets_gst/A20_B100_Cmax_gst_noisy` | **True** | 59 | 59 | 110.55 |
+| `datasets_gst/A20_B100_Cmax_gst` | **True** | 59 | 59 | 62.91 |
+| `datasets_gst/A20_B100_Cmax_gst_noisy` | **True** | 59 | 59 | 111.42 |
 
 ## The answer
 
 **They don't, and here is exactly where:** see the per-ground precision/recall table for any cell below 1.0, and the GST-specific triviality check above — the `itc_availability` single-column shortcut is expected to (and, per the table above, does) miss every Rule-37A-only invoice and every absent-from-2B invoice by construction, since neither ground is visible through that one column. A second, narrower gap: even when invoice IDENTIFICATION is perfect (precision/recall 1.0 on every ground, as measured above), the total ITC-at-risk RUPEE figure still disagrees on `gstr2b_absent` — and per §66 that disagreement is a DEFECT IN THE CORPUS GENERATOR, not a property of the ground. `corpus/generator/build.py:681` charges GST on fee revenue its own ledger marks as carrying none, so ground truth overstates the invoice; both recon implementations exclude those rows correctly. The absent ground is simply the only one where a second, independent computation exists to expose it. See the decomposition table above.
 
-**And GST/ITC reasoning in `resolver/` is now a measured quantity rather than an absence.** §59 gave the resolver the tax feed; the section above scores what it does with it, and the honest summary is that its ITC-risk flag is silent at `datasets_gst/A20_B100_Cmax_gst`, `datasets_gst/A20_B100_Cmax_gst_noisy` (zero rows flagged, recall undefined -- no at-risk-month settled row has yet reached an `OpenBreak` to confirm the flag would find one). The removal probe still shows every line outcome identical with and without `gstr2b.csv`, which is the property §59 requires: the tax feed annotates open items and cannot reach a composition. Nothing here is gated, and no resolver code was changed in response to these numbers.
+**And GST/ITC reasoning in `resolver/` is now a measured quantity rather than an absence.** §59 gave the resolver the tax feed; the section above scores what it does with it, and the honest summary is that its ITC-risk flag is silent at `datasets_gst/A20_B100_Cmax_gst`, `datasets_gst/A20_B100_Cmax_gst_noisy` (zero rows flagged, recall undefined -- no at-risk-month settled row has yet reached an `OpenBreak` to confirm the flag would find one). The removal probe still shows every line outcome identical with and without `gstr2b.csv`, which is the property §59 requires: the tax feed annotates open items and cannot reach a composition. The flag's PRECISION is gated at zero false positives by G10 (§76) and its recall is not; on this family the gate is vacuous, because nothing is flagged. No resolver code was changed in response to any of these numbers.
 

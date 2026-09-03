@@ -31,11 +31,26 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture(scope="module")
-def export() -> dict:
+def export(tmp_path_factory) -> dict:
+    """Export to a TEMP path, never over the tracked `dashboard/data.json`.
+
+    This fixture used to run the exporter with no `--out`, so it overwrote the
+    committed artifact every time the suite ran. Two consequences, both real:
+    `git status` came back dirty after any test run, which makes a scope check
+    before a commit useless; and because `commit_ordering.count` is a live
+    `git log` count, the tracked file went stale on every commit and was
+    silently rewritten by the next test run. A test that mutates the tree it
+    is verifying cannot tell you the tree was already correct.
+
+    `export_dashboard.py` already accepted `--out`; the fixture simply was not
+    using it. Regenerating the real artifact stays a deliberate act -- run
+    `python3 corpus/export_dashboard.py` yourself, or `run_all.py` step 7.
+    """
+    out = tmp_path_factory.mktemp("dashboard") / "data.json"
     subprocess.run([sys.executable, "corpus/export_dashboard.py",
-                    "--skip-hashes"], cwd=ROOT, check=True,
+                    "--skip-hashes", "--out", str(out)], cwd=ROOT, check=True,
                    capture_output=True)
-    return json.loads(EXPORT.read_text())
+    return json.loads(out.read_text())
 
 
 def test_claims_match_the_claims_ledger_exactly(export):

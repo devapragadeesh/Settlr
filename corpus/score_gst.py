@@ -794,10 +794,17 @@ def render(results: list[dict]) -> str:
             f"insensitive) now matches **{oracle_gst_grep()} lines** — it "
             "returned zero when this file was first generated, and §60's "
             "`_itc_risk_flag` block above is the whole of the difference. "
-            "That block is measured and ungated. The GATED checks (G1-G9, all "
-            "composition/closure/warrant checks) remain untouched by anything "
-            "GST-related and are reported below; none of them can fail or "
-            "pass on a tax finding, because none of them look.", "",
+            "That block was measured and ungated until 2026-09-03; **its "
+            "precision is now gated by G10** (`DECISIONS.md` §76), while its "
+            "recall stays measured and ungated because the population is far "
+            "too small for a miss to mean anything. **G10 is VACUOUS on this "
+            "family and that is stated rather than left to be discovered:** "
+            "the flag fires on nothing here, so no prediction can be false "
+            "and the gate cannot fail. It guards a future "
+            "`resolver/breaks.py` that flags more aggressively. The other "
+            "GATED checks (G1-G9, all composition/closure/warrant checks) "
+            "remain untouched by anything GST-related; none of them can fail "
+            "or pass on a tax finding, because none of them look.", "",
             "| dataset | gates | verdict | resolver seconds |",
             "|---|---|---|---:|"]
     for r in results:
@@ -905,8 +912,10 @@ def render(results: list[dict]) -> str:
         f"is that {_flag_summary}. The removal probe still shows every line "
         "outcome identical with and without `gstr2b.csv`, which is the "
         "property §59 requires: the tax feed annotates open items and cannot "
-        "reach a composition. Nothing here is gated, and no resolver code "
-        "was changed in response to these numbers.")
+        "reach a composition. The flag's PRECISION is gated at zero false "
+        "positives by G10 (§76) and its recall is not; on this family the "
+        "gate is vacuous, because nothing is flagged. No resolver code was "
+        "changed in response to any of these numbers.")
     out.append("")
     return "\n".join(out)
 
