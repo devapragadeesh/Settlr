@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# There was no .github/ directory in this repo before this workflow --
+# everything was run manually (README.md's "Run it", CLAUDE.md's commands).
+# This does not replace that: it is a floor, not the primary evidence
+# mechanism. The repo's own generated reports (EVAL_REPORT.md,
+# ORACLE_RESULTS.md, GST_RESULTS.md, SCALE_REPORT.md/RESOLVER_SCALE_REPORT.md)
+# remain the source of truth for any published number; CI's job is only to
+# catch a regression before it reaches one of those runs.
+
+jobs:
+  fast-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt -r requirements-service.txt
+      - name: Frozen-dataset hash verification
+        run: shasum -a 256 -c <(sed 's|^\([0-9a-f]*\) |\1  |' engine/DATASET_HASHES.txt)
+      - name: Fast suite (corpus, isolation, engine, scale-degradation guard)
+        run: pytest corpus/tests tests/test_isolation.py engine/tests tests/test_scale_degradation.py -q
+      - name: New-layer isolation (resolver/ must never import ingest/transport/store/service)
+        run: pytest tests/test_layer_isolation.py -q
+      - name: ingest/ -- format-conformance and round-trip suites
+        run: pytest ingest/tests -q
+      - name: transport/ -- offline pull/poller suites
+        run: pytest transport/tests -q
+
+  resolver-and-adversarial:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt -r requirements-service.txt
+      - name: resolver/ contract-conformance suite
+        run: pytest resolver/tests -q
+      - name: Adversarial malformed-input suite (bucket 3 must stay zero)
+        run: pytest tests/adversarial -q
+
+  store-and-service:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt -r requirements-service.txt
+      - name: store/ -- lossless codec and writer/queries round-trip
+        run: pytest store/tests -q
+      - name: service/ -- pipeline, scheduler, and read-only API (offline)
+        run: pytest service/tests -q
+
+  leakage-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Rediscover D4-D7 against the frozen set (soundness gate)
+        run: python3 corpus/leakage_audit.py --validate-frozen

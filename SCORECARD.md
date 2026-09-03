@@ -46,6 +46,12 @@ Full provenance for each number, including the command that reproduces it: [`CLA
 | | | |
 | **Resolver at scale — enumerations completing** |  |  |
 | at 48,566 rows | **0/12** | every solve truncates from ~4,876 rows up; `rival_closure_count` becomes a lower bound, silently -- `scale/RESOLVER_SCALE_REPORT.md`, `DECISIONS.md` §77 |
+| | | |
+| **Ingestion adapters — round-trip against every dataset** |  |  |
+| `xlsx` | **45/45** | fixtures generated from this repo's own data, not a real bank export -- `ingest/INGESTION_REPORT.md`, `DECISIONS.md` §§81-83 |
+| `camt053` | **45/45** | fixtures generated from this repo's own data, not a real bank export -- `ingest/INGESTION_REPORT.md`, `DECISIONS.md` §§81-83 |
+| `mt940` | **45/45** | fixtures generated from this repo's own data, not a real bank export -- `ingest/INGESTION_REPORT.md`, `DECISIONS.md` §§81-83 |
+| `jsonl` | **45/45** | fixtures generated from this repo's own data, not a real bank export -- `ingest/INGESTION_REPORT.md`, `DECISIONS.md` §§81-83 |
 
 ## The one-paragraph version
 

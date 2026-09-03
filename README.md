@@ -23,6 +23,27 @@ This repository is two things:
 2. a **benchmark** that can tell whether any resolver — including this one — is
    lying, built before the resolver and never tuned against it.
 
+**Amended 2026-09-03 (`DECISIONS.md` §§79–87).** A third thing now sits
+downstream of both, and it changes the shape of the claim above rather than
+just adding to it: **an ingestion/persistence/service layer** — `ingest/`
+(CSV/JSON, `.xlsx`, CAMT.053, MT940, JSONL/paginated JSON, each round-trip
+proven against every dataset on disk — `ingest/INGESTION_REPORT.md`),
+`transport/` (pluggable SFTP/S3 pulls with every test offline, an
+idempotent/quarantining/retrying poller), `store/` (SQLite persistence of
+every resolver run, with `row_history` answering the audit-trail question
+`investigation/CONTROLS_MAPPING.md` §3(b) names as absent — no log of an
+outcome changing across runs), and `service/` (a pipeline, scheduler, and
+read-only API). None of it touches `resolver/`, `resolver_contract/`,
+`matching/`, `engine/`, or any frozen dataset — enforced by
+`tests/test_layer_isolation.py` the same way the resolver/benchmark boundary
+above is enforced. But a benchmark whose whole credibility argument rests on
+frozen, hash-verified inputs and a stateless, wall-clock-free resolver has
+just gained a network boundary and mutable state. That tension is real, not
+resolved by careful layering alone, and is stated here rather than left for a
+reader to notice on their own. The paragraph above is left as originally
+written, per this project's own convention of dating an amendment rather than
+editing prior text.
+
 The second exists because the first version of this project reported **96.55%
 match rate at 1.000 precision** on its own dataset, and then produced **50
 confident wrong answers** the first time it saw data it had not been built
@@ -449,6 +470,27 @@ these fixtures, enforced by `tests/test_scale_degradation.py`. Fixing the
 missing aggregate counter is a `resolver_contract` change and is intentionally
 not made here, per this project's rule that a contract change is its own dated
 decision.
+
+**The ingestion/persistence/service layer's own round-trip fixtures are
+synthetic, and its poller and pipeline are not yet wired together.**
+`ingest/INGESTION_REPORT.md` — generated, not hand-typed — reports 45/45
+round-trips for `.xlsx`, CAMT.053, MT940 and JSONL, but every fixture in that
+count was generated FROM this repo's own `bank_statement.csv`, which proves
+each adapter is self-consistent with the CSV/JSON reader it is checked
+against, not that it correctly parses an arbitrary real bank's export — a
+real sample file, if obtained, would be strictly better evidence than a
+round-trip against a fixture this same repo generated. Separately,
+`transport.poller.Poller` lands arbitrary pulled files into a
+content-addressed staging directory with no notion of which file is
+`bank_statement.csv` versus `settlement_report.csv` for a given dataset — that
+association is not recoverable from a file's bytes, and guessing it would be
+the same invented-structure mistake `CLAUDE.md`'s D5 rule forbids for data,
+applied here to file identity. `service/pipeline.py::run_pipeline` therefore
+still takes an already-assembled six-file dataset directory; turning a
+poller's staged output into one needs a manifest this repository does not yet
+have, and is named here as a deliberate follow-on rather than shipped as a
+heuristic that would look complete without being trustworthy
+(`DECISIONS.md` §87).
 
 **Other named gaps.** The foreign-credit class is a rare-event class as built —
 amounts are drawn independently of the ledger, so a subset almost never nets to

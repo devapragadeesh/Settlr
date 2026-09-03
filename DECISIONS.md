@@ -5344,3 +5344,95 @@ dataset.
 (`fastapi`/`uvicorn`/`httpx` added). Nothing under `resolver/`,
 `resolver_contract/`, `matching/`, `engine/`, `ingest/`, `transport/`,
 `store/`, or any dataset directory changed. No published figure moved.
+
+## 89. Phase D -- CI, a generated ingestion report, and the new layer surfaced into README/SCORECARD/CLAIMS/CHECKPOINT -- 2026-09-03
+
+**What was built.** The closing phase of the multi-format-ingestion /
+SFTP-S3-pulls / persistence-layer plan: `.github/workflows/ci.yml` (this
+repo's first CI config -- there was no `.github/` directory before this),
+`ingest/ingestion_report.py` -> `ingest/INGESTION_REPORT.md` +
+`ingest/ingestion_results.json` (generated, per `CLAUDE.md`: *"Reports are
+generated. If a number appears in a markdown file, a script should have
+written it."*), a dated amendment to `README.md`'s opening framing and a new
+Limitations paragraph, new rows in `SCORECARD.md`/`CLAIMS.md` through their
+generators, and a new `CHECKPOINT.md` §18.
+
+**CI is a floor, not the primary evidence mechanism, and says so in its own
+comments.** Four jobs -- `fast-gate` (frozen-hash verification, the fast
+suite, the four new-layer isolation/conformance suites), `resolver-and-adversarial`,
+`store-and-service`, `leakage-audit` (`corpus/leakage_audit.py --validate-frozen`,
+re-discovering D4-D7 on every push). The workflow's own top comment states
+plainly that this does not replace the repo's generated reports
+(`EVAL_REPORT.md`, `ORACLE_RESULTS.md`, `GST_RESULTS.md`,
+`SCALE_REPORT.md`/`RESOLVER_SCALE_REPORT.md`) as the source of truth for any
+published number -- CI's job is only to catch a regression before one of
+those runs, not to become a second, competing source of claims.
+
+**The ingestion report runs the round-trip checks LIVE, not from a cached
+number.** `python3 -m ingest.ingestion_report` regenerates fixtures for all
+four non-CSV/JSON formats against all 45 dataset directories, tallies
+pass/fail, and writes both a human report and a `ingestion_results.json`
+sidecar -- ~4.4s end to end, fast enough that `corpus/scorecard.py` and
+`corpus/claims_ledger.py` read the JSON fresh on every render rather than
+pinning a held constant the way `D15`/`SCALE` do (those cost minutes; this
+costs seconds, so the "held constant" precedent does not apply and the
+generators say so in a comment). Result: **45/45 on all four formats** --
+`.xlsx`, CAMT.053, MT940, JSONL -- confirmed live at generation time, not
+carried forward from Sec.81-83's original test runs.
+
+**A caught bug: the round-trip script's own `.xlsx`/no-extension mismatch.**
+The generator's first draft named temp files `{format}_{dataset_name}` with
+no extension; `openpyxl.load_workbook` refuses a path it cannot identify by
+suffix, so all 45 `.xlsx` cases failed with `InvalidFileException` on first
+run -- caught by reading the generated report's own Failures section (which
+exists precisely so a run that produced wrong numbers cannot look clean),
+fixed by giving each format's temp file its real extension.
+
+**README's opening framing is amended, not silently rewritten, and the
+tension is stated rather than resolved by careful layering alone.** The
+"this repository is two things" paragraph gains a dated 2026-09-03 amendment
+naming the third layer and saying plainly: *"a benchmark whose whole
+credibility argument rests on frozen, hash-verified inputs and a stateless,
+wall-clock-free resolver has just gained a network boundary and mutable
+state. That tension is real, not resolved by careful layering alone."* A new
+Limitations paragraph states the two honest caveats on the new work: the
+round-trip fixtures are synthetic (generated from this repo's own data, not a
+real bank export), and the poller is not yet wired into the pipeline (naming
+why: file identity is not recoverable from bytes, and guessing would repeat
+the D5 mistake for file structure instead of data).
+
+**`SCORECARD.md`/`CLAIMS.md` changes are additive-only, measured before
+publishing.** `git diff --numstat`: `SCORECARD.md` +6/-0, `CLAIMS.md` +4/-0.
+No existing figure moved.
+
+**`CHECKPOINT.md` gains §18, sections 0-17 left untouched**, per the same
+dated-extension convention §17 itself established over sections 0-16.
+
+**Rejected: hand-typing the round-trip counts into README/SCORECARD/CLAIMS.**
+Would create three more places a future format addition or regression has to
+remember to update -- the exact failure Sec.74 spent an entire entry closing,
+restated in Sec.78 for the scale finding, and honoured identically here.
+
+**Rejected: skipping CI because the repo has survived without it.** True, and
+also true of the Idempotency & Fault Tolerance gap this whole plan closed --
+"has survived without it" describes every industry-standard control this
+project was originally audited against. A repository presenting itself as a
+hiring artifact that will be "cross-examined by engineers" (`CLAUDE.md`)
+benefits from a floor that catches an obvious regression before a reviewer
+does, even though the generated reports remain the real evidence.
+
+**Measured.** `python3 -m ingest.ingestion_report` -- exit 0, 45/45 on all
+four formats. `git diff --numstat SCORECARD.md CLAIMS.md` -- additive only.
+Full gate re-run: `pytest corpus/tests tests/test_isolation.py engine/tests tests/test_scale_degradation.py resolver/tests -q`.
+`graphify update .` run -- 3,494 nodes, 5,957 edges, 263 communities.
+
+**Scope.** New: `.github/workflows/ci.yml`, `ingest/ingestion_report.py`,
+`ingest/INGESTION_REPORT.md`, `ingest/ingestion_results.json`. Modified:
+`README.md` (one dated amendment, one new Limitations paragraph),
+`corpus/scorecard.py` + `SCORECARD.md` (regenerated), `corpus/claims_ledger.py`
++ `CLAIMS.md` (regenerated), `CHECKPOINT.md` (new §18, header note added).
+Nothing under `resolver/`, `resolver_contract/`, `matching/`, `engine/`, or
+any dataset directory changed. No published oracle/GST/scale figure moved.
+
+**This closes the three-track plan in full**: Track A (Sec.79-83), Track B
+(Sec.84-85), Track C (Sec.86-87), Phase D (this entry).

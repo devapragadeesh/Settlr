@@ -11,6 +11,13 @@
 > it described a repository 24 decisions younger than the one on disk. Commit
 > `cd5e430` closed this same loop once before.
 
+> **Extended again 2026-09-03 through `DECISIONS.md` §87.** **§18 below covers
+> §79–§87**, a new ingestion/persistence/service layer (`ingest/`,
+> `transport/`, `store/`, `service/`) built in the same session as §17, after
+> it. §17's own content is unaffected — §79–§87 add a fourth package group
+> downstream of everything §17 describes, none of it touching `resolver/`,
+> `matching/`, or `engine/`.
+
 Every number in this document was re-derived from the artefacts on disk while
 writing it, not copied from earlier prose. Where that re-derivation contradicted
 something this project had already published, the contradiction is reported in
@@ -1308,3 +1315,100 @@ cascade's D1/D2/D3 are still unpatched **on purpose**. D13 and D15 are still
 benchmark-side, not engine-side. 14 of 60 grid cells; B×C untested. The naive
 `GROUP BY` still wins outright on the original fourteen. Nothing in §51–§74
 moved a soundness gate off zero.
+
+## 18. §79–§87: a new ingestion/persistence/service layer (2026-09-03)
+
+Built in the same session as §17, immediately after it, on explicit
+instruction: multi-format ingestion, automated SFTP/S3 pulls, and a
+persistence layer — three of the ten industry-checklist items that sat at
+0% because nothing like them had ever been built, not because of a defect.
+
+### 18.1 Multi-format ingestion (§79–§83)
+
+`ingest/` sits strictly downstream of `resolver/` — `resolver/tests/test_isolation.py`
+bans every resolver module but `loaders.py` from touching a file, so a new
+reader could not live inside `resolver/` at all. Phase A0 (§79) started as a
+straight delegation to `resolver.loaders.load`, proven equal on all 45
+dataset directories in the repo before anything else changed. Phase A1 (§80)
+rebuilt it as an independent second implementation on a role vocabulary
+(`ingest/schema.py`) — **explicitly reversing §72's rejection** of a general
+mapping layer, now that a second format (below) is the "second consumer" §72
+said did not exist. `.xlsx` (§81), CAMT.053/MT940 (§82) and JSONL/paginated
+JSON (§83) followed, each round-trip-proven against every dataset on disk
+using NATIVE format types (Excel dates/floats, real XML, real SWIFT lines),
+not text mirrors of the CSV. Two real bugs were caught by those round-trips
+before shipping — a `.strip()` that lost genuine trailing whitespace in
+narration, and a test fixture that misplaced a SWIFT reference subfield — both
+recorded in §82 with the fix, not silently corrected.
+
+CAMT.053 refuses any document declaring a `<!DOCTYPE`, closing the XML
+entity-expansion attack surface entirely before Track B made this untrusted
+input arriving over a network. Proven against a real billion-laughs payload,
+not asserted.
+
+### 18.2 SFTP/S3 pulls (§84–§85)
+
+`transport/` is a `Transport` protocol with four backends — `file://`,
+`recorded://` (replays a fixture tree; every test uses this), and real
+`SFTPTransport`/`S3Transport` behind a refusal guard modelled directly on
+`spike/common.py`'s `rzp_test_`-only check: explicit opt-in
+(`INGEST_TRANSPORT_ALLOW_LIVE=1`) plus an independent, un-overridable refusal
+of any endpoint naming itself `"prod"`. `paramiko`/`boto3` are imported
+lazily, so no test needs either installed — proven by the refusal firing
+before either library touches a socket.
+
+`transport/poller.py` (§85) is this project's answer to the checklist's
+**Idempotency & Fault Tolerance** item, which was 0% before it: content-digest
+idempotency (`dest_dir/<sha256>_<basename>`, so a rename between polls is
+recognised as a repeat — an idempotency bug the test suite itself caught
+before shipping), atomic writes via `tmp` + `os.replace`, quarantine on a
+validation failure, and retry-with-backoff dead-lettering a permanently flaky
+fetch instead of aborting a whole batch.
+
+### 18.3 Persistence (§86–§87)
+
+`store/` is SQLite, plain SQL, no ORM — a cold clone still needs no service to
+start. Run identity is **derived, not generated**:
+`run_id = sha256(input_digest||code_digest||cap||time_budget)`, which is
+simultaneously the reproducibility check and the write-side idempotency key.
+Wall clock lives only in `runs.started_at`/`finished_at`, as data in one
+table — the resolver itself remains exactly as wall-clock-free as it always
+was (confirmed again: zero `datetime.now`/`date.today` hits anywhere in
+`resolver/`).
+
+A generic codec (`store/codec.py`, driven by `dataclasses.fields`/
+`typing.get_type_hints` rather than eight hand-written serialisers) proves
+every `LineOutcome`/`RowOutcome` round-trips losslessly. **Correctness is
+proven by `==`, not `repr()`** — the round-trip test's first draft compared by
+`repr()` and was flaky across process runs, traced to CPython `frozenset`
+iteration order being insertion-sequence-sensitive on collision, and
+demonstrated directly with a dedicated test rather than only asserted in
+prose. `store/queries.py::row_history` is the actual payoff: it answers the
+question `investigation/CONTROLS_MAPPING.md` §3(b) names as the one genuinely
+absent control — *"no log of an outcome changing from `Ambiguous` to
+`Verified` as new evidence arrived"* — reconstructed entirely downstream of
+`resolver_contract/types.py`, which was not touched.
+
+`service/` (§87) composes `ingest -> resolve -> persist` into one call
+(`run_pipeline`), a stdlib interval scheduler, and a read-only FastAPI over
+`store/queries.py` — no write route exists at all. Every test stays offline
+(FastAPI's in-process `TestClient`, injected `sleep`). The poller
+(§18.2) is deliberately **not** wired into the pipeline: which staged file is
+which of the six canonical artifacts is not recoverable from its bytes, and
+guessing would repeat the invented-structure mistake `CLAUDE.md`'s D5 rule
+forbids for data. Named as a real follow-on, not shipped as a heuristic. The
+`Dockerfile`/`docker-compose.yml` are new and **unverified** — Docker was
+unavailable in the environment this was built in; only the ASGI app's own
+construction was checked.
+
+### 18.4 What §18 does not change
+
+`resolver/`, `resolver_contract/`, `matching/`, `engine/` and every dataset
+directory are byte-for-byte untouched by §79–§87 — enforced by
+`tests/test_layer_isolation.py`, the same mechanism that protects the
+resolver/ground-truth boundary. No published oracle, GST or scale figure
+moved. The ingestion round-trip counts (45/45 per format) are against
+fixtures this repo generated from its own data, not real bank exports —
+stated in `ingest/INGESTION_REPORT.md` itself, not left for a reader to
+assume otherwise. §11's and §17.4's standing gaps are unaffected; this
+section adds a new, separate layer, it does not close anything named there.

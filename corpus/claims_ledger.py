@@ -56,6 +56,9 @@ def rows() -> list[dict]:
              if scale_path.exists() else [])
     scale_at = lambda rows_target: next(
         (p for p in scale if p["rows"] == rows_target), None)
+    ingestion_path = ROOT / "ingest" / "ingestion_results.json"
+    ingestion = (json.loads(ingestion_path.read_text())
+                 if ingestion_path.exists() else {})
     total = lambda p: sum(_dig(r["measured"], p) for r in oracle)
     gate = lambda g: sum(r["violations_by_gate"].get(g, 0) for r in oracle)
 
@@ -80,6 +83,18 @@ def rows() -> list[dict]:
              artefact="`eval/resolver_scale_report.py`",
              how="`python3 eval/resolver_scale_report.py` (~26 min, resume-cached "
                  "per point)"),
+    ]
+    for name, counts in ingestion.items():
+        out.append(dict(
+            claim=f"`ingest/formats/{name}` round-trip against every dataset",
+            value=f"{counts['ok']}/{counts['total']}",
+            denom=f"{counts['total']} dataset directories",
+            scope="fixtures generated from this repo's own bank_statement.csv/"
+                  "recon_combined.json, not a real bank export -- "
+                  "`ingest/INGESTION_REPORT.md`",
+            artefact="`ingest/ingestion_report.py`",
+            how="`python3 -m ingest.ingestion_report`"))
+    out += [
         dict(claim="`Verified` that are non-decisive",
              value=total(("accounting","verified_non_decisive")),
              denom=f"{total(('accounting','verified'))} `Verified`",

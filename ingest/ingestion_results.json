@@ -1,0 +1,22 @@
+{
+ "xlsx": {
+  "total": 45,
+  "ok": 45,
+  "failed": 0
+ },
+ "camt053": {
+  "total": 45,
+  "ok": 45,
+  "failed": 0
+ },
+ "mt940": {
+  "total": 45,
+  "ok": 45,
+  "failed": 0
+ },
+ "jsonl": {
+  "total": 45,
+  "ok": 45,
+  "failed": 0
+ }
+}
