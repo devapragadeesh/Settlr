@@ -5683,3 +5683,113 @@ its git history.
 `resolver/`, `resolver_contract/`, `matching/`, `engine/`, `ingest/`,
 `transport/`, `store/`, `service/`, `corpus/export_dashboard.py`, or
 `dashboard/data.json` changed. No published figure moved.
+
+## 91. Settlr dashboard: SPA page navigation, a real multi-domain "Ask Settlr" query engine, GST/stability evidence panels, and three UI bug fixes -- 2026-09-04
+
+Three rounds of user-reported and self-caught bugs against decision 90's
+dashboard, plus a substantive feature extension, all confined to the four
+files decision 90 already owns: `dashboard/build_dashboard.py`,
+`dashboard/web/template.html`, `dashboard/web/app.js`,
+`dashboard/index.html` (generated).
+
+**Bug fixes.**
+
+- **Command-bar substring collision.** `lineMatchesFilter` tested
+  `q.includes("matched")` to detect a "matched" query, but
+  `"unmatched".includes("matched")` is also true, so typing "unmatched"
+  satisfied both the unmatched-only and matched-only branches at once and
+  always returned zero rows. Fixed with word-tokenized exact matching
+  against a fixed `FILTER_KEYWORDS` set instead of substring tests.
+- **Aging-bucket filter dead branch.** The same function checked
+  `outcome.__type__ !== "OpenBreak"` against a `LineOutcome` object --
+  `OpenBreak` is a `RowOutcome`-only kind, so a `LineOutcome` can never equal
+  it and the branch was a no-op. Replaced with a real check of whether the
+  line's own composition/candidate rows intersect the aged-bucket row-id set
+  via `referencedIdsFor(line)`.
+- **Off-screen elements not actually off screen.** `.toast` and
+  `.discrepancy-banner` hid via `transform:translate(-50%,140%)`, which only
+  clears an element shorter than roughly 2.5x its own offset -- both were
+  taller, leaving a visible sliver at the bottom of the viewport. Fixed with
+  `translate(-50%, calc(100% + 60px))` plus `visibility:hidden`, which is
+  independent of element height.
+- **Notification click targets, footer, logo.** Notifications previously
+  built but never wired to an action; a Settlr-branded footer strip
+  duplicated the brand mark for no navigational purpose; the top-left mark
+  was a text lockup instead of the real `settlrlogoblue.png`. Notifications
+  now carry a `page` field and call the same `switchPage` the nav uses; the
+  footer is deleted; the brand mark is a cropped, transparent
+  `dashboard/web/logo_lockup.png` cut from `settlrlogoblue.png`.
+
+**Feature: page-based navigation.** The dashboard was one long scrolling
+document; six `<section class="page" data-page="...">` sections now toggle
+via `switchPage(name)`, driven by `data-page` nav links, a `hashchange`
+listener (so back/forward and a manually-set `#hash` both work, not only
+in-page clicks), and `history.replaceState` on every nav click.
+
+**Feature: "Ask Settlr" -- a real multi-domain query router, not a filter
+relabeled.** The user asked for something that "refers across the database
+or dashboard and knows everything," not a smarter grep. `domainAnswer(q)`
+checks, in order: entity-name lookup against `D.entities`, an outcome-term
+glossary (verified/ambiguous/unresolved/discrepancy/open break/reconstructed/
+proven-unmatched), then regex-matched dashboard domains -- health score,
+entity-status counts, aging, ingestion, three-systems accuracy, GST/ITC,
+run stability -- before falling back to the original per-line filter. Every
+branch reads `window.SETTLR_DATA`, the same object every other panel
+renders from; there is no second data source and therefore no path to a
+fabricated answer. Rejected: a free-text LLM call from the client. The
+dashboard ships as a static file with no backend and must keep working
+after `pip uninstall` of everything but a browser; a regex router over an
+already-embedded, already-audited JSON blob gives the "ask anything"
+behavior the user wanted without introducing a runtime dependency, a cost,
+or a hallucination surface into a hiring artifact whose whole thesis is
+"every number here is real."
+
+**Feature: GST/tax evidence panel, built from a real `gstr2b.csv` parse**
+(23 invoices, 16 with IRN, 21 filed, 16 with ITC available) plus a live
+count of `itc_risk`-flagged `OpenBreak` rows across every persisted run
+(found: 0). This is not a bug -- `EvidenceKind.GST_DOCUMENT` is bound to
+`Attests.ROW_EXISTENCE` in `resolver_contract/types.py`, so GST evidence can
+never license a composition on its own, and the panel's own copy says so
+rather than presenting the zero as a coverage gap.
+
+**Feature: run-stability panel, real multi-run determinism evidence rather
+than a fabricated trend line.** Four independent `run_pipeline` calls at
+different `(cap, time_budget)` points against the same frozen flagship
+dataset (`corpus/datasets/A20_B50_Cmax`) are fingerprinted by their
+`(bank_index, kind)` outcome sequence and compared. Rejected: plotting a
+synthetic accuracy-over-time chart, which the data does not support (there
+is one frozen dataset, not a time series) -- the honest claim available
+from repeated real runs is determinism, so that is what is shown
+(`identical_outcomes: true` across all four).
+
+**Health-detail slideout extended** with a "D15 -- ambiguity soundness"
+section (`correct_refusals`/`instances`/`genuine_failures` from
+`dashboard/data.json`) and the full 25-row claims ledger, both already
+computed by `corpus/export_dashboard.py` and previously unsurfaced.
+
+**Fix, self-caught in verification, not user-reported:** the new Entities
+table can show two rows with an identical friendly label, because
+`corpus/datasets` and `corpus/datasets_v2` legitimately reuse the same
+axis-point name across the five corpus regenerations recorded in decision
+32. `_friendly_label` now takes the dataset's family and appends `" (v2)"`
+for the second family rather than leaving two entities looking like
+duplicate data.
+
+**Verified in Chrome** (local `http.server`, since the extension cannot
+load `file://`): all six pages switch correctly including via back/forward;
+notifications navigate to the right page; the "unmatched" query now returns
+the correct subset; "Ask Settlr" answers exercised across every domain
+branch (health score, GST, stability, entity status, aging) each with a
+working "Open ->" link; console clean (`read_console_messages`,
+`onlyErrors: true`) after every change.
+
+**Scope.** Modified only the four files decision 90 introduced:
+`dashboard/build_dashboard.py`, `dashboard/web/template.html`,
+`dashboard/web/app.js`, `dashboard/index.html` (generated). Nothing under
+`resolver/`, `resolver_contract/`, `matching/`, `engine/`, `ingest/`,
+`transport/`, `store/`, `service/`, `corpus/`, or `dashboard/data.json`
+touched -- a concurrent, unrelated session's changes to
+`corpus/GST_RESULTS.md`, `corpus/ORACLE_RESULTS.md`, `corpus/gst_results.json`,
+`corpus/oracle_results.json`, `resolver/resolve.py`, and files under
+`investigation/tier_c_ambiguity_ordering/` were left staged-out and
+untouched.

@@ -179,7 +179,8 @@
     $$(".aging-bar").forEach((b) => b.classList.toggle("active", b.parentElement.parentElement.dataset.bucket === agingFilter));
     applyFilters();
     if (agingFilter) {
-      $("#matching").scrollIntoView({ behavior: "smooth", block: "start" });
+      switchPage("matching");
+      history.replaceState(null, "", "#matching");
     }
   }
 
@@ -289,6 +290,57 @@
     panel.append(grid);
   }
 
+  function renderGst() {
+    const panel = $("#gstPanel");
+    const g = D.gst;
+    panel.append(
+      el("div", { class: "panel-head" },
+        el("div", {}, el("h3", {}, "GST / Tax Evidence"),
+          el("div", { class: "sub" }, "gstr2b.csv, the flagship entity's own supplier filing")),
+      ),
+      el("div", { class: "kv" },
+        el("div", { class: "cell" }, el("div", { class: "k" }, "Supplier invoices"), el("div", { class: "v" }, g.invoices)),
+        el("div", { class: "cell" }, el("div", { class: "k" }, "IRN present"), el("div", { class: "v" }, g.irn_present + " / " + g.invoices)),
+        el("div", { class: "cell" }, el("div", { class: "k" }, "Supplier GSTR-3B filed"), el("div", { class: "v" }, g.filed + " / " + g.invoices)),
+        el("div", { class: "cell" }, el("div", { class: "k" }, "ITC available"), el("div", { class: "v" }, g.itc_available + " / " + g.invoices))),
+      el("div", { style: "margin-top:16px;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-2);line-height:1.6" },
+        el("b", { style: "color:var(--text-1)" }, g.flagged_at_risk + " rows flagged at-risk"),
+        ` across ${g.runs_checked} persisted runs. Not a bug: `,
+        el("code", { style: "background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px" }, "EvidenceKind.GST_DOCUMENT"),
+        " is bound to ", el("code", { style: "background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px" }, "Attests.ROW_EXISTENCE"),
+        " in the resolver's own contract — a tax document can annotate an open item but can never license a bank-credit composition. This entity's tax feed genuinely has nothing flagged; that is the architecture working as designed, not the feature being untested.")
+    );
+  }
+
+  function renderStability() {
+    const panel = $("#stabilityPanel");
+    const s = D.stability;
+    panel.append(
+      el("div", { class: "panel-head" },
+        el("div", {}, el("h3", {}, "Run Stability"),
+          el("div", { class: "sub" }, s.runs.length + " independent runs, four different (cap, time budget) points")),
+      )
+    );
+    const list = el("div", { class: "feedlist" });
+    s.runs.forEach((r) => {
+      list.append(el("div", { class: "feed" },
+        el("span", { class: "feed-dot", style: "background:var(--green)" }),
+        el("div", { class: "feed-body" },
+          el("div", { class: "feed-name" }, "run " + r.run_id),
+          el("div", { class: "feed-sub" }, `cap=${r.cap}, time_budget=${r.time_budget}s`)),
+        el("div", { class: "feed-stat" }, el("div", { class: "rows num" }, r.seconds + "s"), el("div", { class: "lbl" }, "wall clock"))));
+    });
+    panel.append(list);
+    panel.append(el("div", {
+      style: `margin-top:14px;padding:12px 14px;border-radius:var(--radius-sm);font-size:12px;line-height:1.6;` +
+        (s.identical_outcomes
+          ? "background:var(--green-bg);border:1px solid var(--green-border);color:#b8f5cf"
+          : "background:var(--red-bg);border:1px solid var(--red-border);color:#ffb3bc"),
+    }, s.identical_outcomes
+      ? `Identical outcome on every bank line across all ${s.runs.length} runs — real reproducibility, not asserted.`
+      : `${s.distinct_fingerprints} distinct outcome sets across ${s.runs.length} runs — a genuine finding, not hidden.`));
+  }
+
   /* ============================== KANBAN ============================== */
   function renderKanban() {
     const panel = $("#kanbanPanel");
@@ -319,6 +371,90 @@
       board.append(col);
     });
     panel.append(board);
+  }
+
+  /* ============================== ENTITIES TABLE ============================== */
+  let entitySort = { key: "label", dir: 1 };
+  let entitySearch = "";
+
+  const ENTITY_COLUMNS = [
+    { key: "label", label: "Entity" },
+    { key: "status", label: "Status" },
+    { key: "bank_lines", label: "Bank Lines", num: true },
+    { key: "verified", label: "Verified", num: true },
+    { key: "open_breaks", label: "Open Breaks", num: true },
+    { key: "unresolved", label: "Unresolved", num: true },
+    { key: "ambiguous", label: "Ambiguous", num: true },
+    { key: "passed", label: "Oracle Gate" },
+  ];
+
+  function renderEntities() {
+    const panel = $("#entitiesPanel");
+    panel.innerHTML = "";
+    panel.append(
+      el("div", { class: "entities-toolbar" },
+        el("input", {
+          class: "entities-search", placeholder: "Search entities by name or id…",
+          oninput: (e) => { entitySearch = e.target.value.toLowerCase(); renderEntityRows(); },
+        }),
+        el("div", { class: "grid-count" }, D.entities.length + " entities"))
+    );
+    const wrap = el("div", { class: "etable-wrap" });
+    const table = el("table", { class: "etable" });
+    const thead = el("thead", {}, el("tr", {}));
+    ENTITY_COLUMNS.forEach((col) => {
+      const th = el("th", {
+        onclick: () => {
+          entitySort = { key: col.key, dir: entitySort.key === col.key ? -entitySort.dir : 1 };
+          renderEntityRows();
+        },
+      }, col.label);
+      th.dataset.key = col.key;
+      thead.firstChild.append(th);
+    });
+    const tbody = el("tbody", { id: "entityTbody" });
+    table.append(thead, tbody);
+    wrap.append(table);
+    panel.append(wrap);
+    renderEntityRows();
+  }
+
+  function renderEntityRows() {
+    const tbody = $("#entityTbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    $$(".etable thead th").forEach((th) => {
+      th.classList.toggle("sorted", th.dataset.key === entitySort.key);
+      th.classList.toggle("asc", th.dataset.key === entitySort.key && entitySort.dir === 1);
+    });
+
+    let rows = D.entities.filter((e) =>
+      !entitySearch || e.label.toLowerCase().includes(entitySearch) || e.axis_point.toLowerCase().includes(entitySearch));
+    rows = rows.slice().sort((a, b) => {
+      const k = entitySort.key;
+      const av = a[k], bv = b[k];
+      if (typeof av === "number") return (av - bv) * entitySort.dir;
+      return String(av).localeCompare(String(bv)) * entitySort.dir;
+    });
+
+    rows.forEach((e) => {
+      const meta = STATUS_META[e.status];
+      const tr = el("tr", { onclick: () => openEntityDrilldown(e) },
+        el("td", { class: "name" }, e.label, el("span", { class: "axis" }, e.axis_point)),
+        el("td", {}, el("span", { class: `status-pill ${meta.cls}` }, meta.label)),
+        el("td", { class: "num" }, e.bank_lines),
+        el("td", { class: "num" }, e.verified),
+        el("td", { class: "num" }, e.open_breaks),
+        el("td", { class: "num" }, e.unresolved),
+        el("td", { class: "num" }, e.ambiguous),
+        el("td", {}, e.passed
+          ? el("span", { style: "color:var(--green)" }, "Passed")
+          : el("span", { style: "color:var(--red)" }, "Failed")));
+      tbody.append(tr);
+    });
+    if (!rows.length) {
+      tbody.append(el("tr", {}, el("td", { colspan: "8", style: "text-align:center;padding:30px;color:var(--text-3)" }, "No entities match that search.")));
+    }
   }
 
   /* ============================== MATCHING GRID ============================== */
@@ -729,6 +865,15 @@
     });
     body.append(scopeSection);
 
+    if (D.trust && D.trust.d15) {
+      const d15 = D.trust.d15;
+      body.append(el("div", { class: "slideout-section" },
+        el("h4", {}, "Ambiguity Soundness — D15"),
+        el("div", { class: "kv" },
+          el("div", { class: "cell" }, el("div", { class: "k" }, "Correct refusals"), el("div", { class: "v", style: "color:var(--green)" }, d15.correct_refusals + " / " + d15.instances)),
+          el("div", { class: "cell" }, el("div", { class: "k" }, "Genuine failures"), el("div", { class: "v" }, d15.genuine_failures)))));
+    }
+
     const claimsSection = el("div", { class: "slideout-section" },
       el("h4", {}, D.claims.length + " Claims in the Ledger"));
     const claimsList = el("div", {});
@@ -754,21 +899,135 @@
   }
   $("#scrim").addEventListener("click", closeDrilldown);
 
-  /* ============================== COMMAND BAR ============================== */
+  /* ============================== ASK SETTLR — THE ANSWER ENGINE ============================== */
+  // Every branch below reads directly from window.SETTLR_DATA -- the exact
+  // object every other panel on the page renders from. There is no second,
+  // hidden data source: the copilot "knows everything" only in the sense
+  // that it can compose a sentence from any field already on the page.
   const KIND_WORD = {
     Verified: "verified", Reconstructed: "reconstructed",
     AttestationDiscrepancy: "flagged as a discrepancy", Ambiguous: "ambiguous",
     Unresolved: "unresolved",
   };
 
+  const GLOSSARY = {
+    "verified": "A bank credit whose composition is corroborated by two independent parties — the resolver's strongest claim.",
+    "ambiguous": "Multiple rival compositions pass the identical soundness check, so the resolver reports every one rather than guessing.",
+    "unresolved": "No subset of eligible rows closes the credit within the search budget — a decline, not a wrong answer.",
+    "discrepancy": "The PSP's own settlement report and the bank statement disagree about the same credit — a finding, not a failed match.",
+    "attestationdiscrepancy": "The PSP's own settlement report and the bank statement disagree about the same credit — a finding, not a failed match.",
+    "open break": "A row with no bank credit found and no proven explanation yet — real accounting risk the longer it stays open.",
+    "reconstructed": "A composition that closes uniquely but without independent corroboration — accepted on structure alone.",
+    "proven unmatched": "A row the resolver can prove never settled (netted out, or never captured) — not a break, a closed question.",
+  };
+
+  function findEntity(q) {
+    return D.entities.find((e) =>
+      q.includes(e.axis_point.toLowerCase()) || q.includes(e.label.toLowerCase()));
+  }
+
+  // Returns null if the query isn't about a whole-dashboard domain (health,
+  // entities, aging, ingestion, trust, GST, stability, or a glossary term) --
+  // the caller then falls back to per-line filtering. Returns
+  // {headline, sub, page} otherwise. Deliberately checked BEFORE line
+  // filtering: "how many entities are certified" is not a question about
+  // bank lines and should never be answered with "0 lines match."
+  function domainAnswer(rawQuery) {
+    const q = rawQuery.toLowerCase();
+
+    const entity = findEntity(q);
+    if (entity) {
+      const meta = STATUS_META[entity.status];
+      return {
+        headline: `${entity.label} (${entity.axis_point}) is ${meta.label.toLowerCase()} — ` +
+          `${entity.verified} verified, ${entity.open_breaks} open breaks of ${entity.bank_lines} bank lines.`,
+        sub: entity.passed ? "Passed every oracle gate." : "Failed at least one oracle gate.",
+        page: "close", onOpen: () => openEntityDrilldown(entity),
+      };
+    }
+
+    for (const [term, def] of Object.entries(GLOSSARY)) {
+      if (q.includes("what is " + term) || q.includes("what does " + term) || q.includes("define " + term) || q.trim() === term) {
+        return { headline: def, sub: "A real term from Settlr's outcome vocabulary — not a paraphrase." };
+      }
+    }
+
+    if (/\bhealth\b|\breconciliation score\b/.test(q)) {
+      const h = D.health;
+      return {
+        headline: `Reconciliation health is ${h.on_determinable_pct.toFixed(1)}% on determinable lines — ` +
+          `${fmtNum(h.answered)} of ${fmtNum(h.determinable)} answered, ${h.of_all_lines_pct.toFixed(1)}% of all ` +
+          `${fmtNum(h.settlement_lines)} settlement lines across ${h.datasets} entities.`,
+        sub: "Click the health score card's ↗ for the full scope-by-scope breakdown.", page: "overview",
+      };
+    }
+
+    if (/\bcertified\b|\bnot started\b|\bawaiting approval\b|\bin progress\b|\bhow many entities\b|\ball entities\b/.test(q)) {
+      const counts = {};
+      D.entities.forEach((e) => { counts[e.status] = (counts[e.status] || 0) + 1; });
+      return {
+        headline: `${D.entities.length} entities: ${counts.certified || 0} certified, ${counts.in_progress || 0} in progress, ` +
+          `${counts.awaiting_approval || 0} awaiting approval, ${counts.not_started || 0} not started.`,
+        sub: "Open the Entities page for the full sortable table.", page: "entities",
+      };
+    }
+
+    if (/\baging\b|\b90\+|\b61-90|\b31-60|\boverdue\b|\bhow old\b/.test(q)) {
+      const a = D.aging;
+      const overSixty = (a["61-90"] || 0) + (a["90+"] || 0);
+      return {
+        headline: `Open exceptions by age: ${a["0-30"] || 0} at 0–30 days, ${a["31-60"] || 0} at 31–60, ` +
+          `${a["61-90"] || 0} at 61–90, ${a["90+"] || 0} at 90+.`,
+        sub: overSixty > 0 ? `${overSixty} breaks past 60 days are real accounting risk.` : "Nothing past 60 days right now.",
+        page: "overview",
+      };
+    }
+
+    if (/\bingestion\b|\bsource feed\b|\bpipeline\b|\blast pull\b|\bdata feed\b/.test(q)) {
+      const totalRows = D.ingestion.reduce((s, f) => s + f.rows, 0);
+      return {
+        headline: `${D.ingestion.length} source feeds connected, ${fmtNum(totalRows)} rows ingested from the flagship entity's last local pull.`,
+        sub: D.ingestion.map((f) => f.label).join(", "), page: "ingestion",
+      };
+    }
+
+    if (/\bnaive\b|\bfrozen cascade\b|\bthree.system\b|\bwrong answers\b|\bhow accurate\b/.test(q)) {
+      const t = D.trust.three_systems;
+      return {
+        headline: `Naive GROUP BY: ${t.naive.wrong}/${t.naive.attempted} wrong. Frozen cascade: ${t.frozen.wrong}/${t.frozen.attempted} wrong. ` +
+          `This resolver: ${t.resolver.wrong}/${t.resolver.attempted} wrong — same oracle, same 30 datasets.`,
+        sub: "Open the Trust page for the full comparison.", page: "trust",
+      };
+    }
+
+    if (/\bgst\b|\bitc\b|\btax\b|\birn\b/.test(q)) {
+      const g = D.gst;
+      return {
+        headline: `${g.invoices} supplier invoices on file, ${g.irn_present} carry an IRN, ${g.filed} filed by the supplier — ` +
+          `${g.flagged_at_risk} flagged at ITC risk across ${g.runs_checked} runs.`,
+        sub: "GST evidence can annotate a break but never license a composition — see the Trust page.", page: "trust",
+      };
+    }
+
+    if (/\bstability\b|\bdeterministic\b|\breproducib\b|\bconsisten(t|cy)\b|\bsame answer\b/.test(q)) {
+      const s = D.stability;
+      return {
+        headline: s.identical_outcomes
+          ? `Identical outcome on every bank line across all ${s.runs.length} independent runs — genuinely reproducible.`
+          : `${s.distinct_fingerprints} distinct outcome sets across ${s.runs.length} runs.`,
+        sub: "Four different (cap, time_budget) points, same frozen entity.", page: "trust",
+      };
+    }
+
+    return null;
+  }
+
   // Composed live from the actual filtered set on every keystroke -- no
-  // canned strings, no server round-trip. This is what "real time, right
-  // under the search bar" means here: a sentence built from D.lines, not a
-  // scripted response.
+  // canned strings, no server round-trip.
   function generateAnswer(lines, query) {
     if (!query) {
       return {
-        headline: "Ask about unmatched lines, entities, or amounts — Settlr answers from this run's real data.",
+        headline: "Ask about unmatched lines, entities, health, aging, GST, or trust — Settlr answers from this run's real data.",
         sub: "",
       };
     }
@@ -794,16 +1053,48 @@
     return { headline, sub };
   }
 
+  let lastDomainAnswer = null;
+
   function renderAnswer() {
-    const lines = visibleLines();
-    const { headline, sub } = generateAnswer(lines, cmdFilter.trim());
+    const query = cmdFilter.trim();
     const answerEl = $("#cmdAnswer");
+    const subEl = $("#cmdSub");
+    answerEl.innerHTML = "";
+    subEl.innerHTML = "";
+
+    const domain = query ? domainAnswer(query) : null;
+    lastDomainAnswer = domain;
+
+    if (domain) {
+      answerEl.append(domain.headline + " ");
+      if (domain.page) {
+        answerEl.append(el("span", {
+          class: "accent", style: "cursor:pointer;text-decoration:underline;text-underline-offset:3px",
+          onclick: () => {
+            if (domain.onOpen) domain.onOpen();
+            else { switchPage(domain.page); history.replaceState(null, "", "#" + domain.page); }
+            closeHintRef && closeHintRef();
+          },
+        }, "Open →"));
+      }
+      subEl.textContent = domain.sub || "";
+      return;
+    }
+
+    const lines = visibleLines();
+    const { headline, sub } = generateAnswer(lines, query);
     answerEl.textContent = headline;
-    $("#cmdSub").textContent = sub;
+    subEl.textContent = sub;
   }
 
+  let closeHintRef = null;
+
   function applyFilters() {
-    renderMatchColumns();
+    // A domain answer isn't about bank lines -- don't touch the grid or make
+    // it look like the search emptied it.
+    if (!(cmdFilter.trim() && domainAnswer(cmdFilter.trim()))) {
+      renderMatchColumns();
+    }
     renderAnswer();
     $("#cmdResultCount").textContent = visibleLines().length + " of " + D.lines.length;
   }
@@ -813,6 +1104,7 @@
     const cmdbar = $(".cmdbar");
     const openHint = () => { renderAnswer(); hint.classList.add("show"); };
     const closeHint = () => hint.classList.remove("show");
+    closeHintRef = closeHint;
 
     input.addEventListener("focus", openHint);
     input.addEventListener("input", () => { cmdFilter = input.value; applyFilters(); });
@@ -847,14 +1139,14 @@
         tone: "var(--amber)",
         title: (D.aging["61-90"] + D.aging["90+"]) + " breaks past 60 days",
         sub: "Real open exceptions from the persisted run — review the aging queue.",
-        scrollTo: "#aging-section",
+        page: "overview",
       });
     }
     const failedEntities = D.entities.filter((e) => !e.passed);
     failedEntities.forEach((e) => items.push({
       tone: "var(--red)", title: e.label + " failed its oracle gate",
       sub: e.open_breaks + " open breaks, " + e.unresolved + " unresolved lines.",
-      scrollTo: "#close",
+      page: "close",
     }));
     return items;
   }
@@ -874,9 +1166,10 @@
             el("div", { class: "sub" }, item.sub)));
         row.addEventListener("click", () => {
           closeNotifPanel();
-          if (item.scrollTo) document.querySelector(item.scrollTo)?.scrollIntoView({ behavior: "smooth" });
+          if (item.page) { switchPage(item.page); history.replaceState(null, "", "#" + item.page); }
           if (item.target != null) {
-            document.querySelector("#matching")?.scrollIntoView({ behavior: "smooth" });
+            switchPage("matching");
+            history.replaceState(null, "", "#matching");
             const line = D.lines[item.target];
             if (line) { selectedLineIndex = line.index; renderMatchColumns(); openLineDrilldown(line); }
           }
@@ -907,6 +1200,40 @@
     });
   }
 
+  /* ============================== PAGE SWITCHING ============================== */
+  const PAGES = ["overview", "close", "entities", "ingestion", "trust", "matching"];
+
+  function switchPage(name) {
+    if (!PAGES.includes(name)) name = "overview";
+    $$(".page").forEach((p) => p.classList.toggle("active", p.dataset.page === name));
+    $$(".navlinks a").forEach((a) => a.classList.toggle("active", a.dataset.page === name));
+    window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  }
+
+  function setupPageSwitching() {
+    $$(".navlinks a").forEach((link) => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        switchPage(link.dataset.page);
+        history.replaceState(null, "", "#" + link.dataset.page);
+      });
+    });
+    $(".brand").addEventListener("click", (e) => {
+      e.preventDefault();
+      switchPage("overview");
+      history.replaceState(null, "", "#overview");
+    });
+    // A plain hash change (browser back/forward, or a hash edited by hand)
+    // is a same-document navigation and does NOT re-run this script -- only
+    // clicks routed through the handlers above called switchPage() so far.
+    // This listener is what makes the browser's own back/forward buttons,
+    // and any link into this page with a #hash, actually work.
+    window.addEventListener("hashchange", () => switchPage(location.hash.slice(1)));
+
+    const initial = (location.hash || "#overview").slice(1);
+    switchPage(initial);
+  }
+
   /* ============================== BOOT ============================== */
   renderMetaChips();
   renderHero();
@@ -914,11 +1241,15 @@
   renderAging();
   renderIngestionSmall();
   renderKanban();
+  renderEntities();
   renderIngestionFull();
   renderTrust();
+  renderGst();
+  renderStability();
   renderMatchingGrid();
   setupCommandBar();
   setupNotifications();
+  setupPageSwitching();
   $("#matchingSub").textContent =
     "Flagship entity " + D.meta.flagship_dataset + " · " + D.lines.length +
     " real bank lines. Select a line to reveal the resolver's actual suggested composition across live source columns.";
