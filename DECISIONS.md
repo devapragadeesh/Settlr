@@ -5619,3 +5619,67 @@ any dataset directory changed. No published oracle/GST/scale figure moved.
 
 **This closes the three-track plan in full**: Track A (Sec.79-83), Track B
 (Sec.84-85), Track C (Sec.86-87), Phase D (this entry).
+
+## 90. `dashboard/index.html` — a generated, real-data UI over the resolver's own output, branded Settlr — 2026-09-03
+
+**What was built.** `dashboard/build_dashboard.py` (generator) +
+`dashboard/web/template.html`/`app.js` (hand-authored template and
+interactivity) → `dashboard/index.html` (the committed, generated output —
+never hand-edited, per `CLAUDE.md`'s "reports are generated" rule applied to
+a webpage). A public-demo-grade reconciliation UI: a health-score hero
+(`dashboard/data.json:coverage.all`), a 30-entity close-progression board
+derived from `corpus/oracle_results.json`, an exception-aging chart sourced
+from a *fresh* resolver run persisted via `store/writer.py` and read back
+through `store/queries.py::open_breaks` (Track C's own payoff feature,
+exercised for the first time by something other than a test), an ingestion
+panel over the flagship dataset's six real artifact files, and a dynamic
+multi-source matching grid whose "AI-suggested match" is the resolver's
+actual `Verified`/`Ambiguous` composition — not a heuristic.
+
+**No invented numbers.** Every figure traces to a real file already in this
+repo or a real run of `resolve()` against the frozen corpus; the generator's
+own docstring states the source of each section. The flagship dataset
+(`corpus/datasets/A20_B50_Cmax`) is run twice with different `cap` values
+specifically so `store/queries.py::row_history` has two genuine persisted
+entries per row — a real (if short) audit trail, not a fabricated multi-run
+narrative.
+
+**Two real bugs the browser caught, not just the generator.** (1) The
+`el()` DOM-builder helper only handled string children, so any numeric
+child (`h.datasets`, an aging-bucket count) threw `TypeError` and left
+entire panels blank — caught via Chrome console inspection, not visual
+inspection alone, since the empty panels looked plausible at a glance. (2)
+`Warrant.independence.independent_parties` is a Python `@property`, not a
+dataclass field, so it never survives `to_jsonable`/`dataclasses.fields()`
+serialisation — the drill-down slide-out threw on open. Fixed by computing
+party membership client-side from the real `sources` list, mirroring
+`resolver_contract.types.SOURCE_PARTY` exactly rather than re-adding a
+field to the contract for a UI's convenience.
+
+**Verified visually in Chrome against the layout rhythm of the supplied
+inspiration image**, not just by absence of console errors: hero card with
+donut + stat tiles beside it, card-based rhythm, dynamic 2-to-4-column
+matching grid confirmed live (selecting a bank line reveals PSP Ledger, ERP
+Order Book, and Dispute Records columns only when the resolver's own
+composition actually touches rows from each), discrepancy banner and
+"Post Variance"/"Open Dispute" actions confirmed with a real
+₹644.93 PSP/bank mismatch, command-bar filtering confirmed against real
+outcome kinds and amounts, aging-bar click-to-filter confirmed with a
+visible active state.
+
+**Rejected: wiring this to a live `service/api.py` fetch.** The user chose
+data baked in at build time — a static file works as a published Artifact
+and as a plain opened HTML file with no service running, matching the
+cold-clone property every other artifact in this repo respects.
+
+**Rejected: reusing the `.claude/worktrees/agent-aa6a3a929b655ebe3/dashboard/web/`
+React build.** A separate, isolated, in-progress parallel effort (different
+stack, different pages) — this work reads from and writes to neither it nor
+its git history.
+
+**Scope.** New: `dashboard/build_dashboard.py`, `dashboard/web/template.html`,
+`dashboard/web/app.js`, `dashboard/web/logo_mark.png`, `dashboard/index.html`,
+`settlrlogo.png`, `settlrlogoblue.png` (brand source assets). Nothing under
+`resolver/`, `resolver_contract/`, `matching/`, `engine/`, `ingest/`,
+`transport/`, `store/`, `service/`, `corpus/export_dashboard.py`, or
+`dashboard/data.json` changed. No published figure moved.
