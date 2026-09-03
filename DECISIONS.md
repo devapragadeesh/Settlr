@@ -4619,3 +4619,65 @@ new one.
 **Scope.** `README.md`, `corpus/scorecard.py`, `SCORECARD.md` (regenerated),
 `corpus/claims_ledger.py`, `CLAIMS.md` (regenerated). No resolver, oracle,
 generator or dataset changed; no existing figure moved. 614 tests pass.
+
+## 79. `ingest/` exists, layered strictly downstream of `resolver/`, proven equal to the old loader on all 45 dataset directories before any new format is added -- 2026-09-03
+
+**Why this is its own entry before any format work.** The highest-risk failure
+in a new reader is that it quietly disagrees with the old one. Phase A0 of the
+multi-format-ingestion plan closes that risk with zero new capability:
+`ingest.load(directory)` currently does nothing but delegate to
+`resolver.loaders.load`, and `ingest/tests/test_conformance.py` asserts the two
+are field-identical -- `rows`, every `BankLine`, `settlement_report`,
+`erp_order_ids`, `disputes`, every `Gstr2bLine` -- over **all 45** dataset
+directories on disk: the two frozen-engine-spelling families (`engine/data`,
+`holdout/data`, eight `scale/data_*`) and the 35 corpus-spelling directories
+across five `corpus/datasets*` families. A fixed-count guard
+(`test_exactly_45_dataset_directories_were_found`) fails loudly if that count
+ever drifts, so the parametrize list cannot silently go empty and pass
+vacuously.
+
+**Where the code lives, and why.** `resolver/tests/test_isolation.py` bans
+every resolver module except `loaders.py` from calling `open`/`read_text`/
+`read_bytes`, and its `test_the_live_import_graph_is_clean` imports every
+resolver module and diffs `sys.modules` against a forbidden-import list --
+catching even a lazy in-function import. `ingest/` therefore lives strictly
+downstream: it imports `resolver.loaders` (legal, and avoids re-implementing
+the `paise` grammar a second time, which is exactly what Sec.70 forbade), and
+`resolver/` never imports it back. That reverse edge is now enforced, not
+assumed: `tests/test_layer_isolation.py` is new, and re-runs the same
+three-mechanism check (source text via AST, forbidden-import list, live import
+graph) in the opposite direction, over `ingest`, `transport`, `store`,
+`service` -- the four packages the full plan adds. A vacuity guard
+(`test_the_new_layers_exist_so_this_guard_is_not_vacuous`) fails if none of the
+four exist yet, so the test cannot pass by having nothing to check.
+
+**Rejected: writing the format adapters directly against `resolver.loaders.load`
+with no seam module.** Would work for Phase A0's single delegation, but gives
+later formats (Sec.80's field-map core, `.xlsx`, CAMT.053, MT940, JSON
+variants) no common `Dataset`-shaped landing point, and no place for the
+conformance test to anchor as new formats are added one at a time.
+
+**Rejected: putting the conformance test inside `resolver/tests/`.** `resolver/`
+must never import `ingest`, so a test that imports both packages cannot live
+under `resolver/` without creating exactly the cycle `tests/test_layer_isolation.py`
+now forbids. It lives under `ingest/tests/` instead, which only needs to import
+`resolver.loaders` -- a legal, one-directional dependency.
+
+**Rejected: reusing `corpus/tests/test_conformance.py`'s file or fixtures.**
+That test's job is `corpus/generator/sim.py` against the frozen
+`engine/simulator.py` -- a different pair of modules answering a different
+question. The pattern (differential equality between an old, trusted
+implementation and a new one, over every fixture on disk) is reused; the file
+is not, because `corpus/` and `ingest/` must stay independently readable.
+
+**Measured, not asserted.** `pytest ingest/tests tests/test_layer_isolation.py -q`
+-- 55 passed (45 conformance cases + the count guard + 9 layer-isolation
+cases). Full gate re-run after: `pytest corpus/tests tests/test_isolation.py
+engine/tests tests/test_scale_degradation.py resolver/tests -q` -- 787 passed,
+7 skipped, no regression against the 614-passed/7-skipped and
+101/173-passed baselines from the prior pass.
+
+**Scope.** New files only: `ingest/__init__.py`, `ingest/tests/__init__.py`,
+`ingest/tests/test_conformance.py`, `tests/test_layer_isolation.py`. Nothing
+under `resolver/`, `resolver_contract/`, `matching/`, `engine/`, or any dataset
+directory changed. No published figure moved.
