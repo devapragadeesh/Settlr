@@ -26,19 +26,19 @@ Over-determined: the answer is recoverable by a `GROUP BY`. Any sound resolver m
 | dataset | naive | frozen | resolver | naive wrong | frozen wrong | resolver wrong | frozen abstained det/rec | resolver abstained det/rec | AD found (planted) | unwarranted claims n/f/r | mean k n/f/r |
 |---|---|---|---|---:|---:|---:|---|---|---|---|---|
 | `datasets/A10_B100_Cmax` | 12/12 | 12/12 | 10/10 | 0 | 0 | 0 | 0/11, 0/1 | 0/11, 0/1 | 1 (1) | 12/0/0 | 1.00/1.00/1.00 |
-| `datasets/A20_B0_Cmax` | 12/12 | 3/3 | 11/11 | 0 | 0 | 0 | 0/0, 8/11 | 0/0, 0/11 | 0 (0) | 12/4/0 | 1.00/21.36/1.08 |
-| `datasets/A20_B100_Cfifo` | 12/12 | 4/4 | 10/10 | 0 | 0 | 0 | 6/10, 1/1 | 0/10, 0/1 | 1 (1) | 12/4/0 | 1.00/14.25/1.00 |
-| `datasets/A20_B100_Cmax` | 12/12 | 6/6 | 10/10 | 0 | 0 | 0 | 5/10, 0/1 | 0/10, 0/1 | 1 (1) | 12/4/0 | 1.00/6.42/1.00 |
-| `datasets/A20_B100_Crandom` | 12/12 | 3/3 | 10/10 | 0 | 0 | 0 | 7/9, 0/1 | 0/9, 0/1 | 1 (1) | 12/4/0 | 1.00/11.30/1.00 |
-| `datasets/A20_B100_Crandom0` | 12/12 | 4/4 | 10/10 | 0 | 0 | 0 | 2/6, 0/0 | 0/6, 0/0 | 1 (1) | 12/3/0 | 1.00/16.08/1.00 |
-| `datasets/A20_B50_Cmax` | 12/12 | 6/6 | 10/10 | 0 | 0 | 0 | 3/4, 3/7 | 0/4, 0/7 | 1 (1) | 12/9/0 | 1.00/4.50/1.82 |
-| `datasets/A20_B75_Cmax` | 12/12 | 4/4 | 10/10 | 0 | 0 | 0 | 5/8, 3/4 | 0/8, 0/4 | 1 (1) | 12/4/0 | 1.00/13.00/1.00 |
-| `datasets/A30_B100_Cmax` | 12/12 | 4/4 | 11/11 | 0 | 0 | 0 | 6/9, 0/1 | 0/9, 0/1 | 1 (1) | 12/2/0 | 1.00/14.00/1.00 |
-| `datasets/A40_B100_Cfifo` | 12/12 | 4/5 | 10/10 | 0 | 1 | 0 | 3/6, 0/1 | 0/6, 0/1 | 1 (1) | 12/2/0 | 1.00/16.17/1.00 |
-| `datasets/A40_B100_Cmax` | 12/12 | 1/1 | 10/10 | 0 | 0 | 0 | 4/5, 0/0 | 0/5, 0/0 | 1 (1) | 12/3/0 | 1.00/21.92/1.00 |
-| `datasets/A40_B100_Crandom` | 12/12 | 2/2 | 11/11 | 0 | 0 | 0 | 6/7, 0/1 | 0/7, 0/1 | 1 (1) | 12/1/0 | 1.00/22.10/1.00 |
-| `datasets/A40_B50_Cmax` | 12/12 | 2/2 | 10/10 | 0 | 0 | 0 | 0/0, 1/2 | 0/0, 0/2 | 1 (1) | 12/4/0 | 1.00/21.00/1.00 |
-| `datasets/A60_B100_Cmax` | 12/12 | 1/1 | 10/10 | 0 | 0 | 0 | 2/3, 0/0 | 0/3, 0/0 | 1 (1) | 12/2/0 | 1.00/17.88/1.00 |
+| `datasets/A20_B0_Cmax` | 12/12 | 3/3 | 11/11 | 0 | 0 | 0 | 0/0, 8/11 | 0/0, 0/11 | 0 (0) | 12/4/0 | 1.00/21.36/16.38 |
+| `datasets/A20_B100_Cfifo` | 12/12 | 4/4 | 10/10 | 0 | 0 | 0 | 6/10, 1/1 | 0/10, 0/1 | 1 (1) | 12/4/0 | 1.00/14.25/19.09 |
+| `datasets/A20_B100_Cmax` | 12/12 | 6/6 | 10/10 | 0 | 0 | 0 | 5/10, 0/1 | 0/10, 0/1 | 1 (1) | 12/4/0 | 1.00/6.42/1.18 |
+| `datasets/A20_B100_Crandom` | 12/12 | 3/3 | 10/10 | 0 | 0 | 0 | 7/9, 0/1 | 0/9, 0/1 | 1 (1) | 12/4/0 | 1.00/11.30/3.27 |
+| `datasets/A20_B100_Crandom0` | 12/12 | 4/4 | 10/10 | 0 | 0 | 0 | 2/6, 0/0 | 0/6, 0/0 | 1 (1) | 12/3/0 | 1.00/16.08/4.42 |
+| `datasets/A20_B50_Cmax` | 12/12 | 6/6 | 10/10 | 0 | 0 | 0 | 3/4, 3/7 | 0/4, 0/7 | 1 (1) | 12/9/0 | 1.00/4.50/32.31 |
+| `datasets/A20_B75_Cmax` | 12/12 | 4/4 | 10/10 | 0 | 0 | 0 | 5/8, 3/4 | 0/8, 0/4 | 1 (1) | 12/4/0 | 1.00/13.00/34.17 |
+| `datasets/A30_B100_Cmax` | 12/12 | 4/4 | 11/11 | 0 | 0 | 0 | 6/9, 0/1 | 0/9, 0/1 | 1 (1) | 12/2/0 | 1.00/14.00/44.00 |
+| `datasets/A40_B100_Cfifo` | 12/12 | 4/5 | 10/10 | 0 | 1 | 0 | 3/6, 0/1 | 0/6, 0/1 | 1 (1) | 12/2/0 | 1.00/16.17/7.38 |
+| `datasets/A40_B100_Cmax` | 12/12 | 1/1 | 10/10 | 0 | 0 | 0 | 4/5, 0/0 | 0/5, 0/0 | 1 (1) | 12/3/0 | 1.00/21.92/2.92 |
+| `datasets/A40_B100_Crandom` | 12/12 | 2/2 | 11/11 | 0 | 0 | 0 | 6/7, 0/1 | 0/7, 0/1 | 1 (1) | 12/1/0 | 1.00/22.10/43.64 |
+| `datasets/A40_B50_Cmax` | 12/12 | 2/2 | 10/10 | 0 | 0 | 0 | 0/0, 1/2 | 0/0, 0/2 | 1 (1) | 12/4/0 | 1.00/21.00/57.86 |
+| `datasets/A60_B100_Cmax` | 12/12 | 1/1 | 10/10 | 0 | 0 | 0 | 2/3, 0/0 | 0/3, 0/0 | 1 (1) | 12/2/0 | 1.00/17.88/44.14 |
 
 **Totals — Original fourteen**
 
@@ -46,7 +46,7 @@ Over-determined: the answer is recoverable by a `GROUP BY`. Any sound resolver m
 |---|---|---|---|---:|---|---|---|---:|---:|---:|
 | **naive GROUP BY** | 14/14 | **168/168 (100%)** | 168/168 | 0 | 0/88 | 0/31 | 0 (13) | 168 | 1.00 | 0s |
 | **frozen cascade** | 14/14 | **57/168 (34%)** | 56/57 | 1 | 49/88 | 16/31 | 0 (13) | 46 | 14.36 | 1162s |
-| **new resolver** | 14/14 | **143/143 (100%), 25 record-contradicted** | 143/143 | 0 | 0/88 | 0/31 | 13 (13) | 0 | 1.06 | 451s |
+| **new resolver** | 14/14 | **143/143 (100%), 25 record-contradicted** | 143/143 | 0 | 0/88 | 0/31 | 13 (13) | 0 | 22.27 | 449s |
 
 **Coverage is not accuracy.** The resolver **attempted 143 of 168** settlement lines here — that is the 85% figure — and of the 143 it attempted, **143 were exactly right and 0 wrong**. The two numbers answer different questions and neither substitutes for the other.
 
@@ -58,8 +58,8 @@ The recon feed carries no settlement fields and there is no settlement report. T
 
 | dataset | naive | frozen | resolver | naive wrong | frozen wrong | resolver wrong | frozen abstained det/rec | resolver abstained det/rec | AD found (planted) | unwarranted claims n/f/r | mean k n/f/r |
 |---|---|---|---|---:|---:|---:|---|---|---|---|---|
-| `datasets/A20_Bnone_Cmax` | **cannot run** | **cannot run** | 1/1 | - | - | 0 | -/0, -/11 | 0/0, 9/11 | 0 (0) | -/-/0 | 0.00/0.00/89.50 |
-| `datasets/A40_Bnone_Cmax` | **cannot run** | **cannot run** | 0/0 | - | - | 0 | -/0, -/7 | 0/0, 6/7 | 0 (0) | -/-/0 | 0.00/0.00/0.00 |
+| `datasets/A20_Bnone_Cmax` | **cannot run** | **cannot run** | 1/1 | - | - | 0 | -/0, -/11 | 0/0, 9/11 | 0 (0) | -/-/0 | 0.00/0.00/130.36 |
+| `datasets/A40_Bnone_Cmax` | **cannot run** | **cannot run** | 0/0 | - | - | 0 | -/0, -/7 | 0/0, 6/7 | 0 (0) | -/-/0 | 0.00/0.00/188.27 |
 
 **Totals — PSP absence**
 
@@ -67,7 +67,7 @@ The recon feed carries no settlement fields and there is no settlement report. T
 |---|---|---|---|---:|---|---|---|---:|---:|---:|
 | **naive GROUP BY** | 0/2 | **0/24 (0%)** | 0/0 | 0 | 0/0 | 0/0 | 0 (0) | 0 | 0.00 | 0s |
 | **frozen cascade** | 0/2 | **0/24 (0%)** | 0/0 | 0 | 0/0 | 0/0 | 0 (0) | 0 | 0.00 | 0s |
-| **new resolver** | 2/2 | **1/22 (5%), 2 record-contradicted** | 1/1 | 0 | 0/0 | 15/18 | 0 (0) | 0 | 44.75 | 106s |
+| **new resolver** | 2/2 | **1/22 (5%), 2 record-contradicted** | 1/1 | 0 | 0/0 | 15/18 | 0 (0) | 0 | 159.31 | 106s |
 
 **Coverage is not accuracy.** The resolver **attempted 1 of 24** settlement lines here — that is the 4% figure — and of the 1 it attempted, **1 was exactly right and 0 wrong**. The two numbers answer different questions and neither substitutes for the other.
 
@@ -79,20 +79,20 @@ A restatement: one batch's attested membership names rows that are not its compo
 
 | dataset | naive | frozen | resolver | naive wrong | frozen wrong | resolver wrong | frozen abstained det/rec | resolver abstained det/rec | AD found (planted) | unwarranted claims n/f/r | mean k n/f/r |
 |---|---|---|---|---:|---:|---:|---|---|---|---|---|
-| `datasets_v2/A10_B100_Cmax` | 11/12 | 11/11 | 9/9 | 1 | 0 | 0 | 1/10, 0/2 | 0/10, 0/2 | 2 (2) | 12/1/0 | 1.00/1.08/1.00 |
+| `datasets_v2/A10_B100_Cmax` | 11/12 | 11/11 | 9/9 | 1 | 0 | 0 | 1/10, 0/2 | 0/10, 0/2 | 2 (2) | 12/1/0 | 1.00/1.08/19.36 |
 | `datasets_v2/A20_B0_Cmax` | 12/12 | 4/4 | 11/11 | 0 | 0 | 0 | 0/0, 7/11 | 0/0, 0/11 | 0 (0) | 12/4/0 | 1.00/20.73/1.00 |
 | `datasets_v2/A20_B100_Cfifo` | 11/12 | 3/3 | 9/9 | 1 | 0 | 0 | 7/10, 2/2 | 0/10, 0/2 | 2 (2) | 12/3/0 | 1.00/17.08/1.00 |
-| `datasets_v2/A20_B100_Cmax` | 11/12 | 8/8 | 9/9 | 1 | 0 | 0 | 2/9, 1/2 | 0/9, 0/2 | 2 (2) | 12/3/0 | 1.00/1.45/2.00 |
-| `datasets_v2/A20_B100_Crandom` | 11/12 | 3/3 | 10/10 | 1 | 0 | 0 | 6/7, 1/2 | 0/7, 0/2 | 2 (2) | 12/3/0 | 1.00/19.00/1.00 |
-| `datasets_v2/A20_B100_Crandom0` | 11/12 | 2/2 | 9/9 | 1 | 0 | 0 | 3/5, 2/2 | 0/5, 0/2 | 2 (2) | 12/1/0 | 1.00/19.36/1.00 |
-| `datasets_v2/A20_B50_Cmax` | 11/12 | 4/4 | 10/10 | 1 | 0 | 0 | 2/4, 5/7 | 0/4, 0/7 | 2 (2) | 12/4/0 | 1.00/15.27/1.00 |
+| `datasets_v2/A20_B100_Cmax` | 11/12 | 8/8 | 9/9 | 1 | 0 | 0 | 2/9, 1/2 | 0/9, 0/2 | 2 (2) | 12/3/0 | 1.00/1.45/20.00 |
+| `datasets_v2/A20_B100_Crandom` | 11/12 | 3/3 | 10/10 | 1 | 0 | 0 | 6/7, 1/2 | 0/7, 0/2 | 2 (2) | 12/3/0 | 1.00/19.00/3.92 |
+| `datasets_v2/A20_B100_Crandom0` | 11/12 | 2/2 | 9/9 | 1 | 0 | 0 | 3/5, 2/2 | 0/5, 0/2 | 2 (2) | 12/1/0 | 1.00/19.36/2.64 |
+| `datasets_v2/A20_B50_Cmax` | 11/12 | 4/4 | 10/10 | 1 | 0 | 0 | 2/4, 5/7 | 0/4, 0/7 | 2 (2) | 12/4/0 | 1.00/15.27/34.17 |
 | `datasets_v2/A20_B75_Cmax` | 11/12 | 4/4 | 9/9 | 1 | 0 | 0 | 5/6, 2/5 | 0/6, 0/5 | 2 (2) | 12/6/0 | 1.00/10.18/1.00 |
-| `datasets_v2/A30_B100_Cmax` | 11/12 | 3/3 | 9/9 | 1 | 0 | 0 | 4/7, 2/2 | 0/7, 0/2 | 2 (2) | 12/3/0 | 1.00/16.73/1.00 |
-| `datasets_v2/A40_B100_Cfifo` | 11/12 | 2/2 | 10/10 | 1 | 0 | 0 | 4/5, 2/2 | 0/5, 0/2 | 1 (2) | 12/4/0 | 1.00/18.54/1.09 |
-| `datasets_v2/A40_B100_Cmax` | 11/12 | 2/2 | 9/9 | 1 | 0 | 0 | 4/6, 1/1 | 0/6, 0/1 | 2 (2) | 12/0/0 | 1.00/24.50/1.00 |
-| `datasets_v2/A40_B100_Crandom` | 10/11 | 0/0 | 9/9 | 1 | 0 | 0 | 3/3, 1/1 | 0/3, 0/1 | 1 (2) | 11/1/0 | 1.00/25.90/1.00 |
-| `datasets_v2/A40_B50_Cmax` | 11/12 | 1/1 | 9/9 | 1 | 0 | 0 | 0/0, 3/4 | 0/0, 0/4 | 2 (2) | 12/1/0 | 1.00/29.79/1.00 |
-| `datasets_v2/A60_B100_Cmax` | 11/12 | 1/1 | 10/10 | 1 | 0 | 0 | 3/4, 0/0 | 0/4, 0/0 | 2 (2) | 12/1/0 | 1.00/25.79/1.00 |
+| `datasets_v2/A30_B100_Cmax` | 11/12 | 3/3 | 9/9 | 1 | 0 | 0 | 4/7, 2/2 | 0/7, 0/2 | 2 (2) | 12/3/0 | 1.00/16.73/48.54 |
+| `datasets_v2/A40_B100_Cfifo` | 11/12 | 2/2 | 10/10 | 1 | 0 | 0 | 4/5, 2/2 | 0/5, 0/2 | 1 (2) | 12/4/0 | 1.00/18.54/16.62 |
+| `datasets_v2/A40_B100_Cmax` | 11/12 | 2/2 | 9/9 | 1 | 0 | 0 | 4/6, 1/1 | 0/6, 0/1 | 2 (2) | 12/0/0 | 1.00/24.50/62.23 |
+| `datasets_v2/A40_B100_Crandom` | 10/11 | 0/0 | 9/9 | 1 | 0 | 0 | 3/3, 1/1 | 0/3, 0/1 | 1 (2) | 11/1/0 | 1.00/25.90/2.23 |
+| `datasets_v2/A40_B50_Cmax` | 11/12 | 1/1 | 9/9 | 1 | 0 | 0 | 0/0, 3/4 | 0/0, 0/4 | 2 (2) | 12/1/0 | 1.00/29.79/5.75 |
+| `datasets_v2/A60_B100_Cmax` | 11/12 | 1/1 | 10/10 | 1 | 0 | 0 | 3/4, 0/0 | 0/4, 0/0 | 2 (2) | 12/1/0 | 1.00/25.79/46.92 |
 
 **Totals — datasets_v2**
 
@@ -100,7 +100,7 @@ A restatement: one batch's attested membership names rows that are not its compo
 |---|---|---|---|---:|---|---|---|---:|---:|---:|
 | **naive GROUP BY** | 14/14 | **167/167 (100%)** | 154/167 | 13 | 0/76 | 0/43 | 0 (26) | 167 | 1.00 | 0s |
 | **frozen cascade** | 14/14 | **48/167 (29%)** | 48/48 | 0 | 44/76 | 29/43 | 0 (26) | 35 | 17.53 | 1301s |
-| **new resolver** | 14/14 | **132/132 (100%), 35 record-contradicted** | 132/132 | 0 | 0/76 | 0/43 | 24 (26) | 0 | 1.08 | 367s |
+| **new resolver** | 14/14 | **132/132 (100%), 35 record-contradicted** | 132/132 | 0 | 0/76 | 0/43 | 24 (26) | 0 | 18.96 | 361s |
 
 **Coverage is not accuracy.** The resolver **attempted 132 of 167** settlement lines here — that is the 79% figure — and of the 132 it attempted, **132 were exactly right and 0 wrong**. The two numbers answer different questions and neither substitutes for the other.
 
@@ -126,8 +126,8 @@ It **FAILS the oracle on 2 of 30 datasets**: `datasets/A20_Bnone_Cmax`, `dataset
 | `OpenBreak` rows in total — these assert nothing | 4308 |
 | `OpenBreak` by reason | {'timing_difference': 950, 'unexpected_change': 304, 'unexplained': 1472, 'upstream_unresolved': 1582} |
 | `OpenBreak` clustered under a causing line / distinct causes | 1582 / 54 |
-| `Unresolved` by reason | {'not_our_credit': 90, 'enumeration_truncated': 136, 'other': 30} |
-| mean candidate set size, max over datasets | 178 |
+| `Unresolved` by reason | {'not_our_credit': 90, 'enumeration_truncated': 48, 'other': 30} |
+| mean candidate set size, max over datasets | 200 |
 
 Read in order:
 
@@ -161,8 +161,8 @@ The prediction was committed **before the fix existed** and one line of it was *
 | … non-decisive | 238 | 239 | +1 |
 | Reconstructed — correct | 1 | 1 | — |
 | **Reconstructed — wrong** | 1 | 0 | -1 |
-| Ambiguous | 5 | 5 | — |
-| Unresolved | 255 | 256 | +1 |
+| Ambiguous | 5 | 93 | +88 |
+| Unresolved | 255 | 168 | -87 |
 | AttestationDiscrepancy | 62 | 62 | — |
 | OpenBreak rows clustered | 1573 | 1582 | +9 |
 

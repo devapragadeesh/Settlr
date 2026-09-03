@@ -19,6 +19,46 @@
    "how": "`python3 corpus/score_resolver.py --all`"
   },
   {
+   "claim": "resolver enumerations completing at 48,566 rows",
+   "value": "0/12",
+   "denom": "12 CP-SAT solves, the largest `scale/data_*` fixture",
+   "scope": "runtime only, no accuracy claim -- `tests/test_scale_degradation.py`",
+   "artefact": "`eval/resolver_scale_report.py`",
+   "how": "`python3 eval/resolver_scale_report.py` (~26 min, resume-cached per point)"
+  },
+  {
+   "claim": "`ingest/formats/xlsx` round-trip against every dataset",
+   "value": "45/45",
+   "denom": "45 dataset directories",
+   "scope": "fixtures generated from this repo's own bank_statement.csv/recon_combined.json, not a real bank export -- `ingest/INGESTION_REPORT.md`",
+   "artefact": "`ingest/ingestion_report.py`",
+   "how": "`python3 -m ingest.ingestion_report`"
+  },
+  {
+   "claim": "`ingest/formats/camt053` round-trip against every dataset",
+   "value": "45/45",
+   "denom": "45 dataset directories",
+   "scope": "fixtures generated from this repo's own bank_statement.csv/recon_combined.json, not a real bank export -- `ingest/INGESTION_REPORT.md`",
+   "artefact": "`ingest/ingestion_report.py`",
+   "how": "`python3 -m ingest.ingestion_report`"
+  },
+  {
+   "claim": "`ingest/formats/mt940` round-trip against every dataset",
+   "value": "45/45",
+   "denom": "45 dataset directories",
+   "scope": "fixtures generated from this repo's own bank_statement.csv/recon_combined.json, not a real bank export -- `ingest/INGESTION_REPORT.md`",
+   "artefact": "`ingest/ingestion_report.py`",
+   "how": "`python3 -m ingest.ingestion_report`"
+  },
+  {
+   "claim": "`ingest/formats/jsonl` round-trip against every dataset",
+   "value": "45/45",
+   "denom": "45 dataset directories",
+   "scope": "fixtures generated from this repo's own bank_statement.csv/recon_combined.json, not a real bank export -- `ingest/INGESTION_REPORT.md`",
+   "artefact": "`ingest/ingestion_report.py`",
+   "how": "`python3 -m ingest.ingestion_report`"
+  },
+  {
    "claim": "`Verified` that are non-decisive",
    "value": 239,
    "denom": "275 `Verified`",
@@ -307,7 +347,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 24.54,
+     "seconds": 24.2,
      "gates": {}
     }
    },
@@ -358,8 +398,8 @@
      "discrepancy_detected": 0,
      "discrepancy_planted": 0,
      "unwarranted": 0,
-     "mean_k": 1.0833333333333333,
-     "seconds": 33.45,
+     "mean_k": 16.384615384615383,
+     "seconds": 33.15,
      "gates": {}
     }
    },
@@ -410,8 +450,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 1,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 22.92,
+     "mean_k": 19.09090909090909,
+     "seconds": 22.46,
      "gates": {}
     }
    },
@@ -462,8 +502,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 1,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 34.67,
+     "mean_k": 1.1818181818181819,
+     "seconds": 34.22,
      "gates": {}
     }
    },
@@ -514,8 +554,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 1,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 40.44,
+     "mean_k": 3.272727272727273,
+     "seconds": 40.49,
      "gates": {}
     }
    },
@@ -566,8 +606,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 1,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 42.91,
+     "mean_k": 4.416666666666667,
+     "seconds": 43.23,
      "gates": {}
     }
    },
@@ -618,8 +658,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 1,
      "unwarranted": 0,
-     "mean_k": 1.8181818181818181,
-     "seconds": 22.81,
+     "mean_k": 32.30769230769231,
+     "seconds": 22.75,
      "gates": {}
     }
    },
@@ -670,8 +710,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 1,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 44.77,
+     "mean_k": 34.166666666666664,
+     "seconds": 44.6,
      "gates": {}
     }
    },
@@ -705,8 +745,8 @@
      "discrepancy_detected": 0,
      "discrepancy_planted": 0,
      "unwarranted": 0,
-     "mean_k": 89.5,
-     "seconds": 48.61,
+     "mean_k": 130.35714285714286,
+     "seconds": 48.29,
      "gates": {
       "G3": 9,
       "G8": 9
@@ -760,8 +800,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 1,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 33.13,
+     "mean_k": 44.0,
+     "seconds": 33.03,
      "gates": {}
     }
    },
@@ -812,8 +852,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 1,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 25.84,
+     "mean_k": 7.384615384615385,
+     "seconds": 25.71,
      "gates": {}
     }
    },
@@ -864,8 +904,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 1,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 34.72,
+     "mean_k": 2.923076923076923,
+     "seconds": 34.73,
      "gates": {}
     }
    },
@@ -916,8 +956,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 1,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 27.94,
+     "mean_k": 43.642857142857146,
+     "seconds": 27.64,
      "gates": {}
     }
    },
@@ -968,8 +1008,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 1,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 30.19,
+     "mean_k": 57.857142857142854,
+     "seconds": 29.77,
      "gates": {}
     }
    },
@@ -1003,8 +1043,8 @@
      "discrepancy_detected": 0,
      "discrepancy_planted": 0,
      "unwarranted": 0,
-     "mean_k": 0.0,
-     "seconds": 57.09,
+     "mean_k": 188.26666666666668,
+     "seconds": 57.71,
      "gates": {
       "G3": 11,
       "G8": 6
@@ -1028,7 +1068,7 @@
      "discrepancy_planted": 1,
      "unwarranted": 12,
      "mean_k": 1.0,
-     "seconds": 0.0
+     "seconds": 0.01
     },
     "frozen": {
      "ran": true,
@@ -1058,8 +1098,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 1,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 32.69,
+     "mean_k": 44.142857142857146,
+     "seconds": 33.1,
      "gates": {}
     }
    },
@@ -1110,8 +1150,8 @@
      "discrepancy_detected": 2,
      "discrepancy_planted": 2,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 23.4,
+     "mean_k": 19.363636363636363,
+     "seconds": 22.12,
      "gates": {}
     }
    },
@@ -1163,7 +1203,7 @@
      "discrepancy_planted": 0,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 22.54,
+     "seconds": 21.95,
      "gates": {}
     }
    },
@@ -1215,7 +1255,7 @@
      "discrepancy_planted": 2,
      "unwarranted": 0,
      "mean_k": 1.0,
-     "seconds": 9.24,
+     "seconds": 9.26,
      "gates": {}
     }
    },
@@ -1266,8 +1306,8 @@
      "discrepancy_detected": 2,
      "discrepancy_planted": 2,
      "unwarranted": 0,
-     "mean_k": 2.0,
-     "seconds": 17.31,
+     "mean_k": 20.0,
+     "seconds": 17.44,
      "gates": {}
     }
    },
@@ -1318,8 +1358,8 @@
      "discrepancy_detected": 2,
      "discrepancy_planted": 2,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 30.51,
+     "mean_k": 3.923076923076923,
+     "seconds": 30.7,
      "gates": {}
     }
    },
@@ -1370,8 +1410,8 @@
      "discrepancy_detected": 2,
      "discrepancy_planted": 2,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 31.24,
+     "mean_k": 2.6363636363636362,
+     "seconds": 31.45,
      "gates": {}
     }
    },
@@ -1422,8 +1462,8 @@
      "discrepancy_detected": 2,
      "discrepancy_planted": 2,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 18.58,
+     "mean_k": 34.166666666666664,
+     "seconds": 18.44,
      "gates": {}
     }
    },
@@ -1526,8 +1566,8 @@
      "discrepancy_detected": 2,
      "discrepancy_planted": 2,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 36.36,
+     "mean_k": 48.53846153846154,
+     "seconds": 36.09,
      "gates": {}
     }
    },
@@ -1578,8 +1618,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 2,
      "unwarranted": 0,
-     "mean_k": 1.0909090909090908,
-     "seconds": 28.82,
+     "mean_k": 16.615384615384617,
+     "seconds": 28.58,
      "gates": {}
     }
    },
@@ -1630,8 +1670,8 @@
      "discrepancy_detected": 2,
      "discrepancy_planted": 2,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 30.07,
+     "mean_k": 62.23076923076923,
+     "seconds": 28.89,
      "gates": {}
     }
    },
@@ -1682,8 +1722,8 @@
      "discrepancy_detected": 1,
      "discrepancy_planted": 2,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 48.19,
+     "mean_k": 2.230769230769231,
+     "seconds": 46.24,
      "gates": {}
     }
    },
@@ -1734,8 +1774,8 @@
      "discrepancy_detected": 2,
      "discrepancy_planted": 2,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 22.75,
+     "mean_k": 5.75,
+     "seconds": 22.1,
      "gates": {}
     }
    },
@@ -1786,8 +1826,8 @@
      "discrepancy_detected": 2,
      "discrepancy_planted": 2,
      "unwarranted": 0,
-     "mean_k": 1.0,
-     "seconds": 29.67,
+     "mean_k": 46.92307692307692,
+     "seconds": 29.7,
      "gates": {}
     }
    }
@@ -1801,10 +1841,26 @@
   "instances": 18,
   "source": "corpus/scorecard.py's D15 constant -- a committed measurement (investigation/D15_MEASUREMENT.md), held as data rather than re-derived on every export"
  },
- "hashes": null,
+ "hashes": {
+  "primary_dataset": {
+   "passed": true,
+   "detail": [
+    "engine/data/recon_combined.json: OK",
+    "engine/data/disputes.json: OK",
+    "engine/data/bank_statement.csv: OK",
+    "engine/data/erp_orders.csv: OK",
+    "engine/data/gstr2b.csv: OK",
+    "engine/ground_truth/ground_truth.json: OK"
+   ]
+  },
+  "corpus_datasets": {
+   "passed": 35,
+   "of": 35
+  }
+ },
  "commit_ordering": {
   "available": true,
-  "count": 46,
+  "count": 67,
   "first_ten": [
    {
     "sha": "2ce40f95e1",
@@ -1859,54 +1915,54 @@
   ],
   "last_ten": [
    {
-    "sha": "b6a26ae321",
-    "date": "2026-08-28 15:05:37 +0530",
-    "subject": "Fix: truncated reflects enumerator status, not the cap alone -- and 3 Determinate flip"
+    "sha": "4872399e87",
+    "date": "2026-09-03 17:59:54 +0530",
+    "subject": "DECISIONS 85: transport/poller.py -- idempotency, quarantine, atomic writes, retry -- Track B complete"
    },
    {
-    "sha": "d3732c504c",
-    "date": "2026-08-28 15:19:39 +0530",
-    "subject": "Step 3.1/3.2/3.3: hostile-reader pass, and a real clean-clone defect fixed"
+    "sha": "9090c003c4",
+    "date": "2026-09-03 18:28:19 +0530",
+    "subject": "DECISIONS 86: store/ -- SQLite persistence, run identity derived not generated"
    },
    {
-    "sha": "43309070a5",
-    "date": "2026-08-28 16:29:54 +0530",
-    "subject": "Step 3.3/3.4 complete: run_all.py timed in a clean clone; FINAL_GATE.md regenerated whole"
+    "sha": "aa66a5d915",
+    "date": "2026-09-03 18:36:40 +0530",
+    "subject": "DECISIONS 87: service/ -- pipeline, scheduler, read-only API -- Track C and the full plan complete"
    },
    {
-    "sha": "5a9598c068",
-    "date": "2026-08-28 20:08:52 +0530",
-    "subject": "Step 4: dashboard export layer -- one file, every figure re-used not recomputed"
+    "sha": "2e1f8630b8",
+    "date": "2026-09-03 18:48:25 +0530",
+    "subject": "DECISIONS 89: Phase D -- CI, generated ingestion report, surfaced into README/SCORECARD/CLAIMS/CHECKPOINT"
    },
    {
-    "sha": "cd5e430dbf",
-    "date": "2026-08-28 21:13:33 +0530",
-    "subject": "Close the CHECKPOINT/DECISIONS staleness loop: sec50 was in future tense"
+    "sha": "6875919351",
+    "date": "2026-09-03 18:53:51 +0530",
+    "subject": "DECISIONS 88: fix _itc_risk_flag's actual set, diagnosed independent of the score it moves"
    },
    {
-    "sha": "62ecc72ff7",
-    "date": "2026-09-02 19:19:37 +0530",
-    "subject": "The GST/ITC and bank-side corpus legs, through DECISIONS 66"
+    "sha": "55d3b43cec",
+    "date": "2026-09-03 22:28:20 +0530",
+    "subject": "DECISIONS 90: dashboard/index.html -- a generated Settlr UI over real resolver output"
    },
    {
-    "sha": "ba2b7632c1",
-    "date": "2026-09-02 19:19:58 +0530",
-    "subject": "DECISIONS 67: the 58 prediction, committed BEFORE the fix"
+    "sha": "3314ba4c52",
+    "date": "2026-09-03 22:48:03 +0530",
+    "subject": "Dashboard fixes: real logo lockup, functional notifications, remove footer, fix hidden-element bug"
    },
    {
-    "sha": "462ced6cb4",
-    "date": "2026-09-03 01:33:30 +0530",
-    "subject": "DECISIONS 68 and 69: the 58 fix, verified, and cardinality reporting"
+    "sha": "625e36e3a3",
+    "date": "2026-09-04 00:02:39 +0530",
+    "subject": "Prediction for _tier_c's truncation-before-ambiguity fix, committed BEFORE the fix"
    },
    {
-    "sha": "0f6a7f70de",
-    "date": "2026-09-03 05:24:27 +0530",
-    "subject": "DECISIONS 70-73: loader silent-failure fixes, and 68's deferred GST re-score"
+    "sha": "6cdd9af62f",
+    "date": "2026-09-04 00:22:45 +0530",
+    "subject": "Dashboard: fix command-bar substring bug, add glass real-time answer, wire health detail panel, bigger logo"
    },
    {
-    "sha": "1228d9fa64",
-    "date": "2026-09-03 12:24:37 +0530",
-    "subject": "DECISIONS 74: four documentation-integrity defects, one of them mine"
+    "sha": "5d71bd8280",
+    "date": "2026-09-04 00:28:54 +0530",
+    "subject": "Dashboard: add Evidence & Provenance panel, surfacing real data that sat unused"
    }
   ]
  },

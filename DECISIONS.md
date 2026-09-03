@@ -5793,3 +5793,155 @@ touched -- a concurrent, unrelated session's changes to
 `corpus/oracle_results.json`, `resolver/resolve.py`, and files under
 `investigation/tier_c_ambiguity_ordering/` were left staged-out and
 untouched.
+
+---
+
+## 92. `_tier_c` checked truncation before ambiguity, so proven non-uniqueness was under-reported as silence — found investigating D15, and it does not close D15 — 2026-09-04
+
+**What this is.** D15 ("PSP-absent coverage: the resolver answers 1 of 24
+bank lines") was believed to need a new algorithm. Investigating it directly
+found the true mechanism — a genuine pool-inflation/consumption conflict,
+already named repeatedly as this repo's hardest open problem (§46,
+`CHECKPOINT.md` §12.4/§14.6) — and, separately, a real, narrow, fixable bug
+sitting one layer up in how the resolver reports what it already knows.
+This entry is the second thing, not the first.
+
+**The bug.** `resolver/resolve.py::_tier_c` checked `not closures.complete`
+*before* `closures.count > 1`, so a truncated CP-SAT enumeration that had
+already found ≥2 distinct closing subsets — definitive, already-proven
+non-uniqueness — was reported as `Unresolved(ENUMERATION_TRUNCATED)` instead
+of the more informative `Ambiguous`. Non-uniqueness needs only two witnesses,
+proven the instant a second closing subset is found; only *uniqueness* needs
+completeness. The code conflated the two.
+
+**Verified safe against `resolver_contract/types.py` directly, zero contract
+change needed.** `Ambiguous.__post_init__` requires only
+`candidate_set.size >= 2` — no completeness requirement. `CandidateSet`'s own
+docstring already anticipates and endorses exactly this case: *"`complete=
+False` means enumeration stopped early. The set is then a SAMPLE and the
+line is MORE ambiguous than its length suggests, never less."*
+`_candidate_set(closures, rows_by_id)` already propagates `closures.complete`
+into `CandidateSet.complete`, so an `Ambiguous` built from a truncated
+`closures` is automatically, correctly labelled a sample.
+
+**The fix.** Move the `count > 1` check above the `not complete` check.
+`count == 1` truncated is untouched — still `Unresolved(ENUMERATION_
+TRUNCATED)`, preserving §39's guard against promoting a truncated single-find
+to `Reconstructed` exactly as before. The `Ambiguous` warrant's `detail`/
+`rationale` text now branches on `closures.complete`, so an incomplete
+candidate set says *"at least N subsets... the true rival count is at least
+this many, never fewer"* rather than reading as if it were exhaustive.
+
+## What this does NOT do — stated with the same directness the investigation used
+
+**This does not close D15's 1/24 PSP-absence coverage number.** No line
+moves to `Reconstructed`/`Verified`. `investigation/D15_MEASUREMENT.md`
+already proved the reclassified lines are genuinely non-unique over the
+resolver's derived pool; this fix touches neither the pool
+(`resolver/eligibility.py::pool_at`) nor consumption. It converts silent,
+unproven abstention into honest, evidenced abstention, on lines that were
+always going to abstain.
+
+**The two PSP-absence datasets still fail G8, with the identical violation
+count, after this fix.** Measured, not asserted: `A20_Bnone_Cmax` G8 = 9
+before and after; `A40_Bnone_Cmax` G8 = 6 before and after; both `passed =
+False` before and after. Verified from code before the fix was written:
+`resolver_contract/types.py::abstention_failures` appends to its failures
+list identically whether `isinstance(outcome, Unresolved)` or
+`isinstance(outcome, Ambiguous)` — a line already a G7/G8 failure stays one.
+
+**A pseudopolynomial uniqueness oracle (`corpus/TECHNIQUES.md`'s
+assessed-but-unbuilt direction) would not close coverage either**, and this
+was checked, not assumed, before ruling it out: of the 93 reclassified
+lines, every one already has `count >= 8` before truncation (most at 200,
+the enumeration cap) — non-uniqueness was already proven by the existing
+CP-SAT run. A faster or better-certified algorithm reaches the same negative
+verdict, not a different one.
+
+## The prediction scorecard
+
+`investigation/tier_c_ambiguity_ordering/PREDICTION.md` was committed in its
+own commit (`625e36e`), before this fix, per §67/§88's precedent.
+
+| claim | prediction | measured |
+|---|---|---|
+| exact reclassification set | 93 pairs, `predicted_reclassification.json` | **93 pairs, EXACT set match — zero missed, zero unexpected** |
+| no line moves to Reconstructed/Verified | — | CONFIRMED — 0 composition changes |
+| no G-gate flips | argued from `abstention_failures`/G3 code | CONFIRMED — 0 gate-count changes, 0 pass/fail flips |
+| D15 datasets still fail G8, same count | — | CONFIRMED — 9/9 and 6/6 |
+
+Blast radius, measured before the fix: **93 `(dataset, bank_index)` pairs
+across 28 of 35 datasets** — far broader than the two PSP-absence datasets.
+`Ambiguous` rose 1→13 (`A20_Bnone_Cmax`) and 0→15 (`A40_Bnone_Cmax`);
+`Unresolved` fell 17→5 and 19→4 correspondingly. `datasets_gst/*`: zero
+lines affected, confirmed by re-scoring and diffing (zero non-timing diff).
+`datasets_gst_holdout`: zero lines affected — its two official artifacts
+are byte-identical before and after by SHA-256.
+
+**One claim's stated reasoning was wrong, corrected here rather than
+smoothed over.** The held-out reach-check's first draft asserted the
+held-out dataset had "zero `_tier_c` truncations" (reasoning from `§68`'s
+older, differently-scoped clock-stop measurement) and would therefore be
+untouched by construction. That reasoning was wrong: the dataset has **4**
+`_tier_c` truncations (`bank[20,23,30,41]`), not zero. The bottom-line
+prediction — zero reclassifications on this dataset — was never actually
+derived from that wrong premise; the sweep's direct `WILL_FLIP=0` measurement
+was correct all along, because all 4 truncated lines have
+`partial_candidates is None`, meaning `closures.count == 0` — the *first*
+branch in `_tier_c`, untouched by this fix, which only reorders the
+`count > 1` branch. The reach-check script was rewritten to test the actual
+relevant question (`count > 1` specifically) rather than "any truncation,"
+and now confirms correctly, for the correct reason. A right conclusion
+resting on a wrong stated reason is exactly the gap §68's own claim 1 exists
+to warn against repeating, so this is recorded rather than quietly fixed.
+
+## Rejected alternatives
+
+**Building the pseudopolynomial uniqueness oracle instead or as well.**
+Rejected for this pass — checked above, it does not close coverage; a
+separate, smaller idea, already assessed and left unbuilt in
+`corpus/TECHNIQUES.md`.
+
+**Fixing the pool-inflation/consumption conflict in the same pass.**
+Rejected, out of scope. Named repeatedly (`CHECKPOINT.md` §12.4/§14.6,
+`DECISIONS.md` §46) as needing dedicated design; a prior joint/global-ILP
+attempt (`DECISIONS.md` §2, 1,347 booleans) already returned UNKNOWN at 60s.
+Mixing it into this pass would be exactly the "two changes under one entry's
+name" hazard §68's own GST-deferral reasoning names.
+
+**Folding the prediction into the fix commit.** Rejected on §67's own
+precedent — two commits cost nothing and make the ordering checkable from
+`git log` alone.
+
+**Reusing `D15_MEASUREMENT.md`'s older per-line table as the prediction's
+numbers.** Rejected. That table predates §68's determinism fix; a fresh
+sweep was run instead, and it found genuinely different figures (e.g.
+`A20_Bnone_Cmax` now shows 13 tier-C lines, not the older table's 9 usable
+reconstructible-instance rows) — reusing the stale table would have repeated
+§68's own claim-1 mistake one section later.
+
+**Leaving the incomplete-case warrant text identical to the complete case's.**
+Rejected — would understate the epistemic state exactly where the contract's
+`CandidateSet` docstring already draws the line between a sample and a proof.
+
+## Scope
+
+`resolver/resolve.py` (`_tier_c` only — the reordering, the branched
+`detail`/`rationale` text, the narrowed comment), `resolver/tests/
+test_tier_c_truncated_ambiguity.py` (new), `investigation/
+tier_c_ambiguity_ordering/` (`PREDICTION.md`, `before_after.py`,
+`sweep_truncation_reclass.py`, `holdout_reach_check.py`,
+`predicted_reclassification.json`, `outcomes_before.json`,
+`outcomes_after.json`), `corpus/ORACLE_RESULTS.md`/`oracle_results.json`,
+`corpus/THREE_SYSTEMS.md`, `SCORECARD.md`, `dashboard/data.json`,
+`corpus/GST_RESULTS.md`/`gst_results.json` (re-scored, confirmed zero
+non-timing diff). `CLAIMS.md` regenerated and byte-identical — no
+`Verified`/`Reconstructed` figure it reports moved.
+
+**Not touched:** `resolver_contract/types.py` (confirmed unnecessary),
+`resolver/eligibility.py::pool_at`, `resolver/enumerate_closures.py`,
+`matching/`, `engine/`, `corpus/GST_HOLDOUT_RESULTS.md`/
+`gst_holdout_results.json` (byte-identical by SHA-256, before and after).
+
+`pytest tests engine/tests resolver/tests corpus/tests -q`: 988 passed, 7
+skipped.

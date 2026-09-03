@@ -2,7 +2,7 @@
  {
   "dataset": "datasets/A10_B100_Cmax",
   "family": "datasets",
-  "seconds": 24.54,
+  "seconds": 24.2,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -117,7 +117,7 @@
  {
   "dataset": "datasets/A20_B0_Cmax",
   "family": "datasets",
-  "seconds": 33.45,
+  "seconds": 33.15,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -136,18 +136,18 @@
     "verified": 11,
     "attestation_discrepancy": 1,
     "reconstructed": 0,
-    "ambiguous": 1,
-    "unresolved": 7,
+    "ambiguous": 2,
+    "unresolved": 6,
     "proven_unmatched": 15,
     "open_breaks": 47,
-    "mean_candidate_set_size": 1.0833333333333333,
-    "max_candidate_set_size": 2,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 16.384615384615383,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 1,
     "verified_non_decisive": 11
    },
    "unresolved_by_reason": {
     "other": 1,
-    "enumeration_truncated": 3,
+    "enumeration_truncated": 2,
     "not_our_credit": 3
    },
    "reconstructed_accuracy": {
@@ -231,7 +231,7 @@
  {
   "dataset": "datasets/A20_B100_Cfifo",
   "family": "datasets",
-  "seconds": 22.92,
+  "seconds": 22.46,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -250,17 +250,17 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 1,
+    "unresolved": 7,
     "proven_unmatched": 17,
     "open_breaks": 102,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 19.09090909090909,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 1,
     "verified_non_decisive": 10
    },
    "unresolved_by_reason": {
-    "enumeration_truncated": 4,
+    "enumeration_truncated": 3,
     "not_our_credit": 3,
     "other": 1
    },
@@ -346,7 +346,7 @@
  {
   "dataset": "datasets/A20_B100_Cmax",
   "family": "datasets",
-  "seconds": 34.67,
+  "seconds": 34.22,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -365,17 +365,17 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 1,
+    "unresolved": 7,
     "proven_unmatched": 17,
     "open_breaks": 93,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 1.1818181818181819,
+    "max_candidate_set_size": 3,
+    "incomplete_enumerations": 1,
     "verified_non_decisive": 9
    },
    "unresolved_by_reason": {
-    "enumeration_truncated": 4,
+    "enumeration_truncated": 3,
     "other": 1,
     "not_our_credit": 3
    },
@@ -461,7 +461,7 @@
  {
   "dataset": "datasets/A20_B100_Crandom",
   "family": "datasets",
-  "seconds": 40.44,
+  "seconds": 40.49,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -480,18 +480,18 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 1,
+    "unresolved": 7,
     "proven_unmatched": 17,
     "open_breaks": 102,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 3.272727272727273,
+    "max_candidate_set_size": 26,
+    "incomplete_enumerations": 1,
     "verified_non_decisive": 10
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
-    "enumeration_truncated": 4,
+    "enumeration_truncated": 3,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -576,7 +576,7 @@
  {
   "dataset": "datasets/A20_B100_Crandom0",
   "family": "datasets",
-  "seconds": 42.91,
+  "seconds": 43.23,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -595,18 +595,18 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 2,
+    "unresolved": 6,
     "proven_unmatched": 15,
     "open_breaks": 72,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 4.416666666666667,
+    "max_candidate_set_size": 34,
+    "incomplete_enumerations": 2,
     "verified_non_decisive": 8
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
-    "enumeration_truncated": 4,
+    "enumeration_truncated": 2,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -690,7 +690,7 @@
  {
   "dataset": "datasets/A20_B50_Cmax",
   "family": "datasets",
-  "seconds": 22.81,
+  "seconds": 22.75,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -709,18 +709,18 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 1,
-    "unresolved": 7,
+    "ambiguous": 3,
+    "unresolved": 5,
     "proven_unmatched": 17,
     "open_breaks": 84,
-    "mean_candidate_set_size": 1.8181818181818181,
-    "max_candidate_set_size": 10,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 32.30769230769231,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 2,
     "verified_non_decisive": 9
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
-    "enumeration_truncated": 3,
+    "enumeration_truncated": 1,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -805,7 +805,7 @@
  {
   "dataset": "datasets/A20_B75_Cmax",
   "family": "datasets",
-  "seconds": 44.77,
+  "seconds": 44.6,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -824,18 +824,18 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 2,
+    "unresolved": 6,
     "proven_unmatched": 15,
     "open_breaks": 99,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 34.166666666666664,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 2,
     "verified_non_decisive": 7
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
-    "enumeration_truncated": 4,
+    "enumeration_truncated": 2,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -920,7 +920,7 @@
  {
   "dataset": "datasets/A20_Bnone_Cmax",
   "family": "datasets",
-  "seconds": 48.61,
+  "seconds": 48.29,
   "passed": false,
   "violations_by_gate": {
    "G3": 9,
@@ -937,8 +937,8 @@
    "G3   bank[16]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[17]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G8   bank[1]    Ambiguous(178) on an instance with exactly one closing subset -- unattested, but exactly one subset closes and it closes nothing else in the window",
-   "G8   bank[5]    Unresolved(enumeration_truncated) on a determined instance -- unattested, but exactly one subset closes and it closes nothing else in the window",
-   "G8   bank[7]    Unresolved(enumeration_truncated) on a determined instance -- unattested, but exactly one subset closes and it closes nothing else in the window"
+   "G8   bank[5]    Ambiguous(200) on an instance with exactly one closing subset -- unattested, but exactly one subset closes and it closes nothing else in the window",
+   "G8   bank[7]    Ambiguous(200) on an instance with exactly one closing subset -- unattested, but exactly one subset closes and it closes nothing else in the window"
   ],
   "violations_total": 18,
   "violations_truncated": true,
@@ -955,17 +955,17 @@
     "verified": 0,
     "attestation_discrepancy": 1,
     "reconstructed": 1,
-    "ambiguous": 1,
-    "unresolved": 17,
+    "ambiguous": 13,
+    "unresolved": 5,
     "proven_unmatched": 17,
     "open_breaks": 294,
-    "mean_candidate_set_size": 89.5,
-    "max_candidate_set_size": 178,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 130.35714285714286,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 12,
     "verified_non_decisive": 0
    },
    "unresolved_by_reason": {
-    "enumeration_truncated": 13,
+    "enumeration_truncated": 1,
     "not_our_credit": 3,
     "other": 1
    },
@@ -1053,7 +1053,7 @@
  {
   "dataset": "datasets/A30_B100_Cmax",
   "family": "datasets",
-  "seconds": 33.13,
+  "seconds": 33.03,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1072,17 +1072,16 @@
     "verified": 11,
     "attestation_discrepancy": 1,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 4,
+    "unresolved": 4,
     "proven_unmatched": 25,
     "open_breaks": 89,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 44.0,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 4,
     "verified_non_decisive": 10
    },
    "unresolved_by_reason": {
-    "enumeration_truncated": 4,
     "other": 1,
     "not_our_credit": 3
    },
@@ -1168,7 +1167,7 @@
  {
   "dataset": "datasets/A40_B100_Cfifo",
   "family": "datasets",
-  "seconds": 25.84,
+  "seconds": 25.71,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1187,18 +1186,18 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 3,
+    "unresolved": 5,
     "proven_unmatched": 32,
     "open_breaks": 168,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 7.384615384615385,
+    "max_candidate_set_size": 55,
+    "incomplete_enumerations": 3,
     "verified_non_decisive": 9
    },
    "unresolved_by_reason": {
-    "enumeration_truncated": 4,
     "other": 1,
+    "enumeration_truncated": 1,
     "not_our_credit": 3
    },
    "reconstructed_accuracy": {
@@ -1283,7 +1282,7 @@
  {
   "dataset": "datasets/A40_B100_Cmax",
   "family": "datasets",
-  "seconds": 34.72,
+  "seconds": 34.73,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1302,18 +1301,18 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 3,
+    "unresolved": 5,
     "proven_unmatched": 34,
     "open_breaks": 139,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 2.923076923076923,
+    "max_candidate_set_size": 14,
+    "incomplete_enumerations": 3,
     "verified_non_decisive": 10
    },
    "unresolved_by_reason": {
     "other": 1,
-    "enumeration_truncated": 4,
+    "enumeration_truncated": 1,
     "not_our_credit": 3
    },
    "reconstructed_accuracy": {
@@ -1398,7 +1397,7 @@
  {
   "dataset": "datasets/A40_B100_Crandom",
   "family": "datasets",
-  "seconds": 27.94,
+  "seconds": 27.64,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1417,18 +1416,18 @@
     "verified": 11,
     "attestation_discrepancy": 1,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 3,
+    "unresolved": 5,
     "proven_unmatched": 34,
     "open_breaks": 125,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 43.642857142857146,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 3,
     "verified_non_decisive": 10
    },
    "unresolved_by_reason": {
     "other": 1,
-    "enumeration_truncated": 4,
+    "enumeration_truncated": 1,
     "not_our_credit": 3
    },
    "reconstructed_accuracy": {
@@ -1513,7 +1512,7 @@
  {
   "dataset": "datasets/A40_B50_Cmax",
   "family": "datasets",
-  "seconds": 30.19,
+  "seconds": 29.77,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1532,18 +1531,17 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 4,
+    "unresolved": 4,
     "proven_unmatched": 32,
     "open_breaks": 174,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 57.857142857142854,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 4,
     "verified_non_decisive": 9
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
-    "enumeration_truncated": 4,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -1628,7 +1626,7 @@
  {
   "dataset": "datasets/A40_Bnone_Cmax",
   "family": "datasets",
-  "seconds": 57.09,
+  "seconds": 57.71,
   "passed": false,
   "violations_by_gate": {
    "G3": 11,
@@ -1646,7 +1644,7 @@
    "G3   bank[15]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[17]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
    "G3   bank[19]   the truth is absent from a candidate set of 200 (enumeration incomplete)",
-   "G8   bank[2]    Unresolved(enumeration_truncated) on a determined instance -- unattested, but exactly one subset closes and it closes nothing else in the window"
+   "G8   bank[2]    Ambiguous(200) on an instance with exactly one closing subset -- unattested, but exactly one subset closes and it closes nothing else in the window"
   ],
   "violations_total": 17,
   "violations_truncated": true,
@@ -1663,18 +1661,17 @@
     "verified": 0,
     "attestation_discrepancy": 1,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 19,
+    "ambiguous": 15,
+    "unresolved": 4,
     "proven_unmatched": 32,
     "open_breaks": 567,
-    "mean_candidate_set_size": 0.0,
-    "max_candidate_set_size": 0,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 188.26666666666668,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 15,
     "verified_non_decisive": 0
    },
    "unresolved_by_reason": {
     "other": 1,
-    "enumeration_truncated": 15,
     "not_our_credit": 3
    },
    "reconstructed_accuracy": {
@@ -1754,7 +1751,7 @@
  {
   "dataset": "datasets/A60_B100_Cmax",
   "family": "datasets",
-  "seconds": 32.69,
+  "seconds": 33.1,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1773,18 +1770,17 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 4,
+    "unresolved": 4,
     "proven_unmatched": 51,
     "open_breaks": 285,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 44.142857142857146,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 4,
     "verified_non_decisive": 9
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
-    "enumeration_truncated": 4,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -1869,7 +1865,7 @@
  {
   "dataset": "datasets_v2/A10_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 23.4,
+  "seconds": 22.12,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -1888,18 +1884,18 @@
     "verified": 9,
     "attestation_discrepancy": 3,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 2,
+    "unresolved": 6,
     "proven_unmatched": 9,
     "open_breaks": 58,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 19.363636363636363,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 2,
     "verified_non_decisive": 7
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
-    "enumeration_truncated": 4,
+    "enumeration_truncated": 2,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -1984,7 +1980,7 @@
  {
   "dataset": "datasets_v2/A20_B0_Cmax",
   "family": "datasets_v2",
-  "seconds": 22.54,
+  "seconds": 21.95,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2099,7 +2095,7 @@
  {
   "dataset": "datasets_v2/A20_B100_Cfifo",
   "family": "datasets_v2",
-  "seconds": 9.24,
+  "seconds": 9.26,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2214,7 +2210,7 @@
  {
   "dataset": "datasets_v2/A20_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 17.31,
+  "seconds": 17.44,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2233,17 +2229,17 @@
     "verified": 9,
     "attestation_discrepancy": 3,
     "reconstructed": 0,
-    "ambiguous": 1,
-    "unresolved": 7,
+    "ambiguous": 2,
+    "unresolved": 6,
     "proven_unmatched": 13,
     "open_breaks": 101,
-    "mean_candidate_set_size": 2.0,
-    "max_candidate_set_size": 11,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 20.0,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 1,
     "verified_non_decisive": 6
    },
    "unresolved_by_reason": {
-    "enumeration_truncated": 3,
+    "enumeration_truncated": 2,
     "not_our_credit": 3,
     "other": 1
    },
@@ -2329,7 +2325,7 @@
  {
   "dataset": "datasets_v2/A20_B100_Crandom",
   "family": "datasets_v2",
-  "seconds": 30.51,
+  "seconds": 30.7,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2348,17 +2344,17 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 3,
+    "unresolved": 5,
     "proven_unmatched": 17,
     "open_breaks": 73,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 3.923076923076923,
+    "max_candidate_set_size": 18,
+    "incomplete_enumerations": 3,
     "verified_non_decisive": 9
    },
    "unresolved_by_reason": {
-    "enumeration_truncated": 4,
+    "enumeration_truncated": 1,
     "not_our_credit": 3,
     "other": 1
    },
@@ -2444,7 +2440,7 @@
  {
   "dataset": "datasets_v2/A20_B100_Crandom0",
   "family": "datasets_v2",
-  "seconds": 31.24,
+  "seconds": 31.45,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2463,17 +2459,17 @@
     "verified": 9,
     "attestation_discrepancy": 3,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 2,
+    "unresolved": 6,
     "proven_unmatched": 13,
     "open_breaks": 109,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 2.6363636363636362,
+    "max_candidate_set_size": 17,
+    "incomplete_enumerations": 2,
     "verified_non_decisive": 8
    },
    "unresolved_by_reason": {
-    "enumeration_truncated": 4,
+    "enumeration_truncated": 2,
     "not_our_credit": 3,
     "other": 1
    },
@@ -2560,7 +2556,7 @@
  {
   "dataset": "datasets_v2/A20_B50_Cmax",
   "family": "datasets_v2",
-  "seconds": 18.58,
+  "seconds": 18.44,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2579,17 +2575,17 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 2,
+    "unresolved": 6,
     "proven_unmatched": 17,
     "open_breaks": 103,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 34.166666666666664,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 2,
     "verified_non_decisive": 7
    },
    "unresolved_by_reason": {
-    "enumeration_truncated": 4,
+    "enumeration_truncated": 2,
     "not_our_credit": 3,
     "other": 1
    },
@@ -2789,7 +2785,7 @@
  {
   "dataset": "datasets_v2/A30_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 36.36,
+  "seconds": 36.09,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2808,18 +2804,17 @@
     "verified": 9,
     "attestation_discrepancy": 3,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 4,
+    "unresolved": 4,
     "proven_unmatched": 25,
     "open_breaks": 159,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 48.53846153846154,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 4,
     "verified_non_decisive": 7
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
-    "enumeration_truncated": 4,
     "other": 1
    },
    "reconstructed_accuracy": {
@@ -2905,7 +2900,7 @@
  {
   "dataset": "datasets_v2/A40_B100_Cfifo",
   "family": "datasets_v2",
-  "seconds": 28.82,
+  "seconds": 28.58,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -2924,19 +2919,19 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 1,
-    "unresolved": 7,
+    "ambiguous": 3,
+    "unresolved": 5,
     "proven_unmatched": 30,
     "open_breaks": 127,
-    "mean_candidate_set_size": 1.0909090909090908,
-    "max_candidate_set_size": 2,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 16.615384615384617,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 2,
     "verified_non_decisive": 10
    },
    "unresolved_by_reason": {
     "not_our_credit": 3,
     "other": 1,
-    "enumeration_truncated": 3
+    "enumeration_truncated": 1
    },
    "reconstructed_accuracy": {
     "correct": 0,
@@ -3022,7 +3017,7 @@
  {
   "dataset": "datasets_v2/A40_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 30.07,
+  "seconds": 28.89,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -3041,19 +3036,18 @@
     "verified": 9,
     "attestation_discrepancy": 3,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 4,
+    "unresolved": 4,
     "proven_unmatched": 32,
     "open_breaks": 172,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 62.23076923076923,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 4,
     "verified_non_decisive": 9
    },
    "unresolved_by_reason": {
     "other": 1,
-    "not_our_credit": 3,
-    "enumeration_truncated": 4
+    "not_our_credit": 3
    },
    "reconstructed_accuracy": {
     "correct": 0,
@@ -3137,7 +3131,7 @@
  {
   "dataset": "datasets_v2/A40_B100_Crandom",
   "family": "datasets_v2",
-  "seconds": 48.19,
+  "seconds": 46.24,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -3156,17 +3150,16 @@
     "verified": 9,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 4,
+    "unresolved": 4,
     "proven_unmatched": 32,
     "open_breaks": 158,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 2.230769230769231,
+    "max_candidate_set_size": 6,
+    "incomplete_enumerations": 4,
     "verified_non_decisive": 9
    },
    "unresolved_by_reason": {
-    "enumeration_truncated": 4,
     "other": 1,
     "not_our_credit": 3
    },
@@ -3254,7 +3247,7 @@
  {
   "dataset": "datasets_v2/A40_B50_Cmax",
   "family": "datasets_v2",
-  "seconds": 22.75,
+  "seconds": 22.1,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -3273,17 +3266,17 @@
     "verified": 9,
     "attestation_discrepancy": 3,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 3,
+    "unresolved": 5,
     "proven_unmatched": 34,
     "open_breaks": 219,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 5.75,
+    "max_candidate_set_size": 29,
+    "incomplete_enumerations": 3,
     "verified_non_decisive": 8
    },
    "unresolved_by_reason": {
-    "enumeration_truncated": 4,
+    "enumeration_truncated": 1,
     "not_our_credit": 3,
     "other": 1
    },
@@ -3369,7 +3362,7 @@
  {
   "dataset": "datasets_v2/A60_B100_Cmax",
   "family": "datasets_v2",
-  "seconds": 29.67,
+  "seconds": 29.7,
   "passed": true,
   "violations_by_gate": {},
   "violations": [],
@@ -3388,17 +3381,17 @@
     "verified": 10,
     "attestation_discrepancy": 2,
     "reconstructed": 0,
-    "ambiguous": 0,
-    "unresolved": 8,
+    "ambiguous": 3,
+    "unresolved": 5,
     "proven_unmatched": 49,
     "open_breaks": 250,
-    "mean_candidate_set_size": 1.0,
-    "max_candidate_set_size": 1,
-    "incomplete_enumerations": 0,
+    "mean_candidate_set_size": 46.92307692307692,
+    "max_candidate_set_size": 200,
+    "incomplete_enumerations": 3,
     "verified_non_decisive": 10
    },
    "unresolved_by_reason": {
-    "enumeration_truncated": 4,
+    "enumeration_truncated": 1,
     "not_our_credit": 3,
     "other": 1
    },

@@ -3,7 +3,7 @@
 
     python3 investigation/tier_c_ambiguity_ordering/sweep_truncation_reclass.py
 
-These, and only these, are predicted to flip to `Ambiguous` under §91's fix.
+These, and only these, are predicted to flip to `Ambiguous` under §92's fix.
 Run BEFORE the fix, against the current (unfixed) code, so the prediction's
 claim 1 is a fresh, dated measurement rather than a reuse of
 `investigation/D15_MEASUREMENT.md`'s table -- that table predates §68's

@@ -639,10 +639,47 @@ def _tier_c(line: BankLine, dataset: Dataset, state: _State, cap: int,
                                            "of the eligible pool explains"),
             detail=f"pool {len(pool)}; enumerator status {closures.status}")
 
+    if closures.count > 1:
+        # Sec 92. Non-uniqueness needs only >=2 witnesses, proven the instant
+        # a second closing subset is found -- unlike uniqueness (below), it
+        # never needs completeness. This branch used to sit AFTER the
+        # `not closures.complete` check, so a truncated enumeration that had
+        # already found 200 rivals was reported Unresolved -- silent,
+        # unproven abstention -- instead of Ambiguous -- honest, evidenced
+        # abstention. `_candidate_set` already propagates `closures.complete`
+        # into `CandidateSet.complete`, so an incomplete candidate set here
+        # is correctly labelled a SAMPLE, not the full rival set (contract's
+        # own `CandidateSet` docstring: "more ambiguous than its length
+        # suggests, never less").
+        return Ambiguous(
+            bank_index=line.index,
+            candidate_set=_candidate_set(closures, state.rows_by_id),
+            warrant=Warrant.over(
+                [existence,
+                 Evidence(kind=EvidenceKind.ARITHMETIC_CLOSURE,
+                          derived_from=PSP | BANK,
+                          detail=(
+                              f"{closures.count} subsets of a {len(pool)}-row "
+                              "pool close to this credit under no objective"
+                              if closures.complete else
+                              f"at least {closures.count} subsets of a "
+                              f"{len(pool)}-row pool already close to this "
+                              "credit under no objective, and enumeration "
+                              "stopped before it could rule out more "
+                              f"({closures.status})"))],
+                rationale=(
+                    "several compositions explain this credit equally well "
+                    "and nothing in the record distinguishes them"
+                    if closures.complete else
+                    "at least two compositions already explain this credit "
+                    "equally well before enumeration finished; the true "
+                    "rival count is at least this many, never fewer")))
+
     if not closures.complete:
-        # One found under truncation is NOT uniqueness. Reporting it as
-        # `Reconstructed` is how the hardest cells would produce the cleanest
-        # numbers (contract 4.5).
+        # Exactly 0 or 1 found so far. MUST stay Unresolved -- a truncated
+        # SINGLE find cannot be promoted to Reconstructed (sec 39's defect
+        # class, unchanged by sec 92). Only this narrower case reaches here
+        # now; the count>1 truncated case is handled above.
         return Unresolved(
             bank_index=line.index,
             reason=UnresolvedReason.ENUMERATION_TRUNCATED,
@@ -653,19 +690,6 @@ def _tier_c(line: BankLine, dataset: Dataset, state: _State, cap: int,
             detail=f"pool {len(pool)}; {closures.count} closing subsets found "
                    f"before {closures.status}; the true count is at least that",
             partial_candidates=_candidate_set(closures, state.rows_by_id))
-
-    if closures.count > 1:
-        return Ambiguous(
-            bank_index=line.index,
-            candidate_set=_candidate_set(closures, state.rows_by_id),
-            warrant=Warrant.over(
-                [existence,
-                 Evidence(kind=EvidenceKind.ARITHMETIC_CLOSURE,
-                          derived_from=PSP | BANK,
-                          detail=f"{closures.count} subsets of a {len(pool)}-row "
-                                 "pool close to this credit under no objective")],
-                rationale="several compositions explain this credit equally "
-                          "well and nothing in the record distinguishes them"))
 
     # exactly one, proven complete. Is it exclusive across the window?
     subset = closures.subsets[0]

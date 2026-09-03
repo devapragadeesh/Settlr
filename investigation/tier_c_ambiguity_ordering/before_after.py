@@ -1,4 +1,4 @@
-"""Dump every resolver outcome on every dataset, for §91's before/after pair.
+"""Dump every resolver outcome on every dataset, for §92's before/after pair.
 
     python3 investigation/tier_c_ambiguity_ordering/before_after.py --label before
     python3 investigation/tier_c_ambiguity_ordering/before_after.py --label after
@@ -161,7 +161,7 @@ def compare() -> int:
             every_field[key] = every_field.get(key, 0) + count
     print(f"\nfields that moved anywhere: {every_field}")
 
-    print("\n--- prediction scorecard (sec 91) ---")
+    print("\n--- prediction scorecard (sec 92) ---")
     only_unresolved_to_ambiguous = True
     for name, moved in field_changes:
         b, a = before[name]["outcomes"], after[name]["outcomes"]
