@@ -1,0 +1,8 @@
+# Track B/C only -- the poller/API service, not the resolver, the benchmark,
+# or its test suite. `pytest` and `run_all.py` must keep working with only
+# the four dependencies in requirements.txt; this file exists so a cold
+# clone's core promise is never spent on a web framework or cloud SDKs.
+#
+# pip install -r requirements.txt -r requirements-service.txt
+paramiko>=3.4        # transport/sftp.py
+boto3>=1.34           # transport/s3.py

@@ -4990,3 +4990,79 @@ suite: `pytest ingest/tests tests/test_layer_isolation.py -q` -- 296 passed.
 **Scope.** New: `ingest/formats/jsonl.py`, `ingest/tests/test_jsonl.py`.
 Nothing under `resolver/`, `resolver_contract/`, `matching/`, `engine/`, or
 any dataset directory changed. No published figure moved.
+
+## 84. `transport/` -- the SFTP/S3 pull interface, every test offline, gated by a refusal guard modelled on `spike/common.py` -- 2026-09-03
+
+**What was built.** Track B, Phase B1: a `Transport` protocol
+(`transport/base.py`) with four backends behind it --
+`LocalTransport` (`file://`), `RecordedTransport` (`recorded://`, replays a
+fixture tree), `SFTPTransport` (real `paramiko`), `S3Transport` (real
+`boto3`) -- and `transport/credentials.py::require_non_production`, the
+refusal guard every real backend calls before it opens a connection.
+
+**Every test in this package is offline, and stays offline by construction.**
+`SFTPTransport`/`S3Transport` import `paramiko`/`boto3` lazily, inside
+`__init__`, never at module level -- so `import transport.sftp` costs nothing
+and pulls in no new dependency for anything that only needs the type.
+`transport/tests/test_real_backends_refuse_without_authorisation.py` proves
+the guard fires BEFORE either library ever touches a socket: no host is
+resolved, no credential is presented, for any case in that file. Every other
+transport test runs against `LocalTransport`/`RecordedTransport`, which never
+leave the filesystem.
+
+**The refusal guard is `spike/common.py::load_env` generalised, and says so.**
+The spike's own words: *"FATAL: refusing to run -- key id ... is not
+rzp_test_*. LIVE KEYS ARE FORBIDDEN IN THIS SPIKE."* There is no equivalent
+universal prefix convention for an SFTP host or an S3 bucket name, so
+`require_non_production` uses an explicit opt-in
+(`INGEST_TRANSPORT_ALLOW_LIVE=1`) instead of a credential-prefix check -- plus
+a second, independent net that the opt-in CANNOT override: any endpoint
+string containing the literal `"prod"`, case-insensitively, is refused
+outright. `test_a_prod_named_endpoint_is_refused_even_with_the_opt_in_set`
+and its SFTP/S3 counterparts pin that the two checks are genuinely
+independent, not one gate with two names.
+
+**`PullRecord` is the evidence trail, and it is redacted by construction, not
+by a strip step.** Directly generalising `spike/common.py::log_raw`'s
+verbatim-with-redacted-`Authorization`-header pattern: `PullRecord`
+(`transport/base.py`) has fields for `transport`, `endpoint`, `key`,
+`byte_count`, `sha256`, `fetched_at`, `outcome` and NOTHING ELSE -- there is
+no field a credential or a payload could land in even by a future accidental
+edit, because the dataclass simply has no slot for either.
+`record_fixtures` (`transport/recorded.py`) is the capture side: pull once
+from a real transport, write every file to disk, and write a manifest of
+these redacted records next to it. This is also how `RecordedTransport`
+fixtures get created for Phase B2's tests.
+
+**Rejected: a single "credentials.py" shared between `sftp.py` and `s3.py`
+that also knows how to construct each client.** Kept as pure gate + refuse,
+with client construction staying in each backend module. A shared
+client-factory would need to know both libraries' APIs, coupling two
+independent, lazily-imported dependencies into one always-imported module --
+exactly the cost the lazy-import discipline above is paying to avoid.
+
+**Rejected: `AutoAddPolicy` for unknown SSH host keys.** `SFTPTransport` uses
+`paramiko.RejectPolicy()` -- an unrecognised host key is a hard failure, not
+a first-connection trust-on-first-use. A production-grade pull from a bank's
+SFTP endpoint is exactly the place host-key pinning is supposed to matter;
+defaulting to the permissive policy would be choosing convenience over the
+one property SSH host verification exists to provide.
+
+**`paramiko`/`boto3` live in `requirements-service.txt`, not
+`requirements.txt`.** `README.md`'s cold-clone promise and every existing
+test run against the four dependencies already there; Track B/C's service
+layer is additive, and a cold clone running only `pytest`/`run_all.py` must
+never be made to pay for a web framework or two cloud SDKs it does not use.
+`pip install -r requirements.txt -r requirements-service.txt` is the full
+install for anyone who does want the service.
+
+**Measured.** `pytest transport/tests -q` -- 17 passed. Full new-layer suite:
+`pytest ingest/tests transport/tests tests/test_layer_isolation.py -q` -- 313
+passed.
+
+**Scope.** New: `transport/__init__.py`, `transport/base.py`,
+`transport/credentials.py`, `transport/local.py`, `transport/recorded.py`,
+`transport/sftp.py`, `transport/s3.py`, `transport/tests/*`,
+`requirements-service.txt`. Nothing under `resolver/`, `resolver_contract/`,
+`matching/`, `engine/`, `ingest/`, or any dataset directory changed. No
+published figure moved.
