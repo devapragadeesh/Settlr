@@ -1,4 +1,11 @@
+<p align="center">
+  <img src="settlrlogoblue.png" alt="Settlr" width="220">
+</p>
+
 # Settlement Truth Engine
+
+*Branded internally as **Settlr** — see [`dashboard/`](dashboard/) for the
+generated UI over the resolver's own output.*
 
 Reconciles a payment ledger against a bank statement, an ERP order book and
 GSTR-2B, and — the part that matters — **says what it does not know.**
@@ -518,10 +525,26 @@ eval/, holdout/,     the earlier evaluation of the frozen engine, including
 scale/               the held-out run that produced the 50 wrong answers
 investigation/       the defect report, plus the operational, controls, and
                      benchmark-extension write-ups (see TEST_PLAN.md)
+ingest/              parses CSV/JSON, .xlsx, CAMT.053, MT940, JSONL --
+                     round-tripped against every dataset on disk
+transport/           pluggable SFTP/S3 pulls, offline-testable, with a
+                     non-production guard (transport/credentials.py)
+store/               SQLite persistence of every resolver run, including
+                     the row-level audit trail (row_history)
+service/             the pipeline, scheduler, and read-only API built on
+                     ingest/, transport/ and store/
+dashboard/           the generated Settlr UI -- build_dashboard.py runs a
+                     real resolver pass and renders index.html from it
 DECISIONS.md         numbered, append-only; every entry carries the
                      alternatives it rejected and why
 CHECKPOINT.md        the current state, written against the artefacts on disk
 ```
+
+`ingest/`, `transport/`, `store/`, `service/` and `dashboard/` sit downstream
+of the resolver/benchmark boundary above and never import `resolver/`,
+`resolver_contract/`, `matching/`, `engine/`, or any frozen dataset path --
+enforced by `tests/test_layer_isolation.py`. See `DECISIONS.md` §§79-91 for
+how and why each was added.
 
 The dependency direction is one-way and load-bearing: `engine/` generates the
 data and the isolated answer key, `resolver/` and `matching/` never read the
