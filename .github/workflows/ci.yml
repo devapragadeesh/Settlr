@@ -53,19 +53,20 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt -r requirements-service.txt
-      # test_every_outcome_round_trips_losslessly is deselected here, not
-      # deleted: it is a real, already-tracked finding
-      # (investigation/resolver_nondeterminism/, DECISIONS.md Sec.58/67),
-      # not a codec bug. The resolver's closure enumeration is time-bounded,
-      # so how much of the candidate space gets explored before the budget
-      # expires depends on CPU availability -- on a shared CI runner under
-      # contention, that occasionally changes which run's outcome the
-      # round-trip is compared against. It still runs, on every push, in
-      # nondeterminism-watch.yml -- visibly, just not gating this badge for
-      # a resolver-timing property this workflow did not introduce and a
-      # dashboard/CI change should not silently paper over.
+      # test_every_outcome_round_trips_losslessly is GATED here again. It was
+      # previously deselected on the claim that its failures were the tracked
+      # resolver-timing finding (investigation/resolver_nondeterminism/,
+      # DECISIONS.md Sec.58/67) and "not a codec bug". That claim was wrong,
+      # and the deselection was hiding a real defect: `_unwrap_optional`
+      # matched only `typing.Union`, so every PEP 604 `X | None` field in the
+      # contract -- whose origin is `types.UnionType` on Python < 3.14 -- was
+      # silently left as a raw dict by the decoder. Timing only decided
+      # whether `Unresolved.partial_candidates` was populated on a given run,
+      # which is why it looked flaky. Fixed in store/codec.py, reproduced
+      # deterministically on 3.12, and guarded by two version-independent
+      # tests. See DECISIONS.md Sec.110.
       - name: store/ -- lossless codec and writer/queries round-trip
-        run: pytest store/tests -q --deselect store/tests/test_codec.py::test_every_outcome_round_trips_losslessly
+        run: pytest store/tests -q
       - name: service/ -- pipeline, scheduler, and read-only API (offline)
         run: pytest service/tests -q
 

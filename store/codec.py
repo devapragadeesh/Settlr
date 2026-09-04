@@ -21,6 +21,7 @@ by the dataclass definitions themselves, cannot drift from them.
 from __future__ import annotations
 
 import enum
+import types
 import typing
 from dataclasses import fields, is_dataclass
 
@@ -52,9 +53,19 @@ def to_jsonable(value: object) -> object:
     raise TypeError(f"to_jsonable: no rule for {type(value).__name__}")
 
 
+#: Both spellings of a union origin. `X | None` (PEP 604) evaluates to a
+#: `types.UnionType`, while `typing.Optional[X]` evaluates to a `typing.Union`
+#: -- and on Python < 3.14 `typing.get_origin` reports these as DIFFERENT
+#: objects, so a check against `typing.Union` alone silently misses every
+#: `X | None` field in `resolver_contract.types` (they all use PEP 604).
+#: Python 3.14 unified the two, which is why this defect was invisible
+#: locally and only ever failed on CI's pinned 3.12. See DECISIONS.md.
+_UNION_ORIGINS = (typing.Union, types.UnionType)
+
+
 def _unwrap_optional(tp: object) -> tuple[object, bool]:
     origin = typing.get_origin(tp)
-    if origin is typing.Union:
+    if origin in _UNION_ORIGINS:
         args = [a for a in typing.get_args(tp) if a is not type(None)]
         if len(args) == 1:
             return args[0], True

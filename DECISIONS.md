@@ -7559,3 +7559,97 @@ already mostly delivers.
 **Files:** `vercel.json`, `.vercelignore`, `.github/workflows/ci.yml`,
 `.github/workflows/nondeterminism-watch.yml` (new), `README.md` (full
 rewrite).
+
+## 110. The "known nondeterminism" in CI was a real codec defect, and the deselection was hiding it -- 2026-09-04
+
+`Nondeterminism watch / resolver-round-trip` had been red for several pushes.
+Both `ci.yml` and `nondeterminism-watch.yml` carried a comment asserting the
+cause: a time-bounded closure enumeration whose exploration depth varies with
+CPU availability on a shared runner, "a real, already-tracked resolver-timing
+property, **not a codec bug**" (Sec.58/67, `investigation/resolver_nondeterminism/`).
+
+**That attribution was wrong, and it was load-bearing** -- it is the reason the
+test was deselected from the gating suite rather than debugged.
+
+### What the failure actually said
+
+The assertion output was not a timing artefact and did not need to be read as
+one. `restored.partial_candidates` came back as a **plain `dict`** --
+`{'__type__': 'CandidateSet', ...}` -- against a `CandidateSet` original. A
+decoder that returns the raw JSON payload for a field has not lost a race; it
+has failed to decode.
+
+### Cause
+
+`store/codec.py::_unwrap_optional` tested `typing.get_origin(tp) is typing.Union`.
+Every optional in `resolver_contract/types.py` is written PEP 604 style
+(`partial_candidates: CandidateSet | None`), whose origin is `types.UnionType`.
+
+On **Python < 3.14 those are different objects**; 3.14 unified them. So:
+
+| | `get_origin(X \| None) is typing.Union` | result |
+|---|---|---|
+| local dev, Python 3.14 | `True` | unwraps, decodes, test passes |
+| CI, pinned Python 3.12 | `False` | falls through to `return value` -- raw dict |
+
+`from_jsonable` has a `return value` fall-through for unrecognised types, so
+the failure was silent rather than an exception.
+
+The timing story was real but **irrelevant to this test**: enumeration
+truncation decides whether `Unresolved.partial_candidates` is non-`None` on a
+given run. It controlled *whether the already-broken path was exercised*, not
+whether the decode worked. That is why it presented as flaky, and why a
+green run was never evidence of correctness.
+
+`nearest_residual: int | None` hit the same fall-through and was invisible
+because returning a raw `int` for an `int` is accidentally correct.
+
+### Fix
+
+`_UNION_ORIGINS = (typing.Union, types.UnionType)`, matched with `in`. Both
+spellings, so it is version-independent in both directions rather than
+re-pinned to whatever the current interpreter happens to do.
+
+### Validation
+
+Reproduced **deterministically** under `uv run --python 3.12`, with no CPU
+contention and no resolver run: constructing one `Unresolved` with a non-`None`
+`partial_candidates` and round-tripping it is sufficient. Same script on 3.14
+passes. Both new tests were confirmed to **fail against the unfixed codec on
+3.12** before the fix was restored -- watched to fail, per this repo's rule
+that an unfalsified test is not evidence. Full `store/tests` on 3.12: 32
+passed, including the round-trip test that had been red.
+
+### Rejected alternatives
+
+- **Leave it deselected and keep the separate watch workflow.** Rejected: the
+  documented reason for the split was an incorrect diagnosis. Keeping the
+  arrangement would have preserved a comment in two workflow files stating
+  something false about the codebase, on the strength of it having been
+  written down earlier.
+- **Pin CI to Python 3.14 so it matches the dev machine.** Rejected: this
+  makes the symptom disappear while leaving a codec that mis-decodes every
+  optional field on the interpreter most deployments actually run. It would
+  also have destroyed the only signal that found the defect.
+- **Special-case `partial_candidates` in the decoder.** Rejected: the codec's
+  stated design (module docstring) is that it is driven generically by the
+  dataclass definitions so it *cannot* drift from them. One hand-written field
+  exemption reintroduces exactly the drift the generic design exists to avoid,
+  and would leave every other `X | None` field still broken.
+- **Assert only on `Unresolved.partial_candidates` in the new test.**
+  Rejected: that is the field that happened to fail. The added test enumerates
+  **every** optional field across every contract dataclass and asserts each is
+  unwrapped, so a future `X | None` is covered on the day it is added.
+- **Delete the flaky test.** Rejected for the obvious reason, recorded because
+  it is what the deselection was slowly becoming.
+
+### What this cost, and the standing lesson
+
+Two workflow files asserted a cause with enough specificity -- naming an
+investigation directory and two decision entries -- to read as settled. It was
+never verified against the actual assertion output, which said `dict` where a
+`CandidateSet` was expected and had said so on every red run. **A plausible
+known-issue attribution is the most expensive kind of wrong**, because it
+converts a failing test from a signal into an expected cost. The same pattern
+`CLAIMS.md` records about its own first run: the mechanism caught what the
+narrative did not.
