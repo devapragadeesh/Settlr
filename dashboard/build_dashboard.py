@@ -68,6 +68,17 @@ LOGO_PATH = ROOT / "dashboard" / "web" / "logo_lockup.png"
 AI_ORB_PATH = ROOT / "aibutton.png"
 OUT_PATH = ROOT / "dashboard" / "index.html"
 DASHBOARD_DATA_PATH = ROOT / "dashboard" / "data.json"
+
+#: The dashboard itself stays a static build-time snapshot (DECISIONS
+#: Sec.90), but the AI panel's `/chat_answerer` now makes a real, live
+#: `POST /runs/{run_id}/ask` call (DECISIONS Sec.101) that needs a real
+#: `store` connection to answer against -- a tempdir database, gone the
+#: moment this script exits, cannot serve that. This is the one durable
+#: artifact this script writes; it is generated (like `index.html` itself)
+#: and gitignored, never hand-edited. `service/asgi.py`'s STORE_DB_PATH
+#: must point here for the live endpoint to answer the same run_id this
+#: build bakes into `window.SETTLR_DATA.meta.run_id`.
+LIVE_DB_PATH = ROOT / "dashboard" / "data" / "settlr_demo.db"
 ORACLE_RESULTS_PATH = ROOT / "corpus" / "oracle_results.json"
 
 #: filename -> (SourceSystem, human label). The six-artifact contract every
@@ -735,8 +746,11 @@ def main() -> int:
     # not a fabricated trend.
     RUN_PARAMS = [(40, 5.0), (45, 6.0), (60, 8.0), (30, 4.0)]
 
+    LIVE_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    if LIVE_DB_PATH.exists():
+        LIVE_DB_PATH.unlink()
     with tempfile.TemporaryDirectory() as tmp:
-        conn = connect(Path(tmp) / "settlr_demo.db")
+        conn = connect(LIVE_DB_PATH)
         run_ids = [run_pipeline(FLAGSHIP_DIR, conn, cap=cap, time_budget=tb)
                    for cap, tb in RUN_PARAMS]
         run_id = run_ids[0]
@@ -764,6 +778,7 @@ def main() -> int:
         itc_conn = connect(Path(tmp) / "settlr_itc_example.db")
         itc_run_id = run_pipeline(ITC_EXAMPLE_DIR, itc_conn, cap=40, time_budget=5.0)
         agents_panel = build_agents_panel(conn, run_id, itc_conn, itc_run_id)
+        conn.close()
 
     dashboard_data = json.loads(DASHBOARD_DATA_PATH.read_text())
     entities = build_entities()

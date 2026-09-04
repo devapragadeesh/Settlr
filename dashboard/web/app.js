@@ -1,6 +1,19 @@
 (function () {
   "use strict";
   const D = window.SETTLR_DATA;
+
+  // The dashboard itself stays a static build-time snapshot (DECISIONS
+  // Sec.90). The AI panel is the one exception: `POST /runs/{run_id}/ask`
+  // (service/api.py, DECISIONS Sec.101) runs a real `agents/chat_answerer.py`
+  // call against the exact run this build baked into D.meta.run_id -- Claude
+  // drafts a SQL SELECT and a summary from what it returns, not a JS keyword
+  // matcher. `service.asgi:app` is assumed to be running locally on 8000
+  // (`uvicorn service.asgi:app --port 8000`, with STORE_DB_PATH pointing at
+  // dashboard/data/settlr_demo.db); if it isn't reachable, or Claude itself
+  // is unreachable (no ANTHROPIC_API_KEY), this degrades to the local
+  // heuristic answerer below -- the same "real answer or an honest miss,
+  // never a guess" contract the Python side already keeps.
+  const AGENT_API_BASE = "http://localhost:8000";
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
   const el = (tag, attrs, ...kids) => {
@@ -1283,7 +1296,7 @@
     "the health score, aging, entities, ingestion, GST/ITC risk, stability, uncertainty/ambiguity, " +
     "a specific entity name, or type / for an agent.";
 
-  function answerFreeText(query) {
+  function localHeuristicAnswer(query) {
     const domain = domainAnswer(query);
     if (domain) {
       pushMessage({ role: "assistant", headline: domain.headline, sub: domain.sub,
@@ -1303,6 +1316,50 @@
     });
     const { headline, sub, sources } = generateAnswer(filtered, query);
     pushMessage({ role: "assistant", headline, sub, sources: sources || [] });
+  }
+
+  async function answerFreeText(query) {
+    const thread = $("#aiThread");
+    const thinking = el("div", { class: "ai-msg assistant" },
+      el("div", { class: "bubble", style: "color:var(--text-3);font-style:italic;" }, "Asking Claude…"));
+    thread.appendChild(thinking);
+    thread.scrollTop = thread.scrollHeight;
+
+    let result = null;
+    try {
+      const res = await fetch(`${AGENT_API_BASE}/runs/${D.meta.run_id}/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: query }),
+        signal: AbortSignal.timeout(25000),
+      });
+      if (!res.ok) throw new Error(`live agent HTTP ${res.status}`);
+      result = await res.json();
+    } catch (err) {
+      thinking.remove();
+      localHeuristicAnswer(query);
+      pushMessage({ role: "assistant",
+        headline: `(Live Claude backend unreachable at ${AGENT_API_BASE} -- ${err.message}. ` +
+          "Falling back to the local answerer above. Start service/asgi.py and set " +
+          "ANTHROPIC_API_KEY to get real reasoning here.)",
+        sources: [] });
+      return;
+    }
+
+    thinking.remove();
+    if (result.mode === "claude") {
+      const sub = `SQL Claude wrote: ${result.sql}` + (result.rows.length ? ` -- ${result.rows.length} row(s)` : "");
+      pushMessage({ role: "assistant", headline: result.answer, sub, sources: [] });
+      return;
+    }
+    // mode === "fallback": Claude itself was unreachable server-side (e.g.
+    // no ANTHROPIC_API_KEY) -- agents/chat_answerer.py's own honest degrade,
+    // a real query when it recognizes the question, a plain admission when
+    // it doesn't. Layer the local heuristic answerer under it either way,
+    // since it covers ground (health score, aging, GST, entities...) the
+    // Python-side fallback pattern list doesn't.
+    pushMessage({ role: "assistant", headline: result.answer, sources: [] });
+    if (!result.rows.length) localHeuristicAnswer(query);
   }
 
   function renderAgentMenu(filterText) {

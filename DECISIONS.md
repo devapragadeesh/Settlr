@@ -6756,3 +6756,108 @@ throughout.
 (render/interaction functions for all three pages). `dashboard/index.html`
 regenerated. Nothing under `resolver/`, `resolver_contract/`, `matching/`,
 `engine/`, or any frozen dataset path touched.
+
+## 101. The AI panel gets a real Claude connection -- `POST /runs/{run_id}/ask` replaces local keyword matching as the free-text default -- 2026-09-04
+
+**The problem, user-reported with a screenshot.** The AI panel's free-text
+path (`answerFreeText` in `dashboard/web/app.js`) was 100% client-side: a
+regex router (`domainAnswer`) over a fixed set of question shapes, then a
+line-filter fallback, then a canned "I don't have an answer for that" string.
+"where is the uncertainity and which is the dataset being used" (the user's
+own, typo included) and "what are the root cause for these defects" both fell
+through to the canned miss. The user's own words: "i dont want a rule based
+chat that just detects words it must be able to find out what reasons are
+etc like an actual ai." Sec.99 had already patched two specific regexes for
+two specific reported questions -- treating the symptom, not the mechanism.
+This entry replaces the mechanism.
+
+**What already existed and was simply never wired up.** `agents/chat_answerer.py`
+(Sec.94) is a real Claude integration: it hands Claude the real `store`
+schema, has Claude draft one read-only `SELECT`, executes it through
+`agents/sql_safety.py`, then has Claude summarize the real rows in plain
+English -- genuine reasoning over genuine data, not keyword matching. It was
+built, tested (`agents/tests/test_chat_answerer.py`), and then never called
+from the dashboard; the AI panel used `domainAnswer` instead because the
+dashboard has no live backend to call (`dashboard/build_dashboard.py` is a
+static, build-time-baked HTML file, DECISIONS Sec.90 -- the whole point being
+zero runtime dependencies to view it).
+
+**The fix keeps the dashboard static and adds one live route.**
+`service/api.py` gains `POST /runs/{run_id}/ask` -- not a new capability,
+just HTTP over the existing `ChatAnswerer.ask(conn, run_id, question)`. It
+still writes nothing to `store` (the module's own docstring's "no write
+endpoint" claim is updated to describe this narrowly, rather than silently
+going stale). CORS is added, scoped by `allow_origin_regex` to `localhost`/
+`127.0.0.1` origins only -- this service is never deployed with a public bind
+address in this repo, and the dashboard calling it is itself a `localhost`
+static file server (Sec.90's `python3 -m http.server`).
+
+**The one real gap this exposed: the flagship run's `store` database never
+outlived `dashboard/build_dashboard.py`'s own process.** `main()` built it in
+a `tempfile.TemporaryDirectory()`, discarded the instant the script returned
+-- fine for baking numbers into JSON, useless for a live endpoint to query
+afterward. Fixed by writing that one connection to a durable, gitignored
+path (`dashboard/data/settlr_demo.db`, `LIVE_DB_PATH` in
+`build_dashboard.py`) instead of the tempdir -- a generated artifact exactly
+like `dashboard/index.html` itself, rebuilt by the same script, never
+hand-edited. `service/asgi.py`'s existing `STORE_DB_PATH` environment
+variable points a real `uvicorn service.asgi:app` process at it. The
+`run_id` the dashboard bakes into `window.SETTLR_DATA.meta.run_id` and the
+`run_id` this database answers queries against are, by construction, the
+same run -- `/ask` 404s otherwise (`get_run` returns `None`).
+
+**`dashboard/web/app.js::answerFreeText`** now `POST`s to `${AGENT_API_BASE}/runs/${D.meta.run_id}/ask`
+first (`AGENT_API_BASE = "http://localhost:8000"`, documented in-code as the
+one place this dashboard assumes a co-located live process -- the only
+exception to the fully-static build). Three honestly-distinguished outcomes,
+verified live in Chrome against the running service (confirmed via the
+service's own access log, not assumed from the UI):
+- `mode: "claude"` -- Claude actually answered; the panel shows Claude's own
+  sentence plus the literal SQL it wrote, as a citation.
+- `mode: "fallback"`, with rows -- Claude was unreachable server-side (this
+  dev sandbox has no `ANTHROPIC_API_KEY` configured; confirmed directly:
+  `call_claude` raises `ModelUnavailable("Could not resolve authentication
+  method...")`), but the question matched one of `ChatAnswerer`'s own
+  deterministic patterns (open breaks / unexplained / unresolved), so a real
+  `store` query still ran. Verified live: asking "how many unexplained open
+  breaks are there" returned "84 row(s), from a real query (Claude
+  unavailable: ...)" -- 84 matches this same run's real open-exception count
+  shown elsewhere on the dashboard, not a guess.
+- Fetch itself fails (no service running, wrong port, CORS) -- the panel
+  falls back to the pre-existing local `domainAnswer`/line-filter path,
+  labeled in the thread as "(Live Claude backend unreachable at
+  http://localhost:8000 -- ...)" so the degrade is never silent.
+
+**Rejected alternative: keep the free-text path entirely local and just add
+more regex patterns.** This is what Sec.99 already did once, for the exact
+two questions reported that time. It does not converge -- it is a fix that
+regresses on the next unanticipated phrasing, and it is the literal thing
+the user asked not to have ("i dont want a rule based chat"). A real model
+call that degrades honestly when unreachable, rather than an ever-growing
+pattern table pretending to be one, is the only version of this that
+actually satisfies the request.
+
+**A second, small, real bug fixed in passing.** `agents/chat_answerer.py`'s
+own fallback strings said "Ollama unavailable" / "without Ollama" -- a
+leftover from before this repo's local-LLM leg was replaced with Claude
+(mid-session, this same day). The default `model` parameter was already
+`claude-sonnet-5`; only the user-facing text still named the old dependency.
+Both strings corrected to say "Claude."
+
+**Verification.** `agents/tests` and `service/tests` pass unchanged (the new
+route is additive; `ChatAnswerer` itself is untouched). Live-verified in
+Chrome: the exact question from the user's screenshot round-trips to the
+real service (confirmed via `service`'s uvicorn access log showing a real
+`OPTIONS` CORS preflight and `POST .../ask 200 OK`, not merely a UI that
+displays a plausible-looking response), degrades honestly with no key
+configured, and a pattern-matched question returns a real row count from a
+real query. Console clean. Nothing under `resolver/`, `resolver_contract/`,
+`matching/`, `engine/`, or any frozen dataset path touched.
+
+**Files:** `service/api.py` (`POST /runs/{run_id}/ask`, `CORSMiddleware`,
+updated module docstring), `agents/chat_answerer.py` (Ollama->Claude text
+fix), `dashboard/build_dashboard.py` (`LIVE_DB_PATH`, `conn` persisted and
+explicitly closed instead of living only in a tempdir), `dashboard/web/app.js`
+(`AGENT_API_BASE`, async `answerFreeText`, `localHeuristicAnswer` renamed
+from the old body), `.gitignore` (`dashboard/data/`), `dashboard/index.html`
+regenerated.

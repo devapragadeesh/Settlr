@@ -94,10 +94,10 @@ class ChatAnswerer:
                     rows = [r for r in all_rows if r["reason"] == target_reason]
                 return {"question": question, "sql": None, "rows": rows,
                         "answer": f"{len(rows)} row(s), from a real query "
-                                  f"(Ollama unavailable: {reason}).",
+                                  f"(Claude unavailable: {reason}).",
                         "mode": "fallback"}
         return {"question": question, "sql": None, "rows": [],
-                "answer": f"Could not answer this without Ollama ({reason}). "
+                "answer": f"Could not answer this without Claude ({reason}). "
                           "Try asking about open breaks, unexplained rows, "
                           "or unresolved rows.",
                 "mode": "fallback"}
