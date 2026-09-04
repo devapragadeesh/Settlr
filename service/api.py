@@ -6,6 +6,13 @@ Every response is built through `store/codec.py::to_jsonable` rather than
 FastAPI's own `jsonable_encoder`, so there is exactly one place in the repo
 that knows how to turn an `Evidence`/`Warrant`/`Composition` into JSON, not
 two competing implementations that could drift.
+
+`/runs/{run_id}/lines` and `/runs/{run_id}/sources` (DECISIONS.md Sec.96) are
+the only two routes added since this module's original 7 -- both scalar
+listings the transaction-flow UI needs to render its default view and
+nothing this app could not already answer per-item. `/ui/transaction-flow`
+serves that UI's one HTML file same-origin, so its `fetch()` calls need no
+CORS configuration at all.
 """
 
 from __future__ import annotations
@@ -14,13 +21,13 @@ import sqlite3
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from store.codec import to_jsonable
 from store.db import connect
 from store.queries import (break_lifecycle, get_run, line_outcome,
-                            open_breaks, row_history, row_outcome,
-                            runs_for_dataset)
+                            line_summaries, open_breaks, row_history,
+                            row_outcome, runs_for_dataset, sources_for_run)
 
 
 def create_app(db_path: Path) -> FastAPI:
@@ -45,6 +52,22 @@ def create_app(db_path: Path) -> FastAPI:
             if run is None:
                 raise HTTPException(status_code=404, detail="run not found")
             return run
+        finally:
+            conn.close()
+
+    @app.get("/runs/{run_id}/lines")
+    def lines_summary(run_id: str):
+        conn = get_conn()
+        try:
+            return line_summaries(conn, run_id)
+        finally:
+            conn.close()
+
+    @app.get("/runs/{run_id}/sources")
+    def sources(run_id: str):
+        conn = get_conn()
+        try:
+            return sources_for_run(conn, run_id)
         finally:
             conn.close()
 
@@ -96,5 +119,10 @@ def create_app(db_path: Path) -> FastAPI:
             return record
         finally:
             conn.close()
+
+    @app.get("/ui/transaction-flow", response_class=HTMLResponse)
+    def transaction_flow_ui():
+        html_path = Path(__file__).resolve().parent / "static" / "transaction_flow.html"
+        return HTMLResponse(content=html_path.read_text())
 
     return app

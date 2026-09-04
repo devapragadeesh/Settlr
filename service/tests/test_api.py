@@ -82,3 +82,38 @@ def test_row_history_endpoint(client: TestClient) -> None:
 def test_lifecycle_404_for_a_row_with_no_break_history(client: TestClient) -> None:
     response = client.get("/breaks/nonexistent_row/lifecycle")
     assert response.status_code == 404
+
+
+def test_lines_summary_matches_line_count_and_is_scalar_only(client: TestClient) -> None:
+    runs = client.get("/runs", params={"dataset": "A10_B100_Cmax"}).json()
+    run_id = runs[0]["run_id"]
+
+    response = client.get(f"/runs/{run_id}/lines")
+    assert response.status_code == 200
+    lines = response.json()
+    assert len(lines) == 20  # A10_B100_Cmax's own bank-line count
+    assert {"bank_index", "kind", "reason", "rival_closure_count",
+            "candidate_count", "detail"} == set(lines[0])
+    # No `outcome_json`/nested warrant here -- that is what /lines/{bank_index} is for.
+    assert "outcome_json" not in lines[0]
+
+
+def test_sources_endpoint_lists_every_ingested_artifact(client: TestClient) -> None:
+    runs = client.get("/runs", params={"dataset": "A10_B100_Cmax"}).json()
+    run_id = runs[0]["run_id"]
+
+    response = client.get(f"/runs/{run_id}/sources")
+    assert response.status_code == 200
+    sources = response.json()
+    artifact_names = {s["artifact_path"] for s in sources}
+    assert artifact_names == {"bank_statement.csv", "settlement_report.csv",
+                              "erp_orders.csv", "gstr2b.csv", "disputes.json",
+                              "recon_combined.json"}
+
+
+def test_transaction_flow_ui_serves_the_real_html_file(client: TestClient) -> None:
+    response = client.get("/ui/transaction-flow")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "Transaction Flow" in response.text
+    assert "/runs/${RUN_ID}/lines" in response.text  # same-origin fetch, no CORS needed

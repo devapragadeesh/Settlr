@@ -19,8 +19,10 @@ from resolver.resolve import resolve
 from resolver_contract.types import ResolverOutput
 from store.db import connect
 from store.queries import (break_lifecycle, get_run, line_outcome,
-                            open_breaks, read_resolver_output, row_history,
-                            row_outcome, runs_for_dataset)
+                            line_summaries, open_break_detail, open_breaks,
+                            owner_for_reason, read_resolver_output, row_history,
+                            row_outcome, runs_for_dataset, sources_for_run,
+                            valid_break_reasons)
 from store.writer import compute_run_id, write_run
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -198,3 +200,48 @@ def test_row_history_across_a_break_opening_then_closing(db) -> None:
     lifecycle = break_lifecycle(db, "pay_X")
     assert lifecycle["first_run_id"] == run1_id
     assert lifecycle["closed_at"] is not None
+
+
+def test_line_summaries_omit_outcome_json_and_cover_every_line(db, resolved_output) -> None:
+    run_id = write_run(db, resolved_output, all_row_ids=_all_row_ids(DATASET_DIR),
+                        cap=40, time_budget=3.0, input_digest="ls1", code_digest="c1",
+                        started_at="t0", finished_at="t1", seconds=1.0)
+    summaries = line_summaries(db, run_id)
+    assert len(summaries) == len(resolved_output.line_outcomes)
+    assert set(summaries[0]) == {"bank_index", "kind", "reason",
+                                 "rival_closure_count", "candidate_count", "detail"}
+
+
+def test_sources_for_run_returns_what_write_run_was_given(db, resolved_output) -> None:
+    sources = [{"artifact_path": "bank_statement.csv", "source_system": "unknown",
+                "format": "csv", "sha256": "abc123"}]
+    run_id = write_run(db, resolved_output, all_row_ids=_all_row_ids(DATASET_DIR),
+                        cap=40, time_budget=3.0, input_digest="sr1", code_digest="c1",
+                        started_at="t0", finished_at="t1", seconds=1.0, sources=sources)
+    recorded = sources_for_run(db, run_id)
+    assert len(recorded) == 1
+    assert recorded[0]["artifact_path"] == "bank_statement.csv"
+
+
+def test_open_break_detail_matches_a_row_from_open_breaks(db, resolved_output) -> None:
+    run_id = write_run(db, resolved_output, all_row_ids=_all_row_ids(DATASET_DIR),
+                        cap=40, time_budget=3.0, input_digest="obd1", code_digest="c1",
+                        started_at="t0", finished_at="t1", seconds=1.0)
+    buckets = open_breaks(db, run_id)
+    any_row = next((r for rows in buckets.values() for r in rows), None)
+    if any_row is None:
+        pytest.skip("fixture dataset has no open breaks")
+    detail = open_break_detail(db, run_id, any_row["row_id"])
+    assert detail["reason"] == any_row["reason"]
+    assert detail["age_days"] == any_row["age_days"]
+    assert open_break_detail(db, run_id, "not-a-real-row") is None
+
+
+def test_valid_break_reasons_and_owner_for_reason_match_the_live_contract() -> None:
+    reasons = valid_break_reasons()
+    assert reasons == tuple(sorted(reasons))  # sorted, per its own docstring
+    assert "unexplained" in reasons
+    assert "timing_difference" in reasons
+    owner, close_condition = owner_for_reason("timing_difference")
+    assert owner == "none -- carry forward"
+    assert "later window" in close_condition

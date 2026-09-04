@@ -92,6 +92,25 @@ def open_breaks(conn: sqlite3.Connection, run_id: str) -> dict[str, list[dict]]:
     return buckets
 
 
+def line_summaries(conn: sqlite3.Connection, run_id: str) -> list[dict]:
+    """One scalar summary row per bank line -- what the transaction-flow UI
+    (`service/static/transaction_flow.html`) needs to render the default
+    list without deserializing every line's full `outcome_json` up front."""
+    rows = conn.execute(
+        "SELECT bank_index, kind, reason, rival_closure_count, candidate_count, "
+        "detail FROM line_outcomes WHERE run_id = ? ORDER BY bank_index", (run_id,)
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def sources_for_run(conn: sqlite3.Connection, run_id: str) -> list[dict]:
+    rows = conn.execute(
+        "SELECT artifact_path, source_system, format, sha256, fetched_at, "
+        "transport FROM sources WHERE run_id = ? ORDER BY source_system", (run_id,)
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def open_break_detail(conn: sqlite3.Connection, run_id: str, row_id: str) -> dict | None:
     """Scalar fields for one open break, without deserializing the full
     `outcome_json` -- everything `agents/break_investigator.py` needs is

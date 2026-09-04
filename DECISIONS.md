@@ -6248,3 +6248,105 @@ regressions.
 (`open_break_detail`, `valid_break_reasons` -- additive functions only).
 Nothing under `resolver/`, `resolver_contract/`, `matching/`, `engine/`, or
 any frozen dataset path touched.
+
+## 96. Phase 3 (connectors) and Phase 4 (transaction-flow UI) -- closing the one real gap, live-verifying two claims of the plan, and one new small API surface -- 2026-09-04
+
+**Phase 3, rescoped by checking what already existed before writing anything.**
+The plan's proposal listed SFTP, S3, and a "Razorpay API" connector as new
+work. All three already existed: `transport/sftp.py` and `transport/s3.py`
+predate this session (with `transport/credentials.py`'s non-production guard
+already tested), and `ingest/formats/jsonl.py`'s own docstring already
+states `recon_combined.json` is "an API-shaped envelope"
+(`{entity, count, items}`) -- confirmed for real, not just by that docstring's
+say-so, against an actual captured Razorpay TEST MODE response
+(`spike/raw/008_rest_recon_combined_current_month.json`), whose
+`response.body` is exactly that shape
+(`test_recon_combined_json_matches_the_real_razorpay_api_envelope_shape`).
+"GST portal export" is the same story: `ingest/schema.py::GSTR2B_ROLES`
+already resolves `gstr2b.csv`'s columns. None of these needed new code.
+
+**What genuinely was missing:** `service/pipeline.py`'s own docstring names
+it -- "wiring a poller's staging output into a canonical six-file dataset
+directory is a real, separate integration decision -- a manifest describing
+which staged digest is which artifact -- and is named here as a deliberate
+follow-on, not solved by a heuristic." `service/manifest.py` is that
+follow-on, built to honor "not solved by a heuristic" literally:
+`propose_artifact_label` guesses (using the same `ingest.schema.Role`
+vocabulary every format adapter already resolves against, plus a real,
+necessary correction found while testing -- `disputes.json` and
+`recon_combined.json` share an identical `{entity, count, items}` envelope in
+this repo's own fixtures, so the two are disambiguated by the first item's
+own keys instead, not the envelope), but a guess is never authoritative:
+`assemble_dataset_directory` refuses to run against anything but a
+human-confirmed mapping covering exactly the six canonical artifacts, naming
+what's missing or unrecognised rather than proceeding partially.
+
+**End-to-end proof, not a unit test in isolation.**
+`service/tests/test_connector_end_to_end.py::test_poller_to_manifest_to_resolver_end_to_end`
+drives a real dataset through `RecordedTransport` (standing in for a live
+SFTP/S3 pull, offline like every other test in this repo) ->
+`transport.poller.Poller` -> `propose_manifest` -> `assemble_dataset_directory`
+-> `ingest.load` -> `resolver.resolve()`, and checks the resolved line
+outcomes match resolving the original directory directly, kind-for-kind.
+Tally/Zoho, SAP/NetSuite, and email-attachment connectors are explicitly
+deferred: no real external system or public sample data exists in this
+repo to responsibly build and test them against, the same reasoning
+Sec.95 gave for not building live PSP/bank/ERP lookups into Break Investigator.
+
+**Phase 4: a live-backed transaction-flow UI, not a second static dashboard.**
+`dashboard/index.html` (Sec.90-91) is deliberately a build-time-baked static
+file with no running backend. This is the opposite case: a page that queries
+`service/api.py` live via same-origin `fetch()`, so no CORS configuration was
+needed at all -- `service/api.py` gained a `GET /ui/transaction-flow` route
+that serves `service/static/transaction_flow.html` directly.
+
+The plan's own claim ("no new backend work needed") was almost, not exactly,
+right: rendering the default view (source cards, a bank-line list) needs a
+LISTING, and the existing API only exposed per-item lookups
+(`/lines/{bank_index}`, `/rows/{row_id}`). Two new read-only routes were
+added, both trivial wrappers over new `store.queries` functions reading only
+existing columns: `GET /runs/{run_id}/lines` (`line_summaries`, scalar
+columns only -- no `outcome_json` deserialization for a view that only needs
+kind/reason/rival counts) and `GET /runs/{run_id}/sources`
+(`sources_for_run`).
+
+**Two real bugs caught only by curling the live server against real data,
+not by writing tests against my own assumptions first:**
+- `sources.source_system` is written as the literal string `"unknown"` by
+  `service/pipeline.py` (pre-existing, not introduced here) -- so the UI
+  cannot match evidence to a source card by that column. Fixed by matching
+  on artifact FILENAME instead, via a client-side table mirroring
+  `resolver_contract.types.SourceSystem`'s own documented artifact mapping
+  (types.py:67-83) -- `psp_ledger -> recon_combined.json`,
+  `bank -> bank_statement.csv`, etc. `service/pipeline.py`'s stub is left
+  alone: fixing it is a separate, deliberate decision with its own
+  validation, per this repo's own rule, not a patch made while building a UI.
+- `Evidence.derived_from` is a `frozenset[SourceSystem]`, serialized as an
+  ARRAY (possibly more than one system for evidence derived from a closure
+  check over two sources at once) -- the first draft treated it as a single
+  string and every card-lighting lookup silently failed. Found by curling
+  `/runs/{run_id}/lines/0` and reading the real JSON, not by guessing the
+  shape from the dataclass definition.
+- `IndependenceDetermination.independent_parties`/`independent_count` are
+  Python `@property`s and do not survive `to_jsonable` (same trap this
+  session's Settlr dashboard work hit earlier, in a different file) -- the
+  panel reads the real `sources`/`rationale` fields only.
+
+**Verified live, not just by the automated suite.** A real server was
+started against a populated database (`corpus/datasets/A20_B50_Cmax`,
+mixing Verified/Unresolved/Ambiguous/AttestationDiscrepancy) and exercised in
+Chrome: clicking a `Verified` line lights the two real source cards its
+evidence derives from and lists its 5 real composition row ids; clicking a
+referenced row that was itself matched (not unmatched) correctly reports
+that state via `row_history` rather than a raw 404, since `row_outcomes`
+only ever holds unmatched dispositions; an `Ambiguous` line shows its real
+10-candidate count; an `AttestationDiscrepancy` line renders its real
+contradiction detail and paise amounts. Console clean throughout
+(`read_console_messages`, `onlyErrors: true`).
+
+**Scope.** New: `service/manifest.py`, `service/static/transaction_flow.html`,
+and tests for both, plus `service/tests/test_connector_end_to_end.py`.
+Modified: `service/api.py` (two new read-only routes, one new HTML route),
+`store/queries.py` (`line_summaries`, `sources_for_run`, additive only).
+Nothing under `resolver/`, `resolver_contract/`, `matching/`, `engine/`, or
+any frozen dataset path touched.

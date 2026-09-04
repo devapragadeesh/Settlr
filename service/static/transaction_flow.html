@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Transaction Flow</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #05070d; --panel: #0b0f1a; --panel-2: #10162a; --border: rgba(255,255,255,.08);
+    --text: #f2f4f8; --text-2: #98a2b8; --text-3: #616d84; --accent: #3b6bff;
+    --verified: #22c55e; --reconstructed: #2dd4bf; --discrepancy: #ef4444;
+    --ambiguous: #f59e0b; --unresolved: #94a3b8; --proven: #a78bfa;
+    --correctly: #64748b; --ring-030: #22c55e; --ring-3160: #f59e0b;
+    --ring-6190: #f97316; --ring-90p: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: Inter, -apple-system, sans-serif; font-size: 14px;
+  }
+  code, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+  header {
+    display: flex; align-items: center; gap: 14px; padding: 16px 24px;
+    border-bottom: 1px solid var(--border); position: sticky; top: 0;
+    background: rgba(5,7,13,.9); backdrop-filter: blur(12px); z-index: 20;
+  }
+  header h1 { font-size: 15px; font-weight: 700; margin: 0; letter-spacing: .01em; }
+  header .sub { color: var(--text-3); font-size: 12.5px; }
+  #status { margin-left: auto; font-size: 12px; color: var(--text-3); }
+  main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+  .section-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--text-3); margin: 28px 0 10px; font-weight: 600;
+  }
+  .cards-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
+  .source-card {
+    flex: 0 0 auto; min-width: 190px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px;
+    transition: border-color .15s, transform .15s;
+  }
+  .source-card.lit { border-color: var(--accent); transform: translateY(-2px); }
+  .source-card .name { font-weight: 600; font-size: 13px; }
+  .source-card .meta { color: var(--text-3); font-size: 11.5px; margin-top: 6px; }
+  .source-card .meta code { color: var(--text-2); }
+  .lines-list { display: flex; flex-direction: column; gap: 6px; }
+  .line-row {
+    display: grid; grid-template-columns: 90px 110px 1fr 90px 60px; gap: 12px;
+    align-items: center; padding: 10px 14px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 10px; cursor: pointer;
+    transition: background .12s, border-color .12s;
+  }
+  .line-row:hover { background: var(--panel-2); }
+  .line-row.selected { border-color: var(--accent); background: var(--panel-2); }
+  .kind-pill {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;
+    font-weight: 600; padding: 3px 9px; border-radius: 999px;
+  }
+  .kind-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .k-Verified { color: var(--verified); background: rgba(34,197,94,.12); }
+  .k-Verified .kind-dot { background: var(--verified); }
+  .k-Reconstructed { color: var(--reconstructed); background: rgba(45,212,191,.12); }
+  .k-Reconstructed .kind-dot { background: var(--reconstructed); }
+  .k-AttestationDiscrepancy { color: var(--discrepancy); background: rgba(239,68,68,.12); }
+  .k-AttestationDiscrepancy .kind-dot { background: var(--discrepancy); }
+  .k-Ambiguous { color: var(--ambiguous); background: rgba(245,158,11,.12); }
+  .k-Ambiguous .kind-dot { background: var(--ambiguous); }
+  .k-Unresolved { color: var(--unresolved); background: rgba(148,163,184,.12); }
+  .k-Unresolved .kind-dot { background: var(--unresolved); }
+  .row-id { color: var(--text-2); font-size: 12.5px; }
+  .rival-note { color: var(--text-3); font-size: 11.5px; }
+  .rows-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px,1fr)); gap: 10px; }
+  .break-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; border-left: 3px solid transparent; cursor: pointer;
+  }
+  .break-card.d-ProvenUnmatched { border-left-color: var(--proven); }
+  .break-card.d-CorrectlyUnmatched { border-left-color: var(--correctly); }
+  .break-card.d-OpenBreak { border-left-color: var(--text-3); }
+  .age-ring {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px;
+  }
+  .age-0-30 { background: var(--ring-030); } .age-31-60 { background: var(--ring-3160); }
+  .age-61-90 { background: var(--ring-6190); } .age-90\+ { background: var(--ring-90p); }
+  #svgOverlay { position: fixed; inset: 0; pointer-events: none; z-index: 15; }
+  #svgOverlay line { stroke: var(--accent); stroke-width: 1.6; opacity: .55; }
+  .panel {
+    position: fixed; top: 0; right: 0; height: 100%; width: 420px; max-width: 92vw;
+    background: var(--panel); border-left: 1px solid var(--border);
+    transform: translateX(100%); transition: transform .22s ease; z-index: 30;
+    overflow-y: auto; padding: 20px;
+  }
+  .panel.open { transform: translateX(0); }
+  .panel h2 { font-size: 14px; margin: 0 0 4px; }
+  .panel .close { float: right; cursor: pointer; color: var(--text-3); font-size: 18px; }
+  .kv { display: grid; grid-template-columns: 130px 1fr; gap: 6px 10px; margin: 12px 0; font-size: 12.5px; }
+  .kv div:nth-child(odd) { color: var(--text-3); }
+  .evidence-item {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; margin-bottom: 8px; font-size: 12.5px;
+  }
+  .evidence-item .kind { font-weight: 600; color: var(--accent); }
+  .ref-row {
+    display: flex; justify-content: space-between; padding: 8px 10px;
+    background: var(--panel-2); border-radius: 8px; margin-bottom: 6px;
+    cursor: pointer; font-size: 12.5px;
+  }
+  .ref-row:hover { outline: 1px solid var(--accent); }
+  .empty { color: var(--text-3); font-size: 12.5px; padding: 20px 0; }
+  a.plain { color: var(--accent); text-decoration: none; cursor: pointer; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Transaction Flow</h1>
+  <span class="sub">real resolver output, live from <code class="mono">store</code></span>
+  <span id="status">loading…</span>
+</header>
+<main>
+  <div class="section-title">Source systems (this run's ingested artifacts)</div>
+  <div class="cards-row" id="sourceCards"></div>
+
+  <div class="section-title">Bank lines</div>
+  <div class="lines-list" id="linesList"></div>
+
+  <div class="section-title">Unmatched rows (OpenBreak / ProvenUnmatched / CorrectlyUnmatched)</div>
+  <div class="rows-grid" id="rowsGrid"></div>
+</main>
+
+<svg id="svgOverlay"></svg>
+
+<div class="panel" id="linePanel">
+  <span class="close" onclick="closePanel('linePanel')">&times;</span>
+  <h2 id="lpTitle">Line</h2>
+  <div id="lpBody"></div>
+</div>
+
+<div class="panel" id="rowPanel">
+  <span class="close" onclick="closePanel('rowPanel')">&times;</span>
+  <h2 id="rpTitle">Row</h2>
+  <div id="rpBody"></div>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const DATASET = params.get('dataset') || 'A20_B50_Cmax';
+let RUN_ID = null, DATASET_NAME = DATASET;
+
+const KIND_LABEL = {
+  Verified: 'Verified', Reconstructed: 'Reconstructed',
+  AttestationDiscrepancy: 'Discrepancy', Ambiguous: 'Ambiguous', Unresolved: 'Unresolved',
+};
+
+// `sources.source_system` is written as the literal string "unknown" by
+// `service/pipeline.py` today (not a bug introduced here -- a pre-existing
+// stub, left alone per this repo's "a fix is a deliberate, recorded
+// decision" rule). So evidence is matched to its source card by artifact
+// filename instead, via `resolver_contract.types.SourceSystem`'s own
+// documented mapping (types.py:67-83) -- not by that stubbed column.
+const DERIVED_FROM_TO_ARTIFACT = {
+  psp_ledger: 'recon_combined.json',
+  psp_settlement_report: 'settlement_report.csv',
+  bank: 'bank_statement.csv',
+  merchant_erp: 'erp_orders.csv',
+  tax_authority: 'gstr2b.csv',
+  dispute_record: 'disputes.json',
+};
+
+async function getJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(url + ' -> ' + r.status);
+  return r.json();
+}
+
+function el(tag, cls, html) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html !== undefined) e.innerHTML = html;
+  return e;
+}
+
+async function boot() {
+  const status = document.getElementById('status');
+  try {
+    const runs = await getJSON(`/runs?dataset=${encodeURIComponent(DATASET)}`);
+    if (!runs.length) { status.textContent = `no runs for dataset ${DATASET}`; return; }
+    const run = runs[runs.length - 1];
+    RUN_ID = run.run_id;
+    DATASET_NAME = run.dataset;
+    status.textContent = `run ${RUN_ID.slice(0, 12)}… · ${run.dataset}`;
+
+    const [sources, lines, breaks] = await Promise.all([
+      getJSON(`/runs/${RUN_ID}/sources`),
+      getJSON(`/runs/${RUN_ID}/lines`),
+      getJSON(`/runs/${RUN_ID}/breaks`),
+    ]);
+    renderSources(sources);
+    renderLines(lines);
+    renderBreaks(breaks);
+  } catch (err) {
+    status.textContent = 'error: ' + err.message;
+  }
+}
+
+function renderSources(sources) {
+  const wrap = document.getElementById('sourceCards');
+  wrap.innerHTML = '';
+  if (!sources.length) { wrap.appendChild(el('div', 'empty', 'No sources recorded for this run.')); return; }
+  for (const s of sources) {
+    const filename = s.artifact_path.split('/').pop();
+    const card = el('div', 'source-card');
+    card.dataset.artifact = filename;
+    card.appendChild(el('div', 'name', filename));
+    card.appendChild(el('div', 'meta',
+      `${s.format}<br><code>${s.sha256.slice(0, 12)}…</code>`));
+    wrap.appendChild(card);
+  }
+}
+
+function renderLines(lines) {
+  const wrap = document.getElementById('linesList');
+  wrap.innerHTML = '';
+  for (const line of lines) {
+    const row = el('div', 'line-row');
+    row.dataset.bankIndex = line.bank_index;
+    row.appendChild(el('div', 'mono row-id', '#' + line.bank_index));
+    const pill = el('span', `kind-pill k-${line.kind}`,
+      `<span class="kind-dot"></span>${KIND_LABEL[line.kind] || line.kind}`);
+    const pillWrap = el('div'); pillWrap.appendChild(pill);
+    row.appendChild(pillWrap);
+    row.appendChild(el('div', 'row-id', line.detail || line.reason || ''));
+    row.appendChild(el('div', 'rival-note',
+      line.rival_closure_count != null ? `rivals: ${line.rival_closure_count}` :
+      line.candidate_count != null ? `${line.candidate_count} candidates` : ''));
+    row.appendChild(el('div', '', ''));
+    row.addEventListener('click', () => selectLine(line.bank_index, row));
+    wrap.appendChild(row);
+  }
+}
+
+function renderBreaks(buckets) {
+  const wrap = document.getElementById('rowsGrid');
+  wrap.innerHTML = '';
+  let any = false;
+  for (const [bucket, rows] of Object.entries(buckets)) {
+    for (const r of rows) {
+      any = true;
+      const card = el('div', 'break-card d-OpenBreak');
+      card.appendChild(el('div', '', `<span class="age-ring age-${bucket.replace('+','\\+')}"></span>`
+        + `<span class="mono">${r.row_id}</span>`));
+      card.appendChild(el('div', 'rival-note', `${r.reason} · ${bucket} days`));
+      card.addEventListener('click', () => selectRow(r.row_id));
+      wrap.appendChild(card);
+    }
+  }
+  if (!any) wrap.appendChild(el('div', 'empty', 'No open breaks on this run.'));
+}
+
+function closePanel(id) { document.getElementById(id).classList.remove('open'); drawArrows([]); }
+
+async function selectLine(bankIndex, rowEl) {
+  document.querySelectorAll('.line-row').forEach(r => r.classList.remove('selected'));
+  rowEl.classList.add('selected');
+  const outcome = await getJSON(`/runs/${RUN_ID}/lines/${bankIndex}`);
+  const kind = outcome.__type__;
+  document.getElementById('lpTitle').textContent = `Line #${bankIndex} — ${kind}`;
+
+  const body = document.getElementById('lpBody');
+  body.innerHTML = '';
+  const kv = el('div', 'kv');
+  const warrant = outcome.warrant;
+  if (warrant) {
+    // `IndependenceDetermination.independent_parties`/`independent_count` are
+    // Python @properties -- they do not survive `store/codec.py::to_jsonable`
+    // (it walks dataclass fields only). Only `sources`/`rationale` are real
+    // fields here; the same trap this session's dashboard work already hit.
+    kv.innerHTML = `<div>Sources</div><div>${warrant.independence.sources.length}: ${warrant.independence.sources.join(', ')}</div>` +
+      `<div>Rationale</div><div>${warrant.independence.rationale}</div>`;
+  }
+  if (kind === 'Verified') {
+    kv.innerHTML += `<div>Rival closures</div><div>${outcome.rival_closure_count}${outcome.rival_count_is_lower_bound ? ' (lower bound — enumeration was capped)' : ''}</div>`;
+  }
+  if (kind === 'Ambiguous') {
+    kv.innerHTML += `<div>Candidates</div><div>${outcome.candidate_set.size}${outcome.candidate_set.complete ? '' : ' (incomplete — sampled)'}</div>`;
+  }
+  body.appendChild(kv);
+
+  document.querySelectorAll('.source-card').forEach(c => c.classList.remove('lit'));
+  if (warrant && warrant.evidence) {
+    body.appendChild(el('div', 'section-title', 'Evidence'));
+    for (const ev of warrant.evidence) {
+      const item = el('div', 'evidence-item');
+      item.innerHTML = `<span class="kind">${ev.kind}</span> — ${ev.detail || ''}`;
+      body.appendChild(item);
+      // `derived_from` is a `frozenset[SourceSystem]` -- serialized as an
+      // array, possibly more than one system (e.g. a closure check derived
+      // from both `bank` and `psp_ledger` at once).
+      for (const system of ev.derived_from) {
+        const artifact = DERIVED_FROM_TO_ARTIFACT[system];
+        const card = artifact && document.querySelector(`.source-card[data-artifact="${artifact}"]`);
+        if (card) card.classList.add('lit');
+      }
+    }
+  }
+
+  if (outcome.contradiction) {
+    body.appendChild(el('div', 'section-title', 'Contradiction'));
+    const item = el('div', 'evidence-item');
+    item.innerHTML = `<span class="kind">${outcome.contradiction.kind}</span> — ${outcome.contradiction.detail}`;
+    body.appendChild(item);
+  }
+
+  const refIds = referencedRowIds(outcome);
+  if (refIds.length) {
+    body.appendChild(el('div', 'section-title', `Referenced rows (${refIds.length})`));
+    for (const id of refIds) {
+      const r = el('div', 'ref-row');
+      r.innerHTML = `<span class="mono">${id}</span><span class="plain">open →</span>`;
+      r.addEventListener('click', () => selectRow(id));
+      body.appendChild(r);
+    }
+  }
+
+  document.getElementById('linePanel').classList.add('open');
+  requestAnimationFrame(() => drawArrows(litSourceCards(), rowEl));
+}
+
+function referencedRowIds(outcome) {
+  if (outcome.composition) return [...outcome.composition.credit_ids, ...outcome.composition.debit_ids];
+  if (outcome.candidate_set) {
+    const ids = new Set();
+    for (const c of outcome.candidate_set.candidates) {
+      c.credit_ids.forEach(i => ids.add(i));
+      c.debit_ids.forEach(i => ids.add(i));
+    }
+    return [...ids];
+  }
+  if (outcome.attested_row_ids) return [...outcome.attested_row_ids];
+  if (outcome.partial_candidates) {
+    const ids = new Set();
+    for (const c of outcome.partial_candidates.candidates) {
+      c.credit_ids.forEach(i => ids.add(i));
+      c.debit_ids.forEach(i => ids.add(i));
+    }
+    return [...ids];
+  }
+  return [];
+}
+
+function litSourceCards() {
+  document.querySelectorAll('.source-card').forEach(c => c.classList.remove('lit'));
+  return [];
+}
+
+async function selectRow(rowId) {
+  document.getElementById('rpTitle').textContent = rowId;
+  const body = document.getElementById('rpBody');
+  body.innerHTML = '<div class="empty">loading…</div>';
+  document.getElementById('rowPanel').classList.add('open');
+
+  try {
+    const history = await getJSON(`/rows/${DATASET_NAME}/${rowId}/history`);
+    // `row_outcomes` only ever holds UNMATCHED rows -- `store/writer.py`
+    // writes one entry per outcome in `ResolverOutput.unmatched`, and a row
+    // assigned to a Verified/Reconstructed composition never appears there
+    // at all. A 404 here is that real, correct state, not an error --
+    // `row_history` (which reconstructs assignment from `line_outcomes` too)
+    // is what actually knows this row was matched.
+    let outcome = null;
+    const resp = await fetch(`/runs/${RUN_ID}/rows/${rowId}`);
+    if (resp.ok) outcome = await resp.json();
+
+    body.innerHTML = '';
+    const kv = el('div', 'kv');
+    if (outcome) {
+      kv.innerHTML = `<div>Disposition</div><div>${outcome.__type__}</div>` +
+        `<div>Reason</div><div>${outcome.reason || '—'}</div>`;
+      if (outcome.age_days != null) kv.innerHTML += `<div>Age</div><div>${outcome.age_days} days</div>`;
+    } else {
+      const latest = history[history.length - 1];
+      kv.innerHTML = `<div>Disposition</div><div>${latest ? latest.state : 'unknown'} ` +
+        `(matched into a bank line's composition -- no separate row_outcomes ` +
+        `record exists for a matched row)</div>`;
+    }
+    body.appendChild(kv);
+
+    body.appendChild(el('div', 'section-title', 'History across runs'));
+    if (!history.length) {
+      body.appendChild(el('div', 'empty', 'Only one run on record for this dataset.'));
+    }
+    for (const h of history) {
+      const item = el('div', 'evidence-item');
+      item.innerHTML = `<span class="kind">${h.state}</span>` +
+        (h.reason ? ` (${h.reason})` : '') + ` — run ${h.run_id.slice(0, 10)}…`;
+      body.appendChild(item);
+    }
+  } catch (err) {
+    body.innerHTML = `<div class="empty">row not found on this run: ${rowId}</div>`;
+  }
+}
+
+function drawArrows() {
+  const svg = document.getElementById('svgOverlay');
+  svg.innerHTML = '';
+  const litCards = [...document.querySelectorAll('.source-card.lit')];
+  const selectedLine = document.querySelector('.line-row.selected');
+  if (!selectedLine || !litCards.length) return;
+  const from = selectedLine.getBoundingClientRect();
+  const fx = from.left + 20, fy = from.top + from.height / 2;
+  for (const card of litCards) {
+    const to = card.getBoundingClientRect();
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', fx); line.setAttribute('y1', fy);
+    line.setAttribute('x2', to.left + to.width / 2); line.setAttribute('y2', to.bottom);
+    svg.appendChild(line);
+  }
+}
+window.addEventListener('resize', () => drawArrows());
+boot();
+</script>
+</body>
+</html>
