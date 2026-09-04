@@ -84,48 +84,119 @@ a{color:inherit;text-decoration:none;}
 .navlinks a:hover{color:var(--text-1);background:rgba(255,255,255,.05);}
 .navlinks a.active{color:var(--text-1);background:rgba(61,116,255,.14);}
 
-.cmdbar{flex:1;max-width:640px;position:relative;}
-.cmdbar-field{
-  display:flex;align-items:center;gap:10px;
-  background:rgba(255,255,255,.045);
-  border:1px solid var(--border);
-  border-radius:99px;padding:9px 16px 9px 14px;
-  transition:.2s var(--ease);
+.topbar-spacer{flex:1;}
+
+/* ---- AI orb trigger (replaces the old text command bar) ----
+   Deliberately cheap to animate: transform + box-shadow only, never a
+   continuously-animated `filter` (blur/drop-shadow recalculated every
+   frame is expensive to composite and hung headless screenshot capture
+   during this feature's own verification -- transform/box-shadow run on
+   the compositor thread and cost nothing comparable). */
+@keyframes orbBreathe{
+  0%,100%{transform:scale(1);}
+  50%{transform:scale(1.045);}
 }
-.cmdbar-field:focus-within{
-  border-color:rgba(61,116,255,.55);
-  background:rgba(61,116,255,.07);
-  box-shadow:0 0 0 4px rgba(61,116,255,.12);
+@keyframes orbPulseRing{
+  0%{transform:scale(.6);opacity:.65;}
+  100%{transform:scale(2.1);opacity:0;}
 }
-.cmdbar-field svg{flex-shrink:0;opacity:.55;}
-.cmdbar-field input{
-  flex:1;background:none;border:none;outline:none;color:var(--text-1);
-  font-size:13.5px;font-family:inherit;
+.ai-orb-btn{
+  position:relative;width:40px;height:40px;flex-shrink:0;border:none;background:none;
+  cursor:pointer;padding:0;border-radius:50%;
 }
-.cmdbar-field input::placeholder{color:var(--text-3);}
-.cmdbar-kbd{font-size:10.5px;color:var(--text-3);border:1px solid var(--border-strong);border-radius:5px;padding:2px 6px;font-family:'Inter';flex-shrink:0;}
-.cmdbar-hint{
-  position:absolute;top:calc(100% + 10px);left:0;right:0;
-  background-image:linear-gradient(175deg,rgba(255,255,255,.16),rgba(255,255,255,.05));
-  background-color:rgba(8,12,24,.78);
-  backdrop-filter:blur(34px) saturate(200%);-webkit-backdrop-filter:blur(34px) saturate(200%);
-  border:1px solid rgba(255,255,255,.20);
-  border-radius:20px;padding:16px;box-shadow:0 30px 70px -20px rgba(5,10,30,.75), inset 0 1px 0 rgba(255,255,255,.18);
-  opacity:0;transform:translateY(-6px) scale(.98);pointer-events:none;
-  transition:.22s var(--ease);font-size:12.5px;color:var(--text-2);z-index:70;
+.ai-orb-btn img{
+  width:100%;height:100%;border-radius:50%;display:block;object-fit:cover;
+  box-shadow:0 0 10px rgba(120,140,255,.35);
+  animation:orbBreathe 4.2s ease-in-out infinite;
+  transition:transform .25s var(--ease), box-shadow .25s var(--ease);
 }
-.cmdbar-hint.show{opacity:1;transform:none;pointer-events:auto;}
-.cmdbar-hint b{color:var(--text-1);font-weight:600;}
-.cmdbar-answer{
-  font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;color:#fff;line-height:1.4;
-  min-height:21px;letter-spacing:-.005em;
+.ai-orb-btn:hover img{transform:scale(1.12);box-shadow:0 0 20px rgba(140,120,255,.7);}
+.ai-orb-btn:active img{transform:scale(.96);}
+.ai-orb-btn .ring{
+  position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(150,140,255,.7);
+  opacity:0;pointer-events:none;
 }
-.cmdbar-answer .accent{color:#a9c0ff;}
-.cmdbar-sub{font-size:11.5px;color:var(--text-2);margin-top:6px;}
-.cmdbar-hint .row{display:flex;justify-content:space-between;gap:10px;padding:10px 0 2px;border-top:1px solid rgba(255,255,255,.1);margin-top:10px;}
-.cmdbar-hint .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
-.cmdbar-hint .chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:4px 11px;font-size:11.5px;cursor:pointer;transition:.15s;}
-.cmdbar-hint .chip:hover{background:rgba(61,116,255,.28);border-color:rgba(61,116,255,.5);}
+.ai-orb-btn.pulsing .ring{animation:orbPulseRing .55s var(--ease) forwards;}
+.ai-orb-label{font-size:11.5px;color:var(--text-3);margin-left:9px;user-select:none;}
+.ai-orb-wrap{display:flex;align-items:center;flex-shrink:0;cursor:pointer;}
+
+/* ---- AI chat panel (slides in from the right) ---- */
+.ai-panel{
+  position:fixed;top:0;right:0;height:100%;width:420px;max-width:94vw;
+  background-image:linear-gradient(175deg,rgba(255,255,255,.06),rgba(255,255,255,.015));
+  background-color:rgba(8,11,22,.94);
+  backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);
+  border-left:1px solid rgba(255,255,255,.12);
+  box-shadow:-30px 0 70px -25px rgba(5,10,30,.8);
+  transform:translateX(100%);transition:transform .28s var(--ease);
+  z-index:90;display:flex;flex-direction:column;
+}
+.ai-panel.show{transform:translateX(0);}
+.ai-panel-head{
+  display:flex;align-items:center;gap:10px;padding:16px 18px;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.ai-panel-head img{width:26px;height:26px;border-radius:50%;animation:orbBreathe 4.2s ease-in-out infinite;}
+.ai-panel-head .title{font-family:'Outfit';font-weight:700;font-size:14.5px;}
+.ai-panel-head .sub{font-size:11px;color:var(--text-3);}
+.ai-panel-close{margin-left:auto;width:28px;height:28px;border-radius:99px;border:none;background:rgba(255,255,255,.06);color:var(--text-2);cursor:pointer;font-size:15px;}
+.ai-panel-close:hover{background:rgba(255,255,255,.12);color:var(--text-1);}
+.ai-thread{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:14px;}
+.ai-msg{max-width:92%;font-size:13px;line-height:1.5;}
+.ai-msg.user{align-self:flex-end;background:rgba(61,116,255,.18);border:1px solid rgba(61,116,255,.32);
+  border-radius:14px 14px 3px 14px;padding:10px 13px;color:var(--text-1);}
+.ai-msg.assistant{align-self:flex-start;width:100%;}
+.ai-msg.assistant .bubble{
+  background:rgba(255,255,255,.045);border:1px solid var(--border);
+  border-radius:3px 14px 14px 14px;padding:11px 14px;color:var(--text-1);
+}
+.ai-msg .sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.ai-msg .source-chip{
+  display:inline-flex;align-items:center;gap:5px;background:rgba(169,192,255,.1);
+  border:1px solid rgba(169,192,255,.28);color:#a9c0ff;border-radius:99px;
+  padding:3px 10px;font-size:10.5px;cursor:pointer;transition:.15s;
+}
+.ai-msg .source-chip:hover{background:rgba(169,192,255,.22);}
+.ai-msg .source-chip svg{width:9px;height:9px;}
+.ai-agent-card{background:rgba(61,116,255,.08);border:1px solid rgba(61,116,255,.25);border-radius:12px;
+  padding:11px 13px;margin-top:2px;}
+.ai-agent-card .name{font-family:'Outfit';font-weight:700;font-size:12.5px;color:#a9c0ff;}
+.ai-agent-card .mode{font-size:10px;color:var(--text-3);margin-top:1px;}
+.ai-agent-card .preview{font-size:12px;color:var(--text-2);margin-top:8px;line-height:1.5;}
+.ai-agent-card .preview b{color:var(--text-1);}
+.ai-empty{color:var(--text-3);font-size:12.5px;text-align:center;padding:40px 20px;line-height:1.6;}
+.ai-input-row{position:relative;padding:14px 16px;border-top:1px solid var(--border);flex-shrink:0;}
+.ai-input-field{
+  display:flex;align-items:flex-end;gap:8px;background:rgba(255,255,255,.05);
+  border:1px solid var(--border);border-radius:16px;padding:9px 10px 9px 14px;
+  transition:.18s var(--ease);
+}
+.ai-input-field:focus-within{border-color:rgba(61,116,255,.55);background:rgba(61,116,255,.06);}
+.ai-input-field textarea{
+  flex:1;background:none;border:none;outline:none;resize:none;color:var(--text-1);
+  font-family:inherit;font-size:13px;line-height:1.4;max-height:96px;
+}
+.ai-input-field textarea::placeholder{color:var(--text-3);}
+.ai-send-btn{
+  width:30px;height:30px;border-radius:99px;border:none;flex-shrink:0;
+  background:linear-gradient(140deg,var(--blue-2),var(--blue-4));color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.15s;
+}
+.ai-send-btn:hover{filter:brightness(1.15);}
+.ai-hint-row{font-size:10.5px;color:var(--text-3);margin-top:7px;padding:0 2px;}
+.agent-menu{
+  position:absolute;bottom:calc(100% + 8px);left:16px;right:16px;
+  background-color:rgba(8,12,24,.96);backdrop-filter:blur(24px);
+  border:1px solid rgba(255,255,255,.14);border-radius:14px;overflow:hidden;
+  box-shadow:0 20px 50px -20px rgba(0,0,0,.7);
+  opacity:0;transform:translateY(6px);pointer-events:none;transition:.16s var(--ease);
+}
+.agent-menu.show{opacity:1;transform:none;pointer-events:auto;}
+.agent-menu-item{padding:9px 13px;cursor:pointer;border-bottom:1px solid var(--border);}
+.agent-menu-item:last-child{border-bottom:none;}
+.agent-menu-item:hover,.agent-menu-item.hl{background:rgba(61,116,255,.16);}
+.agent-menu-item .n{font-family:ui-monospace,'SFMono-Regular',Menlo,monospace;font-size:12px;color:#a9c0ff;font-weight:600;}
+.agent-menu-item .d{font-size:10.5px;color:var(--text-3);margin-top:2px;}
 
 .topbar-actions{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .iconbtn{width:36px;height:36px;border-radius:99px;background:rgba(255,255,255,.045);border:1px solid var(--border);
@@ -151,7 +222,65 @@ a{color:inherit;text-decoration:none;}
 .notif-item .sub{font-size:11px;color:var(--text-3);margin-top:2px;line-height:1.4;}
 .notif-empty{padding:28px 16px;text-align:center;color:var(--text-3);font-size:12px;}
 .avatar{width:34px;height:34px;border-radius:99px;background:linear-gradient(140deg,var(--blue-2),var(--blue-4));
-  display:flex;align-items:center;justify-content:center;font-family:'Outfit';font-weight:600;font-size:13px;color:#fff;flex-shrink:0;}
+  display:flex;align-items:center;justify-content:center;font-family:'Outfit';font-weight:600;font-size:13px;color:#fff;flex-shrink:0;
+  cursor:pointer;border:2px solid transparent;transition:.15s;}
+.avatar:hover{border-color:rgba(61,116,255,.5);}
+.avatar-wrap{position:relative;}
+.avatar-menu{
+  position:absolute;top:calc(100% + 10px);right:0;width:220px;
+  background-image:linear-gradient(175deg,rgba(255,255,255,.14),rgba(255,255,255,.04));
+  background-color:rgba(8,12,24,.92);backdrop-filter:blur(28px);
+  border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:6px;
+  box-shadow:var(--shadow-float);
+  opacity:0;transform:translateY(-6px) scale(.98);pointer-events:none;
+  transition:.18s var(--ease);z-index:70;
+}
+.avatar-menu.show{opacity:1;transform:none;pointer-events:auto;}
+.avatar-menu-head{padding:10px 12px 8px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+.avatar-menu-head .name{font-size:12.5px;font-weight:600;color:var(--text-1);}
+.avatar-menu-head .role{font-size:10.5px;color:var(--text-3);}
+.avatar-menu-item{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;
+  font-size:12.5px;color:var(--text-2);cursor:pointer;transition:.12s;
+}
+.avatar-menu-item:hover{background:rgba(255,255,255,.06);color:var(--text-1);}
+.avatar-menu-item svg{flex-shrink:0;opacity:.7;}
+
+/* ============================== MATCHING-PAGE FILTER ============================== */
+.mfilter-bar{background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:16px;}
+.mfilter-field{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.045);border:1px solid var(--border);border-radius:99px;padding:8px 15px;}
+.mfilter-field svg{flex-shrink:0;opacity:.5;}
+.mfilter-field input{flex:1;background:none;border:none;outline:none;color:var(--text-1);font-size:13px;font-family:inherit;}
+.mfilter-field input::placeholder{color:var(--text-3);}
+.mfilter-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+.mfilter-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.mfilter-chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:4px 11px;font-size:11.5px;cursor:pointer;transition:.15s;color:var(--text-2);}
+.mfilter-chip:hover{background:rgba(61,116,255,.28);border-color:rgba(61,116,255,.5);color:var(--text-1);}
+.mfilter-count{font-size:11.5px;color:var(--text-3);flex-shrink:0;margin-left:10px;}
+
+/* ============================== CONNECTORS PAGE ============================== */
+.connectors-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.connector-card{background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;}
+.connector-head{display:flex;align-items:center;gap:12px;}
+.connector-monogram{
+  width:40px;height:40px;border-radius:12px;flex-shrink:0;
+  background:linear-gradient(140deg,rgba(61,116,255,.28),rgba(61,116,255,.08));
+  border:1px solid rgba(61,116,255,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Outfit';font-weight:700;font-size:12.5px;color:#a9c0ff;
+}
+.connector-card.planned .connector-monogram{
+  background:rgba(255,255,255,.04);border-color:var(--border-strong);color:var(--text-3);
+}
+.connector-name{font-family:'Outfit';font-weight:600;font-size:14px;}
+.connector-status{margin-top:8px;}
+.connector-detail{font-size:11.5px;color:var(--text-3);margin-top:10px;line-height:1.55;}
+.connector-btn{
+  margin-top:14px;width:100%;padding:9px;border-radius:10px;border:1px solid rgba(61,116,255,.4);
+  background:rgba(61,116,255,.14);color:#a9c0ff;font-size:12.5px;font-weight:600;cursor:pointer;transition:.15s;
+}
+.connector-btn:hover{background:rgba(61,116,255,.26);}
+.connector-btn[disabled]{border-color:var(--border-strong);background:none;color:var(--text-3);cursor:not-allowed;}
 
 /* ============================== PAGE HEADER ============================== */
 .pageintro{padding:34px 0 24px;display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;}
@@ -477,29 +606,15 @@ a{color:inherit;text-decoration:none;}
       <a href="#trust" data-page="trust">Trust</a>
       <a href="#matching" data-page="matching">Matching</a>
     </div>
-    <div class="cmdbar">
-      <div class="cmdbar-field">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <input id="cmdInput" type="text" placeholder="Ask Settlr anything — “health score”, “certified entities”, “GST risk”, “unmatched over ₹50,000”…" autocomplete="off">
-        <span class="cmdbar-kbd">⌘K</span>
-      </div>
-      <div class="cmdbar-hint" id="cmdHint">
-        <div class="cmdbar-answer" id="cmdAnswer">Ask about unmatched lines, entities, or amounts — Settlr answers from this run's real data.</div>
-        <div class="cmdbar-sub" id="cmdSub"></div>
-        <div class="row"><span>Quick filters</span><b id="cmdResultCount">—</b></div>
-        <div class="chips">
-          <span class="chip" data-q="unmatched">unmatched</span>
-          <span class="chip" data-q="health score">health score</span>
-          <span class="chip" data-q="certified entities">certified entities</span>
-          <span class="chip" data-q="GST risk">GST risk</span>
-          <span class="chip" data-q="stability">stability</span>
-          <span class="chip" data-q="over 50000">over ₹50,000</span>
-          <span class="chip" data-q="discrepancy">discrepancy</span>
-          <span class="chip" data-q="clear">clear</span>
-        </div>
-      </div>
-    </div>
+    <div class="topbar-spacer"></div>
     <div class="topbar-actions">
+      <div class="ai-orb-wrap" id="aiOrbWrap">
+        <button class="ai-orb-btn" id="aiOrbBtn" title="Ask Settlr" aria-haspopup="true" aria-expanded="false">
+          <img src="data:image/png;base64,__AI_ORB_B64__" alt="Ask Settlr">
+          <span class="ring"></span>
+        </button>
+        <span class="ai-orb-label">Ask Settlr</span>
+      </div>
       <div class="notif-wrap">
         <button class="iconbtn" id="notifBtn" title="Notifications" aria-haspopup="true" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3a5 5 0 00-5 5v3.4c0 .6-.2 1.2-.6 1.7L5 15h14l-1.4-1.9c-.4-.5-.6-1.1-.6-1.7V8a5 5 0 00-5-5z" stroke="currentColor" stroke-width="1.7"/><path d="M9.5 18a2.5 2.5 0 005 0" stroke="currentColor" stroke-width="1.7"/></svg><span class="dot-ping" id="notifDot"></span></button>
         <div class="notif-panel" id="notifPanel">
@@ -507,8 +622,47 @@ a{color:inherit;text-decoration:none;}
           <div class="notif-list" id="notifList"></div>
         </div>
       </div>
-      <div class="avatar">CF</div>
+      <div class="avatar-wrap">
+        <div class="avatar" id="avatarBtn" aria-haspopup="true" aria-expanded="false">CF</div>
+        <div class="avatar-menu" id="avatarMenu">
+          <div class="avatar-menu-head">
+            <div class="name">Collections &amp; Finance</div>
+            <div class="role">Reconciliation ops</div>
+          </div>
+          <div class="avatar-menu-item" data-action="profile"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M5 20c1.6-3.6 4.4-5.4 7-5.4S17.4 16.4 19 20" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>Profile</div>
+          <div class="avatar-menu-item" data-action="settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M12 3v2.4M12 18.6V21M21 12h-2.4M5.4 12H3M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3 5.6 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>Settings</div>
+          <div class="avatar-menu-item" data-action="connectors" data-page="connectors"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 15l6-6M8 9.5 6.5 8a3.5 3.5 0 015-5L13 4.5M16 14.5l1.5 1.5a3.5 3.5 0 01-5 5L11 19.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>Connectors</div>
+          <div class="avatar-menu-item" data-action="signout"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3M10 16l4-4-4-4M14 12H3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>Sign out</div>
+        </div>
+      </div>
     </div>
+  </div>
+</div>
+
+<div class="ai-panel" id="aiPanel">
+  <div class="ai-panel-head">
+    <img src="data:image/png;base64,__AI_ORB_B64__" alt="">
+    <div>
+      <div class="title">Ask Settlr</div>
+      <div class="sub">real answers, cited from this run</div>
+    </div>
+    <button class="ai-panel-close" id="aiPanelClose">&times;</button>
+  </div>
+  <div class="ai-thread" id="aiThread">
+    <div class="ai-empty" id="aiEmpty">
+      Ask about unmatched lines, entities, health, aging, GST, or trust — every
+      answer cites the real record it came from.<br><br>
+      Type <b style="color:var(--text-2)">/</b> to query or run one of Settlr's
+      agents.
+    </div>
+  </div>
+  <div class="ai-input-row">
+    <div class="agent-menu" id="agentMenu"></div>
+    <div class="ai-input-field">
+      <textarea id="aiInput" rows="1" placeholder="Ask a question, or type / for agents…"></textarea>
+      <button class="ai-send-btn" id="aiSendBtn" title="Send"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l16-8L4 4l0 6 11 2-11 2z" fill="currentColor"/></svg></button>
+    </div>
+    <div class="ai-hint-row">Enter to send · Shift+Enter for a new line · / for agents</div>
   </div>
 </div>
 
@@ -569,7 +723,29 @@ a{color:inherit;text-decoration:none;}
   <section class="page" data-page="matching">
     <h2 class="section-title" id="matching">Side-by-Side Matching Grid</h2>
     <p class="section-sub" id="matchingSub"></p>
+    <div class="mfilter-bar">
+      <div class="mfilter-field">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="mFilterInput" type="text" placeholder="Filter this grid — “unmatched”, “verified”, “discrepancy”, “over ₹50,000”…" autocomplete="off">
+      </div>
+      <div class="mfilter-row">
+        <div class="mfilter-chips">
+          <span class="mfilter-chip" data-q="unmatched">unmatched</span>
+          <span class="mfilter-chip" data-q="verified">verified</span>
+          <span class="mfilter-chip" data-q="over 50000">over ₹50,000</span>
+          <span class="mfilter-chip" data-q="discrepancy">discrepancy</span>
+          <span class="mfilter-chip" data-q="clear">clear</span>
+        </div>
+        <div class="mfilter-count"><b id="mFilterResultCount">—</b></div>
+      </div>
+    </div>
     <div class="panel" id="matchingPanel"></div>
+  </section>
+
+  <section class="page" data-page="connectors">
+    <h2 class="section-title" id="connectors">Connectors</h2>
+    <p class="section-sub">Grounded in this repo's actual code state — an "available" connector has working, tested code behind it; a "planned" one is a real, named gap, not a disabled decoy.</p>
+    <div class="connectors-grid" id="connectorsGrid"></div>
   </section>
 
   </div>

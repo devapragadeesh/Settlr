@@ -46,6 +46,8 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from agents import ambiguous_arbiter, break_investigator  # noqa: E402
+from agents import itc_drafter, queue_cleaner, sla_watchdog  # noqa: E402
 from ingest import load as ingest_load  # noqa: E402
 from resolver_contract.types import SourceSystem  # noqa: E402
 from service.pipeline import run_pipeline  # noqa: E402
@@ -55,9 +57,15 @@ from store.queries import (get_run, line_outcome, open_breaks,  # noqa: E402
                             row_history, runs_for_dataset)
 
 FLAGSHIP_DIR = ROOT / "corpus" / "datasets" / "A20_B50_Cmax"
+#: The flagship carries zero itc_risk-flagged breaks (confirmed, DECISIONS
+#: Sec.91's GST panel) -- a second, real dataset known to carry some
+#: (Sec.95's own test fixture) is loaded ONLY for the ITC Drafter preview,
+#: never mixed into any other panel's numbers.
+ITC_EXAMPLE_DIR = ROOT / "corpus" / "datasets" / "A10_B100_Cmax"
 TEMPLATE_PATH = ROOT / "dashboard" / "web" / "template.html"
 APP_JS_PATH = ROOT / "dashboard" / "web" / "app.js"
 LOGO_PATH = ROOT / "dashboard" / "web" / "logo_lockup.png"
+AI_ORB_PATH = ROOT / "aibutton.png"
 OUT_PATH = ROOT / "dashboard" / "index.html"
 DASHBOARD_DATA_PATH = ROOT / "dashboard" / "data.json"
 ORACLE_RESULTS_PATH = ROOT / "corpus" / "oracle_results.json"
@@ -342,6 +350,136 @@ def build_stability_panel(conn, dataset_name: str, run_metas: list[dict]) -> dic
     )
 
 
+#: One line per agent, taken from the real module's own docstring at build
+#: time (`module.__doc__.strip().splitlines()[0]`) rather than retyped here,
+#: so this list cannot drift from what `agents/` actually says about itself.
+_AGENT_MODULES = [
+    ("chat_answerer", None, "read-only"),
+    ("sla_watchdog", sla_watchdog, "read-only"),
+    ("queue_cleaner", queue_cleaner, "read-only"),
+    ("break_investigator", break_investigator, "write-capable, requires approval"),
+    ("ambiguous_arbiter", ambiguous_arbiter, "write-capable, requires approval"),
+    ("itc_drafter", itc_drafter, "write-capable, requires approval"),
+]
+_CHAT_ANSWERER_DESCRIPTION = (
+    "Answers questions about this run's real, already-persisted output. "
+    "This panel IS that agent -- ask it anything.")
+
+
+def build_agents_panel(conn, run_id: str, itc_conn, itc_run_id: str) -> list[dict]:
+    """Real metadata plus one real, illustrative, READ-ONLY preview per
+    agent -- computed here at build time against the same persisted run
+    every other panel uses, never a live call from the static page (this
+    export has no running `service/`, per DECISIONS.md Sec.90's own
+    rejected-alternative). The three write-capable agents' `propose`/
+    `record_resolution` functions are never called here; only their
+    `gather_*`/`present` functions, which touch nothing."""
+    def first_sentence(doc: str) -> str:
+        # The real module docstring's opening sentence, unwrapped -- not a
+        # hard cut at line 1, which can land mid-sentence on a wrapped
+        # docstring (several of these modules wrap their first sentence).
+        text = " ".join(doc.strip().split("\n\n")[0].split())
+        return text.split(". ")[0].rstrip(".") + "."
+
+    agents = []
+    for name, module, mode in _AGENT_MODULES:
+        description = (_CHAT_ANSWERER_DESCRIPTION if module is None
+                        else first_sentence(module.__doc__))
+        preview = None
+
+        if name == "sla_watchdog":
+            escalations = sla_watchdog.build_escalations(conn, run_id)
+            preview = {
+                "kind": "sla_watchdog",
+                "count": len(escalations),
+                "examples": [
+                    {"reason": e.reason, "age_bucket": e.age_bucket, "level": e.level,
+                     "owner": e.owner, "count": e.count}
+                    for e in escalations[:3]
+                ],
+            }
+        elif name == "queue_cleaner":
+            grouped = queue_cleaner.group_carry_forward(conn, run_id)
+            preview = {
+                "kind": "queue_cleaner",
+                "total": grouped["total"],
+                "provable_within_window": len(grouped["provable_within_window"]),
+                "not_provable_within_window": len(grouped["not_provable_within_window"]),
+            }
+        elif name == "break_investigator":
+            row = conn.execute(
+                "SELECT row_id FROM row_outcomes WHERE run_id = ? AND "
+                "disposition = 'OpenBreak' AND reason = 'unexplained' LIMIT 1",
+                (run_id,)).fetchone()
+            if row is not None:
+                try:
+                    facts = break_investigator.gather_case_facts(conn, run_id, row["row_id"])
+                    case_file = break_investigator.draft_case_file(facts)
+                    preview = {"kind": "break_investigator", "row_id": row["row_id"],
+                               "case_file": case_file}
+                except break_investigator.NotInvestigable:
+                    pass
+        elif name == "ambiguous_arbiter":
+            row = conn.execute(
+                "SELECT bank_index FROM line_outcomes WHERE run_id = ? AND "
+                "kind = 'Ambiguous' LIMIT 1", (run_id,)).fetchone()
+            if row is not None:
+                presentation = ambiguous_arbiter.present(conn, run_id, row["bank_index"])
+                preview = {"kind": "ambiguous_arbiter", "bank_index": row["bank_index"],
+                           "candidate_count": presentation["candidate_count"],
+                           "complete": presentation["complete"]}
+        elif name == "itc_drafter":
+            flagged = itc_conn.execute(
+                "SELECT row_id, itc_risk FROM row_outcomes WHERE run_id = ? AND "
+                "disposition = 'OpenBreak' AND itc_risk IS NOT NULL",
+                (itc_run_id,)).fetchall()
+            example_row_id = next(
+                (r["row_id"] for r in flagged if r["row_id"] in r["itc_risk"].split(",")), None)
+            if example_row_id is not None:
+                facts = itc_drafter.gather_grounds(itc_conn, itc_run_id, example_row_id)
+                preview = {"kind": "itc_drafter", "row_id": example_row_id,
+                           "grounds": facts["grounds"],
+                           "dataset": "A10_B100_Cmax (a different real dataset -- "
+                                      "the flagship carries no itc_risk finding)"}
+
+        agents.append(dict(name=name, description=description, mode=mode, preview=preview))
+    return agents
+
+
+#: Grounded in real, checkable code state -- never a claim about a live
+#: integration this repo does not have. `monogram` replaces a brand logo
+#: image deliberately: this repo has no license to reproduce Zoho's, SAP's,
+#: or Tally's actual trademarked artwork, and a self-drawn approximation of
+#: one would be exactly the kind of unearned specificity CLAUDE.md's
+#: evidence discipline warns against.
+CONNECTORS = [
+    dict(name="SFTP", monogram="SF", status="available",
+         detail="transport/sftp.py -- pluggable, offline-testable, refuses a live "
+                "connection without INGEST_TRANSPORT_ALLOW_LIVE=1"),
+    dict(name="S3", monogram="S3", status="available",
+         detail="transport/s3.py -- same non-production guard as SFTP "
+                "(transport/credentials.py)"),
+    dict(name="Razorpay API", monogram="RP", status="available",
+         detail="the recon_combined envelope ({entity, count, items}) is already "
+                "what ingest/formats/jsonl.py parses -- confirmed against a real "
+                "captured TEST MODE response, spike/raw/008_rest_recon_combined_"
+                "current_month.json (DECISIONS Sec.96)"),
+    dict(name="GSTR-2B / GST Portal", monogram="GST", status="available",
+         detail="ingest/schema.py::GSTR2B_ROLES already resolves a portal export's "
+                "12 columns"),
+    dict(name="Zoho Books", monogram="Z", status="planned",
+         detail="no real Zoho export sample exists in this repo to build an "
+                "adapter against responsibly (DECISIONS Sec.96)"),
+    dict(name="Tally", monogram="T", status="planned",
+         detail="same reason as Zoho Books -- deferred, not built"),
+    dict(name="SAP / NetSuite", monogram="SAP", status="planned",
+         detail="named High effort in the original proposal; deferred"),
+    dict(name="Email attachment", monogram="@", status="planned",
+         detail="requires a live Gmail/Outlook credential this environment does "
+                "not hold"),
+]
+
+
 def main() -> int:
     dataset = ingest_load(FLAGSHIP_DIR)
 
@@ -371,6 +509,13 @@ def main() -> int:
         run_metas = [get_run(conn, rid) for rid in run_ids]
         gst = build_gst_panel(FLAGSHIP_DIR, conn, run_ids)
         stability = build_stability_panel(conn, "A20_B50_Cmax", run_metas)
+
+        # A second, real dataset, only for the ITC Drafter agent preview
+        # (see ITC_EXAMPLE_DIR's own comment above) -- never touches any
+        # other panel's numbers.
+        itc_conn = connect(Path(tmp) / "settlr_itc_example.db")
+        itc_run_id = run_pipeline(ITC_EXAMPLE_DIR, itc_conn, cap=40, time_budget=5.0)
+        agents_panel = build_agents_panel(conn, run_id, itc_conn, itc_run_id)
 
     dashboard_data = json.loads(DASHBOARD_DATA_PATH.read_text())
     entities = build_entities()
@@ -422,6 +567,8 @@ def main() -> int:
         trust=build_trust_panel(dashboard_data),
         gst=gst,
         stability=stability,
+        agents=agents_panel,
+        connectors=CONNECTORS,
     )
 
     template = TEMPLATE_PATH.read_text()
@@ -431,12 +578,14 @@ def main() -> int:
 
     import base64
     logo_b64 = base64.b64encode(LOGO_PATH.read_bytes()).decode()
+    ai_orb_b64 = base64.b64encode(AI_ORB_PATH.read_bytes()).decode()
     app_js = APP_JS_PATH.read_text()
 
     output = template.replace(
         "<!--__SETTLR_DATA__-->",
         f"<script>window.SETTLR_DATA = {injected};</script>")
     output = output.replace("__LOGO_B64__", logo_b64)
+    output = output.replace("__AI_ORB_B64__", ai_orb_b64)
     output = output.replace("__APP_JS__", app_js)
     OUT_PATH.write_text(output)
     print(f"wrote {OUT_PATH} ({len(output):,} bytes, {len(lines)} lines, "

@@ -6350,3 +6350,110 @@ Modified: `service/api.py` (two new read-only routes, one new HTML route),
 `store/queries.py` (`line_summaries`, `sources_for_run`, additive only).
 Nothing under `resolver/`, `resolver_contract/`, `matching/`, `engine/`, or
 any frozen dataset path touched.
+
+## 97. Settlr dashboard: an animated AI-orb chat panel replacing the text search bar, real "/" agent previews, and a connectors page behind the avatar menu -- 2026-09-04
+
+**Request.** Replace the top search bar with `aibutton.png` (an existing
+brand asset, untracked, contributed by a parallel session this repo shares --
+using it as a static image asset does not touch that session's own work),
+animate it, open a right-side chat panel on click that answers questions
+with cited sources, support "/agent_name" to query or preview any of the six
+real agents (Sec.94-95), and put a connectors catalog (Zoho etc.) behind the
+existing "CF" avatar.
+
+**The static-file constraint, restated and honored.** This dashboard is
+still the build-time-baked single file `Sec.90` committed to: no live
+`service/` runs when this page is opened, by design (`Sec.90`'s own
+rejected-alternative: "wiring this to a live `service/api.py` fetch"). A
+literal "chat with a live agent" would need a running backend and, for
+Claude-backed agents, real API spend this environment does not have
+configured. So "running" an agent from this panel means something specific
+and honest: `dashboard/build_dashboard.py::build_agents_panel` calls each
+agent's real, READ-ONLY functions (`sla_watchdog.build_escalations`,
+`queue_cleaner.group_carry_forward`, `break_investigator.gather_case_facts`
++ `draft_case_file`, `ambiguous_arbiter.present`, `itc_drafter.gather_grounds`)
+against the SAME persisted run every other panel uses, at BUILD time, and
+embeds one real illustrative result per agent. The three write-capable
+agents' `propose`/`record_resolution` functions are never called here --
+this export has no database to write into. The panel labels every preview
+"Real preview" rather than implying a live run just happened.
+
+**Descriptions are extracted, not retyped.** Each agent's one-line
+description in the panel is `module.__doc__`'s own first sentence
+(`first_sentence()`, joining wrapped lines and splitting on the real first
+". "), so the panel cannot drift from what `agents/` actually says about
+itself the way a hand-copied string could.
+
+**One real dataset gap, handled honestly, not smoothed over.** The flagship
+entity (`A20_B50_Cmax`) carries zero `itc_risk`-flagged rows (Sec.91's own
+GST panel finding). Rather than fabricate one or silently show nothing, the
+ITC Drafter preview runs against a SECOND real dataset
+(`A10_B100_Cmax`, already used as the confirmed-flagged fixture in Sec.95's
+own tests) inside the same build, in a separate connection, and the preview
+explicitly states this is a different dataset and why.
+
+**Sources are real citations, not decoration.** `domainAnswer()`'s branches
+each now return a `sources` array -- the literal file/table the answer
+came from (`corpus/oracle_results.json`, `gstr2b.csv (flagship entity)`,
+specific run ids, `resolver_contract/types.py`) -- rendered as clickable
+chips in the chat thread. Clicking one jumps to the real page/drilldown the
+citation names, exactly like every other cross-reference already in this
+dashboard.
+
+**The Matching-page grid filter moved off the global topbar onto the
+Matching page itself**, since filtering a grid is a property of that view,
+not a site-wide command. The underlying filter logic
+(`cmdFilter`/`lineMatchesFilter`/`visibleLines`, including the substring-
+collision fix from Sec.91) is untouched -- only the DOM it's wired to moved.
+
+**Connectors, grounded in code state, not brand assets.** Each connector
+card cites the real file (`transport/sftp.py`, `ingest/schema.py::GSTR2B_ROLES`)
+or the real deferral reason (Sec.96) instead of a logo image: this repo has
+no license to reproduce Zoho's, SAP's, or Tally's actual trademarked
+artwork, and a self-drawn approximation would be exactly the kind of
+unearned specificity this repo's evidence discipline exists to refuse. A
+"planned" connector's button is genuinely disabled, not a decoy that
+pretends to redirect somewhere real.
+
+**Bug caught only by testing in a real browser, not by reading the CSS:**
+the orb's first animation draft used a continuously-animated `filter:blur()`
+on a spinning conic-gradient pseudo-element plus `filter:drop-shadow()` in
+the breathing keyframe. This hung headless screenshot capture during this
+feature's own Chrome verification (confirmed NOT a page hang -- `read_page`
+and direct JS execution both worked throughout; only paint/composite
+capture stalled). Rewritten to animate `transform`/`box-shadow` only, which
+the compositor thread handles far more cheaply -- the same category of fix
+CSS performance guidance always gives, arrived at here by hitting the
+actual failure rather than pre-emptively avoiding `filter`.
+
+**A second bug, caught by my own isolation test working correctly.**
+`tests/test_agent_isolation.py`'s live-import-graph check originally
+forbade `resolver_contract` from appearing ANYWHERE in `agents/`'s
+transitive import closure -- but `store.queries`/`store.approvals` (which
+`build_agents_panel` and every agent import) legitimately import
+`resolver_contract.types` themselves, so the check was permanently red for
+a correct architecture, not signalling a real violation. Split into two
+checks: the per-file AST test still forbids `agents/*.py` from ever writing
+`import resolver_contract` itself (unchanged, still correct); a new,
+narrower `TRANSITIVELY_FORBIDDEN = ("resolver", "matching", "engine")`
+governs what must never be reachable even indirectly, and a new
+`test_resolver_contract_is_legitimately_reachable_only_through_store`
+documents the distinction so it isn't reintroduced by accident.
+
+**Verified live**, not just built and eyeballed: a real server, the orb
+click, a real free-text question with a working source-chip jump, the "/"
+autocomplete populated with all six real agent names, a real agent preview
+card (`/sla_watchdog` showing this run's actual 5 escalations with real
+counts and owners, confirmed via `innerHTML`, not just the accessibility
+tree's truncated summary), the avatar menu, the Connectors page (available
+vs. planned cards, scrolled and read in full), and the Matching page's
+relocated filter (the "unmatched" chip narrowing 20 lines to the 10 real
+`Unresolved` ones). Console clean throughout.
+
+**Scope.** Modified: `dashboard/build_dashboard.py` (new
+`build_agents_panel`/`CONNECTORS`, new imports from `agents/`),
+`dashboard/web/template.html`, `dashboard/web/app.js`,
+`tests/test_agent_isolation.py` (bug fix, not new scope). `dashboard/index.html`
+regenerated. Nothing under `resolver/`, `resolver_contract/`, `matching/`,
+`engine/`, or any frozen dataset path touched. Full suite green after the
+isolation-test fix.

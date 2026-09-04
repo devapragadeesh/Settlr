@@ -943,12 +943,16 @@
           `${entity.verified} verified, ${entity.open_breaks} open breaks of ${entity.bank_lines} bank lines.`,
         sub: entity.passed ? "Passed every oracle gate." : "Failed at least one oracle gate.",
         page: "close", onOpen: () => openEntityDrilldown(entity),
+        sources: [{ label: "corpus/oracle_results.json", page: "close" }],
       };
     }
 
     for (const [term, def] of Object.entries(GLOSSARY)) {
       if (q.includes("what is " + term) || q.includes("what does " + term) || q.includes("define " + term) || q.trim() === term) {
-        return { headline: def, sub: "A real term from Settlr's outcome vocabulary — not a paraphrase." };
+        return {
+          headline: def, sub: "A real term from Settlr's outcome vocabulary — not a paraphrase.",
+          sources: [{ label: "resolver_contract/types.py" }],
+        };
       }
     }
 
@@ -958,7 +962,9 @@
         headline: `Reconciliation health is ${h.on_determinable_pct.toFixed(1)}% on determinable lines — ` +
           `${fmtNum(h.answered)} of ${fmtNum(h.determinable)} answered, ${h.of_all_lines_pct.toFixed(1)}% of all ` +
           `${fmtNum(h.settlement_lines)} settlement lines across ${h.datasets} entities.`,
-        sub: "Click the health score card's ↗ for the full scope-by-scope breakdown.", page: "overview",
+        sub: "Click a source below for the full scope-by-scope breakdown.", page: "overview",
+        onOpen: openHealthDetail,
+        sources: [{ label: "dashboard/data.json:coverage.all", onOpen: openHealthDetail }],
       };
     }
 
@@ -969,6 +975,7 @@
         headline: `${D.entities.length} entities: ${counts.certified || 0} certified, ${counts.in_progress || 0} in progress, ` +
           `${counts.awaiting_approval || 0} awaiting approval, ${counts.not_started || 0} not started.`,
         sub: "Open the Entities page for the full sortable table.", page: "entities",
+        sources: [{ label: "corpus/oracle_results.json (30 entities)", page: "entities" }],
       };
     }
 
@@ -980,6 +987,7 @@
           `${a["61-90"] || 0} at 61–90, ${a["90+"] || 0} at 90+.`,
         sub: overSixty > 0 ? `${overSixty} breaks past 60 days are real accounting risk.` : "Nothing past 60 days right now.",
         page: "overview",
+        sources: [{ label: "store/queries.py::open_breaks (live resolver run)", page: "overview" }],
       };
     }
 
@@ -988,6 +996,7 @@
       return {
         headline: `${D.ingestion.length} source feeds connected, ${fmtNum(totalRows)} rows ingested from the flagship entity's last local pull.`,
         sub: D.ingestion.map((f) => f.label).join(", "), page: "ingestion",
+        sources: D.ingestion.map((f) => ({ label: f.label, page: "ingestion" })),
       };
     }
 
@@ -997,6 +1006,7 @@
         headline: `Naive GROUP BY: ${t.naive.wrong}/${t.naive.attempted} wrong. Frozen cascade: ${t.frozen.wrong}/${t.frozen.attempted} wrong. ` +
           `This resolver: ${t.resolver.wrong}/${t.resolver.attempted} wrong — same oracle, same 30 datasets.`,
         sub: "Open the Trust page for the full comparison.", page: "trust",
+        sources: [{ label: "corpus/THREE_SYSTEMS.md", page: "trust" }],
       };
     }
 
@@ -1006,6 +1016,7 @@
         headline: `${g.invoices} supplier invoices on file, ${g.irn_present} carry an IRN, ${g.filed} filed by the supplier — ` +
           `${g.flagged_at_risk} flagged at ITC risk across ${g.runs_checked} runs.`,
         sub: "GST evidence can annotate a break but never license a composition — see the Trust page.", page: "trust",
+        sources: [{ label: "gstr2b.csv (flagship entity)", page: "trust" }],
       };
     }
 
@@ -1016,6 +1027,7 @@
           ? `Identical outcome on every bank line across all ${s.runs.length} independent runs — genuinely reproducible.`
           : `${s.distinct_fingerprints} distinct outcome sets across ${s.runs.length} runs.`,
         sub: "Four different (cap, time_budget) points, same frozen entity.", page: "trust",
+        sources: s.runs.map((r) => ({ label: `run ${r.run_id}… (cap=${r.cap})`, page: "trust" })),
       };
     }
 
@@ -1053,77 +1065,301 @@
     return { headline, sub };
   }
 
-  let lastDomainAnswer = null;
-
-  function renderAnswer() {
-    const query = cmdFilter.trim();
-    const answerEl = $("#cmdAnswer");
-    const subEl = $("#cmdSub");
-    answerEl.innerHTML = "";
-    subEl.innerHTML = "";
-
-    const domain = query ? domainAnswer(query) : null;
-    lastDomainAnswer = domain;
-
-    if (domain) {
-      answerEl.append(domain.headline + " ");
-      if (domain.page) {
-        answerEl.append(el("span", {
-          class: "accent", style: "cursor:pointer;text-decoration:underline;text-underline-offset:3px",
-          onclick: () => {
-            if (domain.onOpen) domain.onOpen();
-            else { switchPage(domain.page); history.replaceState(null, "", "#" + domain.page); }
-            closeHintRef && closeHintRef();
-          },
-        }, "Open →"));
-      }
-      subEl.textContent = domain.sub || "";
-      return;
-    }
-
-    const lines = visibleLines();
-    const { headline, sub } = generateAnswer(lines, query);
-    answerEl.textContent = headline;
-    subEl.textContent = sub;
-  }
-
-  let closeHintRef = null;
-
+  /* ============================== MATCHING-PAGE FILTER ============================== */
+  // Grid filtering lives on the Matching page itself now -- it filters a
+  // view, so it belongs on that view. Domain Q&A moved to the AI panel
+  // below, which is a separate concern (a conversation, not a grid control).
   function applyFilters() {
-    // A domain answer isn't about bank lines -- don't touch the grid or make
-    // it look like the search emptied it.
-    if (!(cmdFilter.trim() && domainAnswer(cmdFilter.trim()))) {
-      renderMatchColumns();
-    }
-    renderAnswer();
-    $("#cmdResultCount").textContent = visibleLines().length + " of " + D.lines.length;
+    renderMatchColumns();
+    $("#mFilterResultCount").textContent = visibleLines().length + " of " + D.lines.length;
   }
-  function setupCommandBar() {
-    const input = $("#cmdInput");
-    const hint = $("#cmdHint");
-    const cmdbar = $(".cmdbar");
-    const openHint = () => { renderAnswer(); hint.classList.add("show"); };
-    const closeHint = () => hint.classList.remove("show");
-    closeHintRef = closeHint;
-
-    input.addEventListener("focus", openHint);
+  function setupMatchingFilter() {
+    const input = $("#mFilterInput");
     input.addEventListener("input", () => { cmdFilter = input.value; applyFilters(); });
-    $$(".chip", hint).forEach((chip) => chip.addEventListener("mousedown", (e) => {
-      e.preventDefault();
-      if (chip.dataset.q === "clear") { input.value = ""; cmdFilter = ""; agingFilter = null; $$(".aging-bar").forEach(b=>b.classList.remove("active")); }
-      else { input.value = chip.dataset.q; cmdFilter = chip.dataset.q; }
+    $$(".mfilter-chip").forEach((chip) => chip.addEventListener("click", () => {
+      if (chip.dataset.q === "clear") {
+        input.value = ""; cmdFilter = ""; agingFilter = null;
+        $$(".aging-bar").forEach((b) => b.classList.remove("active"));
+      } else {
+        input.value = chip.dataset.q; cmdFilter = chip.dataset.q;
+      }
       applyFilters();
     }));
-    // Belt-and-braces: close on any click outside the command bar (covers nav
-    // link clicks, section scrolls, and any case a plain blur doesn't fire in
-    // time), not just on input blur.
-    document.addEventListener("click", (e) => {
-      if (!cmdbar.contains(e.target)) closeHint();
+    applyFilters();
+  }
+
+  /* ============================== AI PANEL (Ask Settlr) ============================== */
+  // Composed live from the actual filtered set on every keystroke -- no
+  // canned strings, no server round-trip.
+  function generateAnswer(lines, query) {
+    if (!lines.length) {
+      return { headline: `No bank lines match "${query}."`, sub: "Try a different question.", sources: [] };
+    }
+    const byKind = {};
+    let total = 0;
+    let oldest = null;
+    lines.forEach((l) => {
+      byKind[l.kind] = (byKind[l.kind] || 0) + 1;
+      total += Math.abs(l.amount_paise);
+      if (!oldest || l.value_date < oldest) oldest = l.value_date;
     });
-    $$(".navlinks a").forEach((link) => link.addEventListener("click", closeHint));
+    const breakdown = Object.entries(byKind)
+      .map(([k, n]) => `${n} ${KIND_WORD[k] || k.toLowerCase()}`)
+      .join(", ");
+    const headline = `${lines.length} line${lines.length === 1 ? "" : "s"} match — ${breakdown}, totaling ${inr(total)}.`;
+    const sub = oldest ? `Earliest value date in this set: ${oldest}.` : "";
+    return {
+      headline, sub, page: "matching",
+      sources: lines.slice(0, 5).map((l) => ({
+        label: `bank line #${l.index} (${l.kind})`, page: "matching",
+        onOpen: () => { switchPage("matching"); selectedLineIndex = l.index; renderMatchColumns(); openLineDrilldown(l); },
+      })),
+    };
+  }
+
+  const AGENT_ORDER = ["chat_answerer", "sla_watchdog", "queue_cleaner",
+    "break_investigator", "ambiguous_arbiter", "itc_drafter"];
+  const aiMessages = [];
+
+  function sourceChip(source) {
+    const chip = el("span", {
+      class: "source-chip",
+      onclick: () => {
+        if (source.onOpen) source.onOpen();
+        else if (source.page) { switchPage(source.page); history.replaceState(null, "", "#" + source.page); }
+      },
+    }, el("svg", { width: "9", height: "9", viewBox: "0 0 24 24", fill: "none" },
+      el("path", { d: "M7 17L17 7M17 7H9M17 7V15", stroke: "currentColor", "stroke-width": "2.5", "stroke-linecap": "round" })),
+      source.label);
+    return chip;
+  }
+
+  function renderAgentPreviewCard(agent) {
+    const card = el("div", { class: "ai-agent-card" },
+      el("div", { class: "name" }, "/" + agent.name),
+      el("div", { class: "mode" }, agent.mode));
+    const previewEl = el("div", { class: "preview" });
+    card.appendChild(previewEl);
+
+    if (!agent.preview) {
+      previewEl.textContent = agent.name === "chat_answerer"
+        ? "This is what you're using right now — ask it anything below."
+        : "No real example to preview against this run's data right now.";
+      return card;
+    }
+    const p = agent.preview;
+    if (p.kind === "sla_watchdog") {
+      previewEl.innerHTML = `Real preview: <b>${p.count}</b> escalation(s) this run would send. ` +
+        `First ${p.examples.length}: ` + p.examples.map((e) =>
+          `<b>${e.count}</b> ${e.reason} (${e.age_bucket}d, ${e.level}, owner: ${e.owner})`).join("; ") + ".";
+    } else if (p.kind === "queue_cleaner") {
+      previewEl.innerHTML = `Real preview: <b>${p.total}</b> carry-forward break(s), ` +
+        `<b>${p.provable_within_window}</b> provable within the observed window, ` +
+        `<b>${p.not_provable_within_window}</b> not. Surfaced only — nothing auto-closed.`;
+    } else if (p.kind === "break_investigator") {
+      previewEl.innerHTML = `Real preview on <b>${p.row_id}</b>: "${p.case_file}"`;
+    } else if (p.kind === "ambiguous_arbiter") {
+      previewEl.innerHTML = `Real preview on bank line <b>#${p.bank_index}</b>: ` +
+        `<b>${p.candidate_count}</b> candidates${p.complete ? "" : " (sampled, incomplete)"} — a human must choose.`;
+    } else if (p.kind === "itc_drafter") {
+      previewEl.innerHTML = `Real preview on <b>${p.row_id}</b> (${p.dataset}): grounds ${p.grounds.join(", ")}.`;
+    }
+    return card;
+  }
+
+  function renderAiThread() {
+    const thread = $("#aiThread");
+    thread.innerHTML = "";
+    if (!aiMessages.length) {
+      thread.appendChild(el("div", { class: "ai-empty", id: "aiEmpty" },
+        "Ask about unmatched lines, entities, health, aging, GST, or trust — every ",
+        "answer cites the real record it came from.", el("br"), el("br"),
+        "Type ", el("b", { style: "color:var(--text-2)" }, "/"), " to query or run one of Settlr's agents."));
+      return;
+    }
+    aiMessages.forEach((m) => {
+      if (m.role === "user") {
+        thread.appendChild(el("div", { class: "ai-msg user" }, m.text));
+        return;
+      }
+      const bubble = el("div", { class: "bubble" }, m.headline);
+      if (m.sub) bubble.appendChild(el("div", { style: "color:var(--text-3);font-size:11.5px;margin-top:6px;" }, m.sub));
+      if (m.agentCard) bubble.appendChild(m.agentCard);
+      if (m.sources && m.sources.length) {
+        bubble.appendChild(el("div", { class: "sources" }, m.sources.map(sourceChip)));
+      }
+      thread.appendChild(el("div", { class: "ai-msg assistant" }, bubble));
+    });
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  function pushMessage(msg) { aiMessages.push(msg); renderAiThread(); }
+
+  function sendAiMessage() {
+    const input = $("#aiInput");
+    const text = input.value.trim();
+    if (!text) return;
+    pushMessage({ role: "user", text });
+    input.value = "";
+    input.style.height = "auto";
+    hideAgentMenu();
+
+    if (text.startsWith("/")) {
+      const [rawName, ...rest] = text.slice(1).split(/\s+/);
+      const agent = D.agents.find((a) => a.name === rawName);
+      if (!agent) {
+        pushMessage({ role: "assistant",
+          headline: `No agent named "${rawName}". Available: ${AGENT_ORDER.map((n) => "/" + n).join(", ")}`,
+          sources: [] });
+        return;
+      }
+      if (agent.name === "chat_answerer" && rest.length) {
+        answerFreeText(rest.join(" "));
+        return;
+      }
+      pushMessage({ role: "assistant", headline: agent.description,
+        agentCard: renderAgentPreviewCard(agent), sources: [] });
+      return;
+    }
+    answerFreeText(text);
+  }
+
+  function answerFreeText(query) {
+    const domain = domainAnswer(query);
+    if (domain) {
+      pushMessage({ role: "assistant", headline: domain.headline, sub: domain.sub,
+        sources: domain.sources || [] });
+      return;
+    }
+    const filtered = D.lines.filter((l) => {
+      const saved = cmdFilter;
+      cmdFilter = query;
+      const match = lineMatchesFilter(l);
+      cmdFilter = saved;
+      return match;
+    });
+    const { headline, sub, sources } = generateAnswer(filtered, query);
+    pushMessage({ role: "assistant", headline, sub, sources: sources || [] });
+  }
+
+  function renderAgentMenu(filterText) {
+    const menu = $("#agentMenu");
+    const term = filterText.slice(1).toLowerCase();
+    const matches = AGENT_ORDER
+      .map((n) => D.agents.find((a) => a.name === n))
+      .filter((a) => a && a.name.startsWith(term));
+    if (!matches.length) { menu.classList.remove("show"); return; }
+    menu.innerHTML = "";
+    matches.forEach((a) => {
+      const item = el("div", { class: "agent-menu-item",
+        onclick: () => { $("#aiInput").value = "/" + a.name + " "; $("#aiInput").focus(); hideAgentMenu(); } },
+        el("div", { class: "n" }, "/" + a.name),
+        el("div", { class: "d" }, a.description));
+      menu.appendChild(item);
+    });
+    menu.classList.add("show");
+  }
+  function hideAgentMenu() { $("#agentMenu").classList.remove("show"); }
+
+  function pulseOrb() {
+    const btn = $("#aiOrbBtn");
+    btn.classList.remove("pulsing");
+    void btn.offsetWidth; // restart the CSS animation
+    btn.classList.add("pulsing");
+  }
+
+  function openAiPanel() {
+    pulseOrb();
+    $("#aiPanel").classList.add("show");
+    $("#aiOrbBtn").setAttribute("aria-expanded", "true");
+    renderAiThread();
+    $("#aiInput").focus();
+  }
+  function closeAiPanel() {
+    $("#aiPanel").classList.remove("show");
+    $("#aiOrbBtn").setAttribute("aria-expanded", "false");
+    hideAgentMenu();
+  }
+
+  function setupAiPanel() {
+    const orb = $("#aiOrbWrap");
+    const input = $("#aiInput");
+    orb.addEventListener("click", () => {
+      const panel = $("#aiPanel");
+      panel.classList.contains("show") ? closeAiPanel() : openAiPanel();
+    });
+    $("#aiPanelClose").addEventListener("click", closeAiPanel);
+    $("#aiSendBtn").addEventListener("click", sendAiMessage);
+    input.addEventListener("input", () => {
+      input.style.height = "auto";
+      input.style.height = Math.min(input.scrollHeight, 96) + "px";
+      if (input.value.startsWith("/")) renderAgentMenu(input.value);
+      else hideAgentMenu();
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendAiMessage(); }
+      if (e.key === "Escape") { hideAgentMenu(); }
+    });
     document.addEventListener("keydown", (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); input.focus(); openHint(); }
-      if (e.key === "Escape") { closeDrilldown(); closeHint(); closeNotifPanel(); }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openAiPanel(); }
+      if (e.key === "Escape") { closeDrilldown(); closeAiPanel(); closeNotifPanel(); closeAvatarMenu(); }
+    });
+  }
+
+  /* ============================== AVATAR MENU ============================== */
+  function closeAvatarMenu() {
+    $("#avatarMenu").classList.remove("show");
+    $("#avatarBtn").setAttribute("aria-expanded", "false");
+  }
+  function setupAvatarMenu() {
+    const btn = $("#avatarBtn");
+    const menu = $("#avatarMenu");
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const willShow = !menu.classList.contains("show");
+      menu.classList.toggle("show", willShow);
+      btn.setAttribute("aria-expanded", String(willShow));
+    });
+    $$(".avatar-menu-item").forEach((item) => item.addEventListener("click", () => {
+      closeAvatarMenu();
+      if (item.dataset.page) { switchPage(item.dataset.page); history.replaceState(null, "", "#" + item.dataset.page); }
+      else if (item.dataset.action === "profile") showToast("Profile — not wired up in this demo (session only)");
+      else if (item.dataset.action === "settings") showToast("Settings — not wired up in this demo (session only)");
+      else if (item.dataset.action === "signout") showToast("Sign out — not wired up in this demo (session only)");
+    }));
+    document.addEventListener("click", (e) => {
+      if (!menu.contains(e.target) && e.target !== btn) closeAvatarMenu();
+    });
+  }
+
+  /* ============================== CONNECTORS PAGE ============================== */
+  function renderConnectors() {
+    const grid = $("#connectorsGrid");
+    grid.innerHTML = "";
+    D.connectors.forEach((c) => {
+      const available = c.status === "available";
+      const card = el("div", { class: "connector-card" + (available ? "" : " planned") },
+        el("div", { class: "connector-head" },
+          el("div", { class: "connector-monogram" }, c.monogram),
+          el("div", {},
+            el("div", { class: "connector-name" }, c.name),
+            el("div", { class: "connector-status" },
+              el("span", {
+                class: "status-pill",
+                style: available
+                  ? "background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);"
+                  : "background:var(--slate-bg);color:var(--slate);border:1px solid var(--border-strong);",
+              }, available ? "Available" : "Planned")))),
+        el("div", { class: "connector-detail" }, c.detail));
+      const btn = el("button", {
+        class: "connector-btn",
+        onclick: () => showToast(available
+          ? `${c.name}: ${c.detail}`
+          : `${c.name} isn't built yet — ${c.detail}`),
+      }, available ? "Configure →" : "Not available");
+      if (!available) btn.disabled = true;
+      card.appendChild(btn);
+      grid.appendChild(card);
     });
   }
 
@@ -1201,7 +1437,7 @@
   }
 
   /* ============================== PAGE SWITCHING ============================== */
-  const PAGES = ["overview", "close", "entities", "ingestion", "trust", "matching"];
+  const PAGES = ["overview", "close", "entities", "ingestion", "trust", "matching", "connectors"];
 
   function switchPage(name) {
     if (!PAGES.includes(name)) name = "overview";
@@ -1216,6 +1452,7 @@
         e.preventDefault();
         switchPage(link.dataset.page);
         history.replaceState(null, "", "#" + link.dataset.page);
+        closeAiPanel(); closeNotifPanel(); closeAvatarMenu();
       });
     });
     $(".brand").addEventListener("click", (e) => {
@@ -1247,7 +1484,10 @@
   renderGst();
   renderStability();
   renderMatchingGrid();
-  setupCommandBar();
+  renderConnectors();
+  setupMatchingFilter();
+  setupAiPanel();
+  setupAvatarMenu();
   setupNotifications();
   setupPageSwitching();
   $("#matchingSub").textContent =
