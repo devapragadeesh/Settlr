@@ -161,7 +161,16 @@ def test_the_strict_grammar_accepts_every_money_cell_in_the_repo():
                                 f"{path}:{column}={row[column]!r} -- tightening "
                                 f"the parser would move a published figure")
 
-    assert checked > 6000, (
+    # scale/data_* (8 large fixture dirs) is gitignored by design and only
+    # exists locally after `python3 scale/generate_scale.py` (~30 min) has
+    # been run -- a clean checkout (CI, a fresh clone) genuinely does not
+    # have it. The floor drops to what git alone guarantees rather than
+    # asserting a number no checkout can satisfy without a 30-minute build
+    # step; the anti-vacuity purpose (make sure the sweep isn't silently
+    # empty) holds at either floor.
+    scale_present = (repo_root / "scale" / "data_250").exists()
+    floor = 6000 if scale_present else 5000
+    assert checked > floor, (
         f"only {checked} money cells found; this test is meant to sweep the "
         f"whole corpus and something is not being walked")
 
@@ -284,7 +293,12 @@ def test_every_dataset_in_the_repo_loads():
         {Path(p).parent for p in glob.glob(
             str(repo_root / "**/recon_combined.json"), recursive=True)
          if ".claude" not in Path(p).parts})
-    assert len(directories) >= 45, f"only found {len(directories)} datasets"
+    # See test_the_strict_grammar_accepts_every_money_cell_in_the_repo's
+    # comment: scale/data_* (8 dirs) is gitignored by design and absent on
+    # any clean checkout until generate_scale.py has been run locally.
+    scale_present = (repo_root / "scale" / "data_250").exists()
+    floor = 45 if scale_present else 37
+    assert len(directories) >= floor, f"only found {len(directories)} datasets"
 
     failures = []
     for directory in directories:

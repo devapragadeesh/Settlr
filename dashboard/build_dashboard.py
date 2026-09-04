@@ -400,6 +400,22 @@ def build_method_breakdown(dataset, open_break_row_ids: set[str]) -> list[dict]:
     return sorted(out, key=lambda m: -m["count"])
 
 
+#: Whether a bank line carries a processor attestation is the single most
+#: important piece of context for reading the match rate, and it was
+#: missing. `Verified` REQUIRES an attestation to corroborate -- so on an
+#: entity where the processor only attests to some batches, the match rate
+#: is capped by attestation coverage, not by how good the engine is.
+#: Without this split a 50% rate reads as a failure when it is in fact the
+#: ceiling. Derived from the real evidence on each outcome, not assumed.
+def _has_attestation(entry: dict) -> bool:
+    outcome = entry.get("outcome") or {}
+    if outcome.get("__type__") == "AttestationDiscrepancy":
+        return True          # the processor DID attest; the bank contradicted it
+    warrant = outcome.get("warrant") or {}
+    return any("attested" in (ev.get("kind") or "")
+               for ev in (warrant.get("evidence") or []))
+
+
 def build_kpis(dataset, lines: list[dict], timing: dict, rows_by_id: dict,
                 aging_rows: dict, run_meta) -> dict:
     """The metrics a reconciliation product leads with, each computed from
@@ -419,7 +435,16 @@ def build_kpis(dataset, lines: list[dict], timing: dict, rows_by_id: dict,
         if raw:
             unreconciled += raw.get("amount") or raw.get("debit") or 0
 
+    attested = [e for e in lines if _has_attestation(e)]
+    unattested = len(lines) - len(attested)
+
     return dict(
+        attested_lines=len(attested),
+        unattested_lines=unattested,
+        # Of the lines that COULD be matched -- i.e. that carry a processor
+        # attestation to corroborate -- how many actually were.
+        on_attested_pct=round(100 * (verified + reconstructed) / len(attested), 1) if attested else None,
+        discrepancies=kinds.get("AttestationDiscrepancy", 0),
         # "Straight through" = matched with no human step needed at all.
         straight_through_pct=round(100 * (verified + reconstructed) / total, 1),
         # "First pass" = matched on an identifier alone, before any
@@ -910,11 +935,27 @@ def build_accounting_summary(lines: list[dict], rows_by_id: dict[str, dict]) -> 
     return dict(
         gross_paise=gross, fees_paise=fees, tax_paise=tax,
         refunds_paise=refunds, net_paise=net, net_credit_check_paise=net_credit,
+        # Double entry for a settlement RECEIVED, from the merchant's side:
+        # the processor receivable is cleared (credit), and what discharged
+        # it is split across cash actually banked, the fee taken, and the
+        # refunds netted out of the payout.
+        #
+        #   Dr Bank             net      cash that arrived
+        #   Dr Processing Fees  fees     the processor's cut, an expense
+        #   Dr Refund Liability refunds  refunds netted out reduce the liability
+        #   Cr PSP Clearing     gross    the receivable being settled
+        #
+        # net + fees + refunds == gross by construction, so this balances.
+        # The previous layout had Bank and Refund Liability on the credit
+        # side and PSP Clearing on the debit side, which put debits out by
+        # exactly 2 x fees -- caught by the balance check now run in the UI
+        # rather than by reading it, which is the whole argument for having
+        # the check.
         lines=[
-            dict(account="PSP Clearing", debit_paise=gross, credit_paise=0),
+            dict(account="Bank", debit_paise=net, credit_paise=0),
             dict(account="Processing Fees", debit_paise=fees, credit_paise=0),
-            dict(account="Refund Liability", debit_paise=0, credit_paise=refunds),
-            dict(account="Bank", debit_paise=0, credit_paise=net),
+            dict(account="Refund Liability", debit_paise=refunds, credit_paise=0),
+            dict(account="PSP Clearing", debit_paise=0, credit_paise=gross),
         ])
 
 

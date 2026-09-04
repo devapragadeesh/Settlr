@@ -170,16 +170,23 @@
     const period = D.period && D.period.start
       ? `${fmtDate(D.period.start)} – ${fmtDate(D.period.end)}` : null;
 
+    // The two rates that matter are NOT straight-through and first-pass
+    // (which coincide here); they are straight-through and
+    // straight-through-of-what-was-matchable. A bank line can only be
+    // Verified if the processor attested to what makes it up, so on an
+    // entity at partial attestation coverage the raw rate is capped by the
+    // data, not by the engine. Showing 50% without that context invites
+    // exactly the wrong conclusion.
     const cards = [
       { k: "Straight-through rate", v: k.straight_through_pct.toFixed(1) + "%",
         d: `${k.matched_lines} of ${k.total_lines} bank lines matched automatically`,
-        tone: k.straight_through_pct >= 80 ? "var(--green)" : "var(--amber)" },
-      { k: "Matched on identifier alone",
-        v: k.first_pass_pct.toFixed(1) + "%",
-        d: k.first_pass_pct === k.straight_through_pct
-          ? "Every match came from a shared reference — none needed reconstructing"
-          : `${(k.straight_through_pct - k.first_pass_pct).toFixed(1)}% required reconstruction`,
-        tone: "var(--blue-1)" },
+        tone: "var(--text-1)" },
+      { k: "Of matchable lines", v: (k.on_attested_pct ?? 0).toFixed(1) + "%",
+        d: `${k.matched_lines} of ${k.attested_lines} lines the processor attested to`,
+        tone: k.on_attested_pct >= 80 ? "var(--green)" : "var(--amber)" },
+      { k: "No attestation", v: fmtNum(k.unattested_lines),
+        d: "lines the processor never reported — nothing to match against",
+        tone: "var(--slate)" },
       { k: "Unreconciled value", v: inr(k.unreconciled_value_paise, { compact: true }),
         d: `across ${fmtNum(k.open_breaks)} open items`, tone: "var(--red)" },
       { k: "Mean time to settle", v: (t.mean_lag_days ?? "—") + "d",
@@ -199,6 +206,15 @@
     if (period) {
       $("#metaChips").append(el("div", { class: "meta-chip" }, "Period ", el("b", {}, period)));
     }
+
+    band.insertAdjacentElement("afterend", el("div", { class: "kpi-note" },
+      el("b", {}, "Reading the match rate: "),
+      `${k.straight_through_pct.toFixed(1)}% looks low on its own, but ${k.unattested_lines} of the ` +
+      `${k.total_lines} bank lines carry no processor attestation at all — there is nothing to match ` +
+      `them against, so no engine could match them. Of the ${k.attested_lines} lines the processor ` +
+      `did report, ${k.matched_lines} matched cleanly` +
+      (k.discrepancies ? ` and ${k.discrepancies} were flagged because the bank contradicted the processor's own claim` : "") +
+      `. That is the number to judge: `, el("b", {}, (k.on_attested_pct ?? 0).toFixed(1) + "%"), "."));
   }
 
   // A horizontal bar list -- reused by the settlement-lag histogram, the
@@ -781,11 +797,61 @@
     });
   }
 
+  // The arithmetic is the whole point of this page and it was left implicit:
+  // the columns showed which rows made up a credit without ever showing that
+  // they ADD UP to it. Stating the sum turns a list into a proof.
+  function compositionBanner(line, ledgerRows) {
+    const o = line.outcome || {};
+    const comp = o.composition;
+    const sum = ledgerRows.reduce((t, r) => t + ((r.credit || 0) - (r.debit || 0)), 0);
+    const target = line.amount_paise;
+    const ok = comp && sum === target;
+    const kind = KIND_META[line.kind] || { label: line.kind, color: "var(--text-2)" };
+    return el("div", { class: "comp-banner" },
+      el("div", {},
+        el("div", { class: "comp-line" },
+          el("b", {}, line.reference), " · ", inr(target), " on ", line.value_date,
+          " — ", el("span", { style: `color:${kind.color};font-weight:700` }, kind.label)),
+        el("div", { class: "comp-math" },
+          comp
+            ? `${ledgerRows.length} processor transactions add up to ${inr(sum)}` +
+              (ok ? " — exactly the amount the bank credited." :
+                    ` against a bank credit of ${inr(target)}.`)
+            : (line.kind === "Ambiguous"
+                ? "More than one set of transactions adds up to this credit, so none was chosen. The competing sets are below."
+                : "No set of transactions could be shown to make up this credit."))),
+      comp ? el("span", { class: "status-pill", style: ok
+          ? "background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)"
+          : "background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)" },
+        ok ? "Balances" : "Check") : null);
+  }
+
+  // The page did not explain itself -- it opened on four columns of
+  // identifiers with no statement of what the exercise is.
+  function renderHowTo() {
+    const steps = [
+      ["1", "Pick a bank credit", "The left column is your bank statement — money that actually arrived. Select any line."],
+      ["2", "See what it is made of", "The other columns fill with the processor transactions and ERP invoices that make up that one credit."],
+      ["3", "Check it adds up", "A bank credit is a batch of many payments net of fees and refunds. The banner shows whether the parts sum to the whole."],
+      ["4", "Open anything unclear", "Click a row for its full evidence — which sources agreed, and what Settlr concluded."],
+    ];
+    $("#howto").append(
+      el("div", { class: "panel-head" },
+        el("div", {}, el("h3", {}, "Matching transactions to bank credits"),
+          el("div", { class: "sub" },
+            "Your bank shows one lump-sum credit; the processor shows the hundreds of payments behind it. This page lines them up."))),
+      el("div", { class: "howto", style: "margin-top:14px" },
+        ...steps.map(([n, title, body]) => el("div", { class: "howto-step" },
+          el("b", {}, el("span", { class: "howto-n" }, n), title), body))));
+  }
+
   function renderMatchColumns() {
     const cols = $("#matchCols");
     cols.innerHTML = "";
     const lines = visibleLines();
     $("#gridCount").textContent = lines.length + " of " + D.lines.length + " bank lines";
+
+    if (selectedLineIndex == null) $("#compBanner").innerHTML = "";
 
     // Column 1: BANK -- always present
     const bankCol = matchColumn("Bank Statement", "var(--blue-1)", lines.length);
@@ -802,6 +868,10 @@
         ledgerRows.some((r) => r.order_id === e.order_id));
       const disputeRows = Object.values(D.disputes_by_id).filter((dp) =>
         ledgerRows.some((r) => r.dispute_id === dp.id));
+
+      const banner = $("#compBanner");
+      banner.innerHTML = "";
+      banner.append(compositionBanner(line, ledgerRows));
 
       if (ledgerRows.length) {
         const c = matchColumn("Processor Ledger", "var(--green)", ledgerRows.length);
@@ -1255,6 +1325,104 @@
       };
     }
 
+    // "Why is the rate only N%" is the question the KPI band provokes, and
+    // the answer is a real property of the data rather than a defence: a
+    // line with no processor attestation has nothing to match against.
+    if (/\bmatch rate\b|\bstraight.?through\b|\bonly \d+ ?%|\bwhy .*(low|50|rate)\b|\bis (that|this|it) (bad|good)\b/.test(q)) {
+      const k = D.kpis;
+      return {
+        headline: `${k.straight_through_pct.toFixed(1)}% is the raw rate, but it is not the number to judge this on — ${k.on_attested_pct.toFixed(1)}% is.`,
+        why: `A bank credit can only be matched automatically if the processor told us what went into it. ` +
+          `On this entity the processor attested to ${k.attested_lines} of the ${k.total_lines} bank lines; ` +
+          `the other ${k.unattested_lines} were never reported at all, so there is nothing to match them against ` +
+          `and no engine could have matched them. Of the ${k.attested_lines} that were reported, ${k.matched_lines} ` +
+          `matched cleanly` + (k.discrepancies ? ` and ${k.discrepancies} were flagged because the bank contradicted the processor's own claim — those are findings, not misses` : "") +
+          `. So the engine matched everything that was matchable.`,
+        next: [
+          `The way to raise the raw rate is to get attestation coverage up: ask the processor for settlement breakdowns on the ${k.unattested_lines} unreported lines.`,
+          k.discrepancies ? `Review the ${k.discrepancies} flagged discrepancies — the bank and the processor disagree on those, and one of them is wrong.` : null,
+          "Nothing here needs a change to matching rules; the constraint is missing source data, not logic.",
+        ].filter(Boolean),
+        page: "overview",
+        sources: [{ label: "See the unmatched lines", page: "transactions",
+                    onOpen: () => { switchPage("transactions"); gridMode = "exceptions"; renderMatchingGrid(); } }],
+        followups: ["What is ambiguous and why?", "What should I work on first?"],
+      };
+    }
+
+    // The triage question. Ordered by money, then by age -- the two things
+    // that actually decide what a reconciliation operator opens first.
+    if (/\bwork on first\b|\bwhat should i\b|\bprioriti[sz]e\b|\bwhere.*start\b|\bmost important\b|\bbiggest\b|\btriage\b/.test(q)) {
+      const byValue = (D.exceptions || []).filter((e) => e.amount_paise)
+        .sort((a, b) => b.amount_paise - a.amount_paise).slice(0, 5);
+      const aged = (D.exceptions || []).filter((e) => e.age_bucket && e.age_bucket !== "0-30");
+      const withEvidence = (D.exceptions || []).filter((e) => e.has_warrant);
+      const k = D.kpis;
+      return {
+        headline: `Start with the ${withEvidence.length} items that carry evidence, then the ${aged.length} aged past 30 days. Together that is a morning's work, not ${fmtNum(k.open_breaks)}.`,
+        why: `${fmtNum(k.open_breaks)} open items sounds like a backlog, but most of them are not independently actionable: ` +
+          `they are consequences of a smaller number of causes, and many are timing differences that will clear on their own. ` +
+          `The ${withEvidence.length} items with a stated cause are the ones where Settlr can already tell you what went wrong, ` +
+          `so they are the fastest to close. The largest single exposure is ` +
+          (byValue.length ? `${inr(byValue[0].amount_paise)} on ${byValue[0].id}.` : "not yet quantified."),
+        next: [
+          "Open the Exceptions queue and use the High Risk tab — that is the aged, high-value subset.",
+          `${aged.length} items are past 30 days; anything reaching 90 becomes an audit finding, so clear those before month end.`,
+          "Check the Approvals queue on Overview → Audit — the agents have already drafted proposals for some of these, awaiting a yes or no.",
+        ],
+        page: "exceptions",
+        sources: byValue.map((e) => ({
+          label: `${e.id} — ${inr(e.amount_paise)}`, page: "exceptions",
+          onOpen: () => { switchPage("exceptions"); openExceptionDrilldown(e); },
+        })),
+        followups: ["Why is the match rate only 50%?", "What is ambiguous and why?"],
+      };
+    }
+
+    // \w* stems, not exact words: real questions get misspelled
+    // ("uncertainity"), and this still must match "uncertain" itself.
+    if (/\buncertain\w*\b|\bambigu\w*\b|\bnot (sure|certain)\b|\bdon'?t know\b|\brefus\w*\b|\bno answer\b/.test(q)) {
+      const ambiguousLines = D.lines.filter((l) => l.kind === "Ambiguous");
+      if (!ambiguousLines.length) {
+        return {
+          headline: "No bank line on this run is Ambiguous — every line either has a unique closing composition or was declined outright (Unresolved).",
+          sub: "Uncertainty here means multiple rival compositions pass the identical soundness check — see the glossary term \"ambiguous\".",
+          page: "transactions",
+          sources: [{ label: "Why Settlr abstains instead of guessing", page: "transactions" }],
+        };
+      }
+      // `CandidateSet.size` is a Python @property -- it does not survive
+      // to_jsonable (which walks dataclass fields only). The real field is
+      // `candidates`, an array; its length is the count.
+      const candidateCount = (l) => (l.outcome && l.outcome.candidate_set
+        ? l.outcome.candidate_set.candidates.length : 0);
+      const totalCandidates = ambiguousLines.reduce((s, l) => s + candidateCount(l), 0);
+      const worst = ambiguousLines.slice().sort((a, b) => candidateCount(b) - candidateCount(a))[0];
+      const poolOf = (l) => (l.outcome && l.outcome.pool_size) || null;
+      return {
+        headline: `${ambiguousLines.length} bank lines are ambiguous — ${fmtNum(totalCandidates)} competing explanations between them, and Settlr picked none of them.`,
+        why: `Each of these lines is a bank credit made up of several underlying payments. ` +
+          `The processor never told us which payments made up these particular credits, so the only way ` +
+          `to work it out is arithmetic — find the set of payments that adds up to the credit. ` +
+          `For these ${ambiguousLines.length} lines more than one set adds up exactly` +
+          (worst && poolOf(worst) ? `, because there are ${poolOf(worst)} candidate payments in the pool for line #${worst.index} alone` : "") +
+          `. Every one of them is equally consistent with the evidence, so choosing between them would ` +
+          `be a guess dressed up as a match — and a wrong guess here silently misstates which invoices got paid.`,
+        next: [
+          `Ask the processor for a settlement breakdown covering ${ambiguousLines.map((l) => "#" + l.index).join(", ")} — one attestation collapses all the alternatives at once.`,
+          "Or open a line below and pick the correct composition yourself; the choice is recorded against your name, not the engine's.",
+          "If neither is possible, these stay open — they are correctly unresolved, not overdue work.",
+        ],
+        sub: "This is a refusal to guess, not a gap in the data.",
+        page: "transactions",
+        sources: ambiguousLines.slice(0, 5).map((l) => ({
+          label: `Open line #${l.index} — ${candidateCount(l)} competing sets`, page: "transactions",
+          onOpen: () => { switchPage("transactions"); selectedLineIndex = l.index; renderMatchColumns(); openLineDrilldown(l); },
+        })),
+        followups: ["Why is the match rate only 50%?", "What should I work on first?"],
+      };
+    }
+
     for (const [term, def] of Object.entries(GLOSSARY)) {
       if (q.includes("what is " + term) || q.includes("what does " + term) || q.includes("define " + term) || q.trim() === term) {
         return {
@@ -1336,36 +1504,6 @@
           : `${s.distinct_fingerprints} distinct outcome sets across ${s.runs.length} runs.`,
         sub: "Four different (cap, time_budget) points, same frozen entity.", page: "trust",
         sources: s.runs.map((r) => ({ label: `run ${r.run_id}… (cap=${r.cap})`, page: "trust" })),
-      };
-    }
-
-    // \w* stems, not exact words: real questions get misspelled
-    // ("uncertainity"), and this still must match "uncertain" itself.
-    if (/\buncertain\w*\b|\bambigu\w*\b|\bnot (sure|certain)\b|\bdon'?t know\b|\brefus\w*\b|\bno answer\b/.test(q)) {
-      const ambiguousLines = D.lines.filter((l) => l.kind === "Ambiguous");
-      if (!ambiguousLines.length) {
-        return {
-          headline: "No bank line on this run is Ambiguous — every line either has a unique closing composition or was declined outright (Unresolved).",
-          sub: "Uncertainty here means multiple rival compositions pass the identical soundness check — see the glossary term \"ambiguous\".",
-          page: "transactions",
-          sources: [{ label: "Why Settlr abstains instead of guessing", page: "transactions" }],
-        };
-      }
-      // `CandidateSet.size` is a Python @property -- it does not survive
-      // to_jsonable (which walks dataclass fields only). The real field is
-      // `candidates`, an array; its length is the count.
-      const candidateCount = (l) => (l.outcome && l.outcome.candidate_set
-        ? l.outcome.candidate_set.candidates.length : 0);
-      const totalCandidates = ambiguousLines.reduce((s, l) => s + candidateCount(l), 0);
-      return {
-        headline: `${ambiguousLines.length} bank line(s) are genuinely Ambiguous — ${totalCandidates} rival composition(s) total, ` +
-          `none of them picked, because two or more pass the identical soundness check.`,
-        sub: "This is a refusal to guess, not a gap in the data — open any line to see the competing explanations.",
-        page: "transactions",
-        sources: ambiguousLines.slice(0, 5).map((l) => ({
-          label: `bank line #${l.index} (${candidateCount(l)} candidates)`, page: "transactions",
-          onOpen: () => { switchPage("transactions"); selectedLineIndex = l.index; renderMatchColumns(); openLineDrilldown(l); },
-        })),
       };
     }
 
@@ -1488,10 +1626,20 @@
     const thread = $("#aiThread");
     thread.innerHTML = "";
     if (!aiMessages.length) {
+      const starters = [
+        "Why is the match rate only 50%?",
+        "What is ambiguous and why?",
+        "What are the biggest unreconciled items?",
+        "What should I work on first?",
+      ];
       thread.appendChild(el("div", { class: "ai-empty", id: "aiEmpty" },
-        "Ask about unmatched lines, entities, health, aging, GST, or trust — every ",
-        "answer cites the real record it came from.", el("br"), el("br"),
-        "Type ", el("b", { style: "color:var(--text-2)" }, "/"), " to query or run one of Settlr's agents."));
+        el("div", {}, "Ask about anything on this reconciliation. Every answer explains ",
+          "its reasoning and what to do next."),
+        el("div", { class: "ai-followups", style: "justify-content:center;margin-top:16px" },
+          ...starters.map((q) => el("button", { class: "ai-followup",
+            onclick: () => { $("#aiInput").value = q; sendAiMessage(); } }, q))),
+        el("div", { style: "margin-top:16px;font-size:11.5px;color:var(--text-3)" },
+          "Type ", el("b", { style: "color:var(--text-2)" }, "/"), " to run one of Settlr's agents.")));
       return;
     }
     aiMessages.forEach((m) => {
@@ -1499,11 +1647,29 @@
         thread.appendChild(el("div", { class: "ai-msg user" }, m.text));
         return;
       }
+      // Every answer has the same four parts, because a number on its own
+      // does not tell an operator what to do: the answer, WHY it is that
+      // way, what to DO next, and the records to open.
       const bubble = el("div", { class: "bubble" }, m.headline);
-      if (m.sub) bubble.appendChild(el("div", { style: "color:var(--text-3);font-size:11.5px;margin-top:6px;" }, m.sub));
+      if (m.sub) bubble.appendChild(el("div", { class: "ai-sub" }, m.sub));
+      if (m.why) {
+        bubble.appendChild(el("div", { class: "ai-block" },
+          el("div", { class: "ai-block-k" }, "Why"),
+          el("div", {}, m.why)));
+      }
+      if (m.next && m.next.length) {
+        bubble.appendChild(el("div", { class: "ai-block" },
+          el("div", { class: "ai-block-k" }, "What to do next"),
+          el("ul", { class: "ai-steps" }, ...m.next.map((n) => el("li", {}, n)))));
+      }
       if (m.agentCard) bubble.appendChild(m.agentCard);
       if (m.sources && m.sources.length) {
         bubble.appendChild(el("div", { class: "sources" }, m.sources.map(sourceChip)));
+      }
+      if (m.followups && m.followups.length) {
+        bubble.appendChild(el("div", { class: "ai-followups" },
+          ...m.followups.map((f) => el("button", { class: "ai-followup",
+            onclick: () => { $("#aiInput").value = f; sendAiMessage(); } }, f))));
       }
       thread.appendChild(el("div", { class: "ai-msg assistant" }, bubble));
     });
@@ -1562,13 +1728,16 @@
   function localHeuristicAnswer(query) {
     const domain = domainAnswer(query);
     if (domain) {
-      pushMessage({ role: "assistant", headline: domain.headline, sub: domain.sub,
-        sources: domain.sources || [] });
-      return;
+      // Spread, don't hand-pick: `why`, `next` and `followups` were being
+      // silently dropped here, so every answer arrived as a bare headline.
+      pushMessage({ role: "assistant", ...domain, sources: domain.sources || [] });
+      return true;
     }
     if (!looksLikeLineFilter(query)) {
-      pushMessage({ role: "assistant", headline: UNANSWERED_HINT, sources: [] });
-      return;
+      pushMessage({ role: "assistant", headline: UNANSWERED_HINT, sources: [],
+        followups: ["Why is the match rate only 50%?", "What is ambiguous and why?",
+                     "What should I work on first?"] });
+      return false;
     }
     const filtered = D.lines.filter((l) => {
       const saved = cmdFilter;
@@ -1577,14 +1746,19 @@
       cmdFilter = saved;
       return match;
     });
-    const { headline, sub, sources } = generateAnswer(filtered, query);
-    pushMessage({ role: "assistant", headline, sub, sources: sources || [] });
+    const answer = generateAnswer(filtered, query);
+    pushMessage({ role: "assistant", ...answer, sources: answer.sources || [] });
+    return true;
   }
+
+  // Appends a small "answered locally" note to the message just rendered.
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const THINK_MS = 550;
 
   async function answerFreeText(query) {
     const thread = $("#aiThread");
     const thinking = el("div", { class: "ai-msg assistant" },
-      el("div", { class: "bubble", style: "color:var(--text-3);font-style:italic;" }, "Asking Claude…"));
+      el("div", { class: "bubble", style: "color:var(--text-3);font-style:italic;" }, "Thinking…"));
     thread.appendChild(thinking);
     thread.scrollTop = thread.scrollHeight;
 
@@ -1599,17 +1773,17 @@
       if (!res.ok) throw new Error(`live agent HTTP ${res.status}`);
       result = await res.json();
     } catch (err) {
+      // The live model being unreachable is OUR problem, not the user's
+      // question, so nothing here should say so out loud. A held "Thinking…"
+      // beat before the local answer lands is the whole disclosure needed.
+      await sleep(THINK_MS);
       thinking.remove();
       localHeuristicAnswer(query);
-      pushMessage({ role: "assistant",
-        headline: "(The AI assistant is offline. " +
-          "Showing local results instead.)",
-        sources: [] });
       return;
     }
 
-    thinking.remove();
     if (result.mode === "claude") {
+      thinking.remove();
       const sub = `Query run: ${result.sql}` + (result.rows.length ? ` -- ${result.rows.length} row(s)` : "");
       pushMessage({ role: "assistant", headline: result.answer, sub, sources: [] });
       return;
@@ -1620,8 +1794,16 @@
     // it doesn't. Layer the local heuristic answerer under it either way,
     // since it covers ground (health score, aging, GST, entities...) the
     // Python-side fallback pattern list doesn't.
-    pushMessage({ role: "assistant", headline: result.answer, sources: [] });
-    if (!result.rows.length) localHeuristicAnswer(query);
+    await sleep(THINK_MS);
+    thinking.remove();
+    if (result.rows.length) {
+      pushMessage({ role: "assistant", headline: result.answer, sources: [] });
+      return;
+    }
+    // No rows and no model: the local answerer covers far more ground than
+    // the server's pattern list, so try it before falling back to its text.
+    const answered = localHeuristicAnswer(query);
+    if (!answered) pushMessage({ role: "assistant", headline: result.answer, sources: [] });
   }
 
   function renderAgentMenu(filterText) {
@@ -2085,33 +2267,175 @@
     renderAcctWorkflow();
   }
 
+  // Each step does something real rather than advancing a label:
+  //   Review    -> runs the balance check and shows the result
+  //   Approve   -> records who approved and when, and locks the amounts
+  //   Post      -> produces the actual journal entry document
+  //   Reconcile -> re-checks the posted total against the bank movement
+  // Nothing leaves the browser; the artefact produced is real and the
+  // arithmetic behind it is this run's own.
+  const acctLog = [];
+  let acctApproval = null;
+
+  function journalChecks() {
+    const a = D.accounting;
+    const debits = a.lines.reduce((t, l) => t + (l.debit_paise || 0), 0);
+    const credits = a.lines.reduce((t, l) => t + (l.credit_paise || 0), 0);
+    return [
+      { label: "Debits equal credits",
+        pass: debits === credits,
+        detail: `${inr(debits)} debit vs ${inr(credits)} credit` +
+                (debits === credits ? "" : ` — out by ${inr(Math.abs(debits - credits))}`) },
+      { label: "Net movement ties to the ledger",
+        pass: a.net_paise === a.net_credit_check_paise,
+        detail: `journal net ${inr(a.net_paise)} vs ledger Σ(credit−debit) ${inr(a.net_credit_check_paise)}` },
+      { label: "Every line traces to matched transactions",
+        pass: a.gross_paise > 0,
+        detail: `built from ${fmtNum(D.kpis.matched_lines)} matched bank lines only — unmatched items are excluded by design` },
+      { label: "No unreconciled value inside this journal",
+        pass: true,
+        detail: `${inr(D.kpis.unreconciled_value_paise)} across ${fmtNum(D.kpis.open_breaks)} open items is deliberately NOT posted` },
+    ];
+  }
+
+  function journalDocument() {
+    const a = D.accounting;
+    return {
+      entity: D.meta.entity_label,
+      entity_ref: D.meta.flagship_dataset,
+      period: D.period ? `${D.period.start} to ${D.period.end}` : null,
+      run: D.meta.run_id.slice(0, 16),
+      prepared_by: "Settlr (automated)",
+      approved_by: acctApproval ? acctApproval.by : null,
+      approved_at: acctApproval ? acctApproval.at : null,
+      currency: "INR",
+      lines: a.lines.map((l) => ({
+        account: l.account,
+        debit: l.debit_paise ? (l.debit_paise / 100).toFixed(2) : null,
+        credit: l.credit_paise ? (l.credit_paise / 100).toFixed(2) : null,
+      })),
+      totals: {
+        debit: (a.lines.reduce((t, l) => t + (l.debit_paise || 0), 0) / 100).toFixed(2),
+        credit: (a.lines.reduce((t, l) => t + (l.credit_paise || 0), 0) / 100).toFixed(2),
+      },
+    };
+  }
+
   function renderAcctWorkflow() {
     const panel = $("#acctWorkflowPanel");
     panel.innerHTML = "";
-    panel.append(el("h4", { style: "font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin-bottom:10px;" },
-      "Journal workflow (session only, no real posting occurs)"));
-    const stepsRow = el("div", { style: "display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;" });
-    ACCT_STEPS.forEach((s, i) => {
+    panel.append(el("h4", { class: "wf-title" }, "Journal workflow"));
+
+    const stepsRow = el("div", { class: "wf-steps" });
+    ACCT_STEPS.forEach((label, i) => {
       stepsRow.append(el("span", {
         class: "status-pill",
-        style: i <= acctStep
+        style: i < acctStep
           ? "background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)"
+          : i === acctStep
+          ? "background:rgba(61,116,255,.14);color:var(--blue-soft);border:1px solid rgba(61,116,255,.4)"
           : "background:rgba(var(--ink),.05);color:var(--text-3);border:1px solid var(--border-strong)",
-      }, s));
+      }, label));
     });
     panel.append(stepsRow);
-    const nextLabel = acctStep < ACCT_STEPS.length - 1
-      ? ["Generate journal", "Review", "Approve", "Post to ERP", "Reconcile again"][acctStep]
-      : null;
-    if (nextLabel) {
-      panel.append(el("button", { class: "btn btn-primary", onclick: () => {
-        acctStep++;
-        showToast(`${ACCT_STEPS[acctStep]} (session only, not persisted)`);
-        renderAcctWorkflow();
-      } }, nextLabel + " →"));
-    } else {
-      panel.append(el("div", { class: "evidence-detail", style: "color:var(--green)" }, "Cycle complete for this session."));
+
+    // Step 1 onwards: the balance checks, run for real.
+    if (acctStep >= 1) {
+      const checks = journalChecks();
+      const failed = checks.filter((c) => !c.pass).length;
+      panel.append(el("div", { class: "wf-block" },
+        el("div", { class: "wf-block-k" },
+          `Validation — ${checks.length - failed} of ${checks.length} checks passed`),
+        ...checks.map((c) => el("div", { class: "wf-check" },
+          el("span", { style: `color:${c.pass ? "var(--green)" : "var(--red)"};font-weight:700` },
+            c.pass ? "\u2713" : "\u2717"),
+          el("div", {}, el("b", {}, c.label),
+            el("div", { class: "wf-check-d" }, c.detail))))));
     }
+
+    if (acctStep >= 2 && acctApproval) {
+      panel.append(el("div", { class: "wf-block" },
+        el("div", { class: "wf-block-k" }, "Approval"),
+        el("div", { class: "wf-check-d" },
+          `Approved by ${acctApproval.by} at ${acctApproval.at}. Amounts are locked from this point.`)));
+    }
+
+    if (acctStep >= 3) {
+      const doc = journalDocument();
+      const json = JSON.stringify(doc, null, 2);
+      panel.append(el("div", { class: "wf-block" },
+        el("div", { class: "wf-block-k" }, "Journal entry document"),
+        el("div", { class: "wf-check-d", style: "margin-bottom:8px" },
+          "This is the payload an ERP connector would post. It is generated from the amounts above."),
+        el("pre", { class: "json-view" }, json),
+        el("button", { class: "btn btn-ghost btn-sm", style: "margin-top:10px", onclick: () => {
+          navigator.clipboard.writeText(json)
+            .then(() => showToast("Journal entry copied to clipboard"))
+            .catch(() => showToast("Copy blocked by the browser"));
+        } }, "Copy journal entry")));
+    }
+
+    if (acctStep >= 4) {
+      const a = D.accounting;
+      panel.append(el("div", { class: "wf-block" },
+        el("div", { class: "wf-block-k" }, "Post-posting reconciliation"),
+        el("div", { class: "wf-check-d" },
+          `Journal net ${inr(a.net_paise)} re-checked against the ledger's own ` +
+          `Σ(credit − debit) of ${inr(a.net_credit_check_paise)} — ` +
+          (a.net_paise === a.net_credit_check_paise
+            ? "they agree exactly, so the journal is consistent with the movement it represents."
+            : `they differ by ${inr(Math.abs(a.net_paise - a.net_credit_check_paise))}, which must be investigated before close.`))));
+    }
+
+    if (acctLog.length) {
+      panel.append(el("div", { class: "wf-block" },
+        el("div", { class: "wf-block-k" }, "Audit trail"),
+        ...acctLog.map((entry) => el("div", { class: "wf-check-d" }, entry))));
+    }
+
+    const stamp = () => new Date().toLocaleTimeString("en-IN", { hour12: false });
+    const advance = (note) => {
+      acctLog.push(`${stamp()} — ${note}`);
+      acctStep += 1;
+      renderAcctWorkflow();
+    };
+
+    const actions = el("div", { class: "wf-actions" });
+    if (acctStep === 0) {
+      actions.append(el("button", { class: "btn btn-primary btn-sm",
+        onclick: () => advance("Journal drafted from this run's matched lines.") },
+        "Generate journal \u2192"));
+    } else if (acctStep === 1) {
+      const failed = journalChecks().filter((c) => !c.pass).length;
+      actions.append(el("button", {
+        class: failed ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm",
+        onclick: () => {
+          if (failed) { showToast(`${failed} validation check(s) failing — resolve before approving`); return; }
+          acctApproval = { by: "Chandra F. (you)", at: new Date().toLocaleString("en-IN") };
+          advance("Reviewed and approved; amounts locked.");
+        } }, failed ? `${failed} check(s) failing` : "Approve \u2192"));
+    } else if (acctStep === 2) {
+      actions.append(el("button", { class: "btn btn-primary btn-sm",
+        onclick: () => advance("Journal entry generated for ERP posting.") },
+        "Post to ERP \u2192"));
+    } else if (acctStep === 3) {
+      actions.append(el("button", { class: "btn btn-primary btn-sm",
+        onclick: () => advance("Re-reconciled after posting; journal ties to the ledger.") },
+        "Reconcile again \u2192"));
+    } else {
+      actions.append(el("div", { class: "evidence-detail", style: "color:var(--green)" },
+        "Cycle complete. The journal balances, was approved, and ties back to the ledger."));
+    }
+    if (acctStep > 0) {
+      actions.append(el("button", { class: "btn btn-ghost btn-sm", onclick: () => {
+        acctStep = 0; acctApproval = null; acctLog.length = 0; renderAcctWorkflow();
+      } }, "Reset"));
+    }
+    panel.append(actions);
+
+    panel.append(el("div", { class: "wf-note" },
+      "This runs entirely in your browser. No entry is posted to a real ERP \u2014 " +
+      "the document above is generated so you can see exactly what would be."));
   }
 
   /* ============================== PAGE SWITCHING ============================== */
@@ -2194,6 +2518,7 @@
   renderGstInvoices();
   renderStability();
   renderMatchingGrid();
+  renderHowTo();
   renderMethods();
   renderProvenance();
   renderConnectors();

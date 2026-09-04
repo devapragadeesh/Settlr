@@ -2,10 +2,30 @@
   <img src="settlrlogoblue.png" alt="Settlr" width="220">
 </p>
 
+<p align="center">
+  <a href="https://github.com/devapragadeesh/Settlr/actions/workflows/ci.yml"><img src="https://github.com/devapragadeesh/Settlr/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+</p>
+
 # Settlement Truth Engine
 
-*Branded internally as **Settlr** — see [`dashboard/`](dashboard/) for the
-generated UI over the resolver's own output.*
+*Branded internally as **Settlr** — a live dashboard over this engine's own
+output is in [`dashboard/`](dashboard/); [`AGENTS.md`](AGENTS.md) describes
+this repo's layout and boundaries to a coding agent.*
+
+## What Settlr does
+
+A payment processor settles many transactions into one bank credit at a time
+it chooses, net of fees and refunds — so a single ₹99,329.23 deposit might be
+21 orders, or 40, and the bank statement alone never says which. Get that
+match wrong at scale and finance either books revenue that never settled or
+misses revenue that did. Settlr reconciles the payment ledger, the bank
+statement, the ERP order book and GST filings against each other, matches
+what it can prove, and — the part every other engine we evaluated skips —
+**refuses to guess on the rest, with a stated reason.** The dashboard turns
+that into daily workflow: an exceptions queue routed by owner, a
+maker-checker approval trail for every proposed reclassification, journal
+generation with balance validation before posting, and a settlement-timing
+view (matched to what money actually did, not what the ledger assumes).
 
 Reconciles a payment ledger against a bank statement, an ERP order book and
 GSTR-2B, and — the part that matters — **says what it does not know.**

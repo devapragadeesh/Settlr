@@ -60,4 +60,13 @@ def test_exactly_45_dataset_directories_were_found() -> None:
     # was added or removed since this test was written, and the fixed number
     # is the anti-vacuity guard against the parametrize list silently going
     # empty.
-    assert len(DATASET_DIRS) == 45
+    #
+    # scale/data_* (8 dirs) is gitignored by design (scale/README.md,
+    # .gitignore: "large and fully reproducible from generate_scale.py...
+    # not committed", ~30 min to regenerate) -- so a clean CI checkout has
+    # 37, not 45, until that script has been run. This asserts the number
+    # that is actually guaranteed by what git tracks, and the full 45 when
+    # a local dev has generated the scale fixtures, rather than asserting a
+    # number CI can never satisfy from a checkout alone.
+    scale_present = (ROOT / "scale" / "data_250").exists()
+    assert len(DATASET_DIRS) == (45 if scale_present else 37)
