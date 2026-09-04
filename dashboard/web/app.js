@@ -1031,6 +1031,46 @@
       };
     }
 
+    // \w* stems, not exact words: real questions get misspelled
+    // ("uncertainity"), and this still must match "uncertain" itself.
+    if (/\buncertain\w*\b|\bambigu\w*\b|\bnot (sure|certain)\b|\bdon'?t know\b|\brefus\w*\b|\bno answer\b/.test(q)) {
+      const ambiguousLines = D.lines.filter((l) => l.kind === "Ambiguous");
+      if (!ambiguousLines.length) {
+        return {
+          headline: "No bank line on this run is Ambiguous — every line either has a unique closing composition or was declined outright (Unresolved).",
+          sub: "Uncertainty here means multiple rival compositions pass the identical soundness check — see the glossary term \"ambiguous\".",
+          page: "matching",
+          sources: [{ label: "resolver_contract/types.py — Ambiguous has no `decomposition` attribute", page: "matching" }],
+        };
+      }
+      // `CandidateSet.size` is a Python @property -- it does not survive
+      // to_jsonable (which walks dataclass fields only). The real field is
+      // `candidates`, an array; its length is the count.
+      const candidateCount = (l) => (l.outcome && l.outcome.candidate_set
+        ? l.outcome.candidate_set.candidates.length : 0);
+      const totalCandidates = ambiguousLines.reduce((s, l) => s + candidateCount(l), 0);
+      return {
+        headline: `${ambiguousLines.length} bank line(s) are genuinely Ambiguous — ${totalCandidates} rival composition(s) total, ` +
+          `none of them picked, because two or more pass the identical soundness check.`,
+        sub: "This is a refusal to guess, not a gap in the resolver — see each line's real candidate set.",
+        page: "matching",
+        sources: ambiguousLines.slice(0, 5).map((l) => ({
+          label: `bank line #${l.index} (${candidateCount(l)} candidates)`, page: "matching",
+          onOpen: () => { switchPage("matching"); selectedLineIndex = l.index; renderMatchColumns(); openLineDrilldown(l); },
+        })),
+      };
+    }
+
+    if (/\bwhich (dataset|entity)\b|\bwhat dataset\b|\bwhat entity\b|\bflagship\b|\bwhich run\b|\bwhat run\b/.test(q)) {
+      const m = D.meta;
+      return {
+        headline: `This run is against ${m.flagship_dataset} (the flagship entity) — run ${m.run_id.slice(0, 16)}…, ` +
+          `${m.run_count} persisted run(s) on record, code digest ${m.code_digest}.`,
+        sub: "30 entities exist in total; this page's live numbers are all from the one flagship run above.", page: "close",
+        sources: [{ label: "corpus/datasets/" + m.flagship_dataset, page: "close" }],
+      };
+    }
+
     return null;
   }
 
@@ -1224,11 +1264,33 @@
     answerFreeText(text);
   }
 
+  // A query is only treated as a bank-line filter if it actually looks like
+  // one -- a FILTER_KEYWORD, an amount, or a short (<=4 word) fragment that
+  // could plausibly be a reference/narration snippet. Otherwise a long
+  // natural-language question (no keyword, no amount) would silently fall
+  // through to "0 lines match your whole sentence," which reads as the
+  // engine failing to understand rather than the honest truth: the
+  // question just isn't one of the things this panel currently answers.
+  function looksLikeLineFilter(query) {
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+    if (words.some((w) => FILTER_KEYWORDS.has(w))) return true;
+    if (/₹?\s*[\d,]+/.test(query) && /\d/.test(query)) return true;
+    return words.length <= 4;
+  }
+
+  const UNANSWERED_HINT = "I don't have a specific real-data answer for that yet. Try asking about " +
+    "the health score, aging, entities, ingestion, GST/ITC risk, stability, uncertainty/ambiguity, " +
+    "a specific entity name, or type / for an agent.";
+
   function answerFreeText(query) {
     const domain = domainAnswer(query);
     if (domain) {
       pushMessage({ role: "assistant", headline: domain.headline, sub: domain.sub,
         sources: domain.sources || [] });
+      return;
+    }
+    if (!looksLikeLineFilter(query)) {
+      pushMessage({ role: "assistant", headline: UNANSWERED_HINT, sources: [] });
       return;
     }
     const filtered = D.lines.filter((l) => {
@@ -1333,31 +1395,40 @@
   }
 
   /* ============================== CONNECTORS PAGE ============================== */
+  // Three real states, not two: "connected" means this exact run's data
+  // literally came in through that format (recon_combined.json / gstr2b.csv
+  // are real ingested artifacts of THIS run -- computed server-side in
+  // build_dashboard.py against build_ingestion_status's real output, not
+  // guessed here). "available" means real, tested code exists
+  // (transport/sftp.py, transport/s3.py) but this run's data came from a
+  // local file, not that transport. "planned" is a genuine, named gap.
+  const CONNECTOR_STATUS_META = {
+    connected: { label: "Connected", pill: "background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);" },
+    available: { label: "Available", pill: "background:rgba(61,116,255,.14);color:#a9c0ff;border:1px solid rgba(61,116,255,.35);" },
+    planned: { label: "Planned", pill: "background:var(--slate-bg);color:var(--slate);border:1px solid var(--border-strong);" },
+  };
+
   function renderConnectors() {
     const grid = $("#connectorsGrid");
     grid.innerHTML = "";
     D.connectors.forEach((c) => {
-      const available = c.status === "available";
-      const card = el("div", { class: "connector-card" + (available ? "" : " planned") },
+      const meta = CONNECTOR_STATUS_META[c.status];
+      const planned = c.status === "planned";
+      const card = el("div", { class: "connector-card" + (planned ? " planned" : "") },
         el("div", { class: "connector-head" },
           el("div", { class: "connector-monogram" }, c.monogram),
           el("div", {},
             el("div", { class: "connector-name" }, c.name),
             el("div", { class: "connector-status" },
-              el("span", {
-                class: "status-pill",
-                style: available
-                  ? "background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);"
-                  : "background:var(--slate-bg);color:var(--slate);border:1px solid var(--border-strong);",
-              }, available ? "Available" : "Planned")))),
+              el("span", { class: "status-pill", style: meta.pill }, meta.label)))),
         el("div", { class: "connector-detail" }, c.detail));
       const btn = el("button", {
         class: "connector-btn",
-        onclick: () => showToast(available
+        onclick: () => showToast(!planned
           ? `${c.name}: ${c.detail}`
           : `${c.name} isn't built yet — ${c.detail}`),
-      }, available ? "Configure →" : "Not available");
-      if (!available) btn.disabled = true;
+      }, c.status === "connected" ? "View details →" : planned ? "Not available" : "Configure →");
+      if (planned) btn.disabled = true;
       card.appendChild(btn);
       grid.appendChild(card);
     });

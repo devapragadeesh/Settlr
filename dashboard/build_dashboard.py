@@ -452,6 +452,15 @@ def build_agents_panel(conn, run_id: str, itc_conn, itc_run_id: str) -> list[dic
 #: or Tally's actual trademarked artwork, and a self-drawn approximation of
 #: one would be exactly the kind of unearned specificity CLAUDE.md's
 #: evidence discipline warns against.
+#:
+#: `status="available"` means real, tested code exists but this run's data
+#: did not literally travel through it (SFTP/S3: the flagship's files are
+#: read from local disk, not pulled live). Where a connector's `artifact`
+#: key names a file that IS one of this run's own six real ingested
+#: artifacts (checked against `build_ingestion_status`'s live output in
+#: `main()` below, not hand-set here), the status is upgraded to
+#: "connected" -- an honest, narrower claim than "available" everywhere,
+#: not a blanket "yes" for four different real states.
 CONNECTORS = [
     dict(name="SFTP", monogram="SF", status="available",
          detail="transport/sftp.py -- pluggable, offline-testable, refuses a live "
@@ -459,12 +468,12 @@ CONNECTORS = [
     dict(name="S3", monogram="S3", status="available",
          detail="transport/s3.py -- same non-production guard as SFTP "
                 "(transport/credentials.py)"),
-    dict(name="Razorpay API", monogram="RP", status="available",
+    dict(name="Razorpay API", monogram="RP", status="available", artifact="recon_combined.json",
          detail="the recon_combined envelope ({entity, count, items}) is already "
                 "what ingest/formats/jsonl.py parses -- confirmed against a real "
                 "captured TEST MODE response, spike/raw/008_rest_recon_combined_"
                 "current_month.json (DECISIONS Sec.96)"),
-    dict(name="GSTR-2B / GST Portal", monogram="GST", status="available",
+    dict(name="GSTR-2B / GST Portal", monogram="GST", status="available", artifact="gstr2b.csv",
          detail="ingest/schema.py::GSTR2B_ROLES already resolves a portal export's "
                 "12 columns"),
     dict(name="Zoho Books", monogram="Z", status="planned",
@@ -522,6 +531,14 @@ def main() -> int:
     ingestion = build_ingestion_status(FLAGSHIP_DIR)
     discrepancies = build_discrepancies(lines)
 
+    ingested_artifacts = {f["artifact"] for f in ingestion}
+    connectors = []
+    for c in CONNECTORS:
+        c = dict(c)
+        if c.get("artifact") in ingested_artifacts:
+            c["status"] = "connected"
+        connectors.append(c)
+
     order_ids = {r["order_id"] for r in rows_by_id.values() if r.get("order_id")}
     erp_by_order = build_erp_lookup(FLAGSHIP_DIR, order_ids)
     disputes_by_id = {did: dict(dataset.disputes[did])
@@ -568,7 +585,7 @@ def main() -> int:
         gst=gst,
         stability=stability,
         agents=agents_panel,
-        connectors=CONNECTORS,
+        connectors=connectors,
     )
 
     template = TEMPLATE_PATH.read_text()

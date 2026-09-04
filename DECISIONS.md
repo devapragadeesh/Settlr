@@ -6569,3 +6569,67 @@ foundation already shown unsound.
 `track_eager_reconstruction.py`, `eager_reconstruction_report.json`). No file
 under `resolver/`, `resolver_contract/`, `matching/`, `engine/` or any
 `corpus/` dataset touched. No gate, no dataset, no contract change.
+
+## 99. AI panel: two real bugs from live use -- a compound question falling through to a nonsense grid-filter miss, and a serialization trap on `CandidateSet.size` -- plus honest three-tier connector status -- 2026-09-04
+
+**Bug 1: "where is the uncertainty and which is the dataset being used"
+answered "No bank lines match [the whole sentence]."** `answerFreeText`
+had no fallback between "matches a `domainAnswer` branch" and "treat the
+entire question as a bank-line substring filter" -- so any real question
+`domainAnswer` didn't recognize silently became a doomed filter query
+against `line.reference`/`line.narration`, and the panel reported a grid
+miss instead of admitting it didn't understand the question. Fixed two
+ways: `looksLikeLineFilter` now gates whether free text is even attempted
+as a filter (a `FILTER_KEYWORDS` hit, an amount, or a short <=4-word
+fragment -- otherwise it's answered with an honest
+"I don't have a specific real-data answer for that yet" plus what it CAN
+answer); and two new real `domainAnswer` branches were added --
+uncertainty/ambiguity (real `Ambiguous` line count and candidate totals)
+and "which dataset" (the real flagship entity, run id, persisted-run count).
+The uncertainty regex matches on the `uncertain`/`ambigu` STEM
+(`\buncertain\w*\b`), not the exact word, because the query that surfaced
+this bug was itself misspelled ("uncertainity") -- an exact-word regex
+would have looked fixed in testing and still failed on the real input.
+
+**Bug 2, caught immediately by testing the fix live: `CandidateSet.size` is
+a Python `@property`, not a dataclass field -- the same class of trap
+`resolver_contract.types.IndependenceDetermination.independent_parties`
+already caught twice this session (Sec.96, Sec.97), now a third time on a
+different class.** The new uncertainty branch's first draft read
+`l.outcome.candidate_set.size` and rendered "NaN rival composition(s)" and
+"undefined candidates" -- `to_jsonable` only walks real fields, and
+`CandidateSet`'s real field is `candidates` (an array); `size` is
+`len(self.candidates)` computed client-side in Python, never serialized.
+Fixed by counting `candidates.length` instead. Recorded a third time
+deliberately: three different dataclasses have now hit this exact
+serialization gap in three different UI surfaces this session, which is a
+pattern worth a reader noticing, not three unrelated one-off bugs.
+
+**Connectors: three honest states, not two.** The user's own framing --
+"if these are all already connected just show connected" -- was right that
+"Available" undersold four different real states as one. `recon_combined.json`
+and `gstr2b.csv` are literally two of this exact run's own six real ingested
+artifacts (cross-checked in `build_dashboard.py::main` against
+`build_ingestion_status`'s live output, not hand-set), so Razorpay API and
+GSTR-2B/GST Portal are now labelled "Connected" with a "View details →"
+action. SFTP and S3 have real, tested transport code
+(`transport/sftp.py`/`transport/s3.py`) but this run's data came from a
+local file, not that transport -- they stay "Available" ("Configure →"),
+a narrower and more honest claim than blanket "Connected" would have been.
+Zoho/Tally/SAP/email remain "Planned", genuinely disabled.
+
+**Verified live** via direct JS execution against the running dashboard
+server (`http://localhost:8935`, left running per explicit request): both
+new domain-answer branches return real numbers cited correctly (3 Ambiguous
+lines, 90 total candidates, 10/40/40 per line; the real flagship dataset
+name, run id, and persisted-run count), the connectors page shows
+"Connected" only on the two artifacts this run actually ingested, and
+console stayed clean throughout. Full suite re-run, zero regressions.
+
+**Scope.** Modified: `dashboard/build_dashboard.py` (connector-status
+cross-check against real ingestion, additive), `dashboard/web/app.js`
+(two new `domainAnswer` branches, `looksLikeLineFilter`, three-tier
+connector rendering, the `CandidateSet.candidates.length` fix).
+`dashboard/index.html` regenerated. Nothing under `resolver/`,
+`resolver_contract/`, `matching/`, `engine/`, or any frozen dataset path
+touched.
