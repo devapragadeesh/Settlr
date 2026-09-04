@@ -50,6 +50,7 @@
     AttestationDiscrepancy: { label: "Discrepancy", color: "var(--red)" },
     Ambiguous: { label: "Ambiguous", color: "var(--amber)" },
     Unresolved: { label: "Unresolved", color: "var(--slate)" },
+    OpenBreak: { label: "Open Break", color: "var(--red)" },
   };
 
   /* ============================== META CHIPS ============================== */
@@ -1507,8 +1508,296 @@
     });
   }
 
+  /* ============================== EXCEPTIONS / INVESTIGATION ============================== */
+  // Every exception in D.exceptions is real -- see DECISIONS Sec.100.
+  // OpenBreak items carry `has_warrant: false` deliberately: the live
+  // resolver never populates OpenBreak.warrant, so this page must not
+  // synthesize a "likely explanation" for those, only for the
+  // Unresolved/AttestationDiscrepancy items that genuinely carry one.
+  function statCards(containerId, cards) {
+    const row = $(containerId);
+    row.innerHTML = "";
+    cards.forEach((c, i) => {
+      row.append(el("div", { class: "panel stat-card fadein", style: `animation-delay:${i * 60}ms` },
+        el("div", { class: "lbl" }, c.lbl),
+        el("div", { class: "val num" }, "" + c.val),
+        el("div", { class: `trend ${c.tone || "warn"}` }, c.trend || "")));
+    });
+  }
+
+  const exceptionLocalStatus = {}; // session-only, never persisted -- see action handlers below
+  let excTab = "all";
+  let excSearch = "";
+
+  function exceptionMatchesTab(e, tab) {
+    if (tab === "all") return true;
+    if (tab === "high-risk") return e.age_bucket === "61-90" || e.age_bucket === "90+";
+    if (tab === "aging") return e.scope === "row";
+    if (tab === "source") return true; // grouping happens in render, not filtering
+    if (tab === "owner") return true;
+    return true;
+  }
+
+  function visibleExceptions() {
+    const q = excSearch.trim().toLowerCase();
+    return D.exceptions.filter((e) => {
+      if (!exceptionMatchesTab(e, excTab)) return false;
+      if (!q) return true;
+      return (e.reference || "").toLowerCase().includes(q) ||
+        (e.reason || "").toLowerCase().includes(q) ||
+        (e.owner || "").toLowerCase().includes(q);
+    });
+  }
+
+  function renderExceptions() {
+    const list = visibleExceptions();
+    const highRisk = D.exceptions.filter((e) => e.age_bucket === "61-90" || e.age_bucket === "90+").length;
+    const withEvidence = D.exceptions.filter((e) => e.has_warrant).length;
+    statCards("#excStatRow", [
+      { lbl: "Open Exceptions", val: D.exceptions.length, trend: `${list.length} shown`, tone: "warn" },
+      { lbl: "High Risk (61+ days)", val: highRisk, trend: "aged 61-90 or 90+", tone: highRisk > 0 ? "down" : "up" },
+      { lbl: "With Real Evidence", val: withEvidence, trend: `${D.exceptions.length - withEvidence} carry no warrant`, tone: "warn" },
+    ]);
+
+    const body = $("#excTableBody");
+    body.innerHTML = "";
+    if (excTab === "source" || excTab === "owner") {
+      const key = excTab === "source" ? (e) => e.scope === "line" ? "Bank line" : "Unmatched row" : (e) => e.owner || "—";
+      const groups = {};
+      list.forEach((e) => { const k = key(e); (groups[k] = groups[k] || []).push(e); });
+      Object.entries(groups).forEach(([groupName, items]) => {
+        body.append(el("tr", {}, el("td", { colspan: "7", style: "font-weight:700;color:var(--text-1);background:rgba(255,255,255,.03);" },
+          `${groupName} (${items.length})`)));
+        items.forEach((e) => body.append(exceptionRow(e)));
+      });
+      return;
+    }
+    list.forEach((e) => body.append(exceptionRow(e)));
+    if (!list.length) {
+      body.append(el("tr", {}, el("td", { colspan: "7", style: "text-align:center;color:var(--text-3);padding:24px;" },
+        "No exceptions match this filter.")));
+    }
+  }
+
+  function exceptionRow(e) {
+    const meta = KIND_META[e.kind] || KIND_META.Unresolved;
+    const status = exceptionLocalStatus[e.id];
+    const tr = el("tr", { onclick: () => openExceptionDrilldown(e) },
+      el("td", { class: "name" }, e.id, status ? el("span", { class: "axis" }, status) : null),
+      el("td", {}, el("span", { class: "status-pill", style: `background:${meta.color}22;color:${meta.color};border:1px solid ${meta.color}55` }, meta.label)),
+      el("td", {}, (e.reason || "—").replace(/_/g, " ")),
+      el("td", { class: "num" }, e.amount_paise != null ? inr(Math.abs(e.amount_paise)) : "—"),
+      el("td", {}, e.age_days != null ? `${e.age_days}d (${e.age_bucket})` : "—"),
+      el("td", {}, e.owner || "—"),
+      el("td", {}, e.has_warrant ? "real evidence" : "no warrant on file"));
+    return tr;
+  }
+
+  function evidencePanel(title, records, renderer) {
+    const sec = el("div", { class: "slideout-section" }, el("h4", {}, title));
+    if (!records || !records.length) {
+      sec.append(el("div", { class: "evidence-detail" }, `Not found in ${title}.`));
+      return sec;
+    }
+    records.forEach((r) => sec.append(el("div", { class: "evidence-item" },
+      el("div", { class: "evidence-dot" }),
+      el("div", { class: "evidence-txt", html: renderer(r) }))));
+    return sec;
+  }
+
+  function exceptionAction(exc, label, newStatus) {
+    return el("button", { class: "btn btn-ghost btn-sm", onclick: (e) => {
+      e.stopPropagation();
+      exceptionLocalStatus[exc.id] = newStatus;
+      showToast(`${exc.id}: ${label} (session only, not persisted)`);
+      renderExceptions();
+    } }, label);
+  }
+
+  function openExceptionDrilldown(exc) {
+    const slideout = $("#slideout");
+    slideout.innerHTML = "";
+    const meta = KIND_META[exc.kind] || KIND_META.Unresolved;
+
+    slideout.append(el("div", { class: "slideout-head" },
+      el("div", {},
+        el("h3", {}, exc.id + " · " + exc.reference),
+        el("div", { class: "sub" },
+          (exc.amount_paise != null ? inr(Math.abs(exc.amount_paise)) + " · " : ""),
+          el("span", { style: `color:${meta.color};font-weight:600` }, meta.label))),
+      el("button", { class: "slideout-close", onclick: closeDrilldown }, "✕")
+    ));
+
+    const body = el("div", { class: "slideout-body" });
+
+    body.append(el("div", { class: "slideout-section" },
+      el("h4", {}, "Summary"),
+      el("div", { class: "kv" },
+        el("div", { class: "cell" }, el("div", { class: "k" }, "Reason"), el("div", { class: "v" }, (exc.reason || "—").replace(/_/g, " "))),
+        el("div", { class: "cell" }, el("div", { class: "k" }, "Owner"), el("div", { class: "v" }, exc.owner || "—")),
+        el("div", { class: "cell" }, el("div", { class: "k" }, "Age"), el("div", { class: "v" }, exc.age_days != null ? `${exc.age_days} days` : "—")),
+        el("div", { class: "cell" }, el("div", { class: "k" }, "Close condition"), el("div", { class: "v", style: "font-size:11px;font-weight:500;" }, exc.close_condition || "—")))));
+
+    body.append(el("div", { class: "slideout-section" },
+      el("h4", {}, "Likely Explanation"),
+      exc.has_warrant
+        ? el("div", { class: "evidence-detail" }, exc.likely_explanation || "—")
+        : el("div", { class: "evidence-detail", style: "color:var(--amber)" },
+            "No warrant on file — the resolver has not classified this with evidence. " +
+            "Stating a cause here would be invented, not real.")));
+
+    if (exc.has_warrant && exc.evidence && exc.evidence.evidence) {
+      const sec = el("div", { class: "slideout-section" }, el("h4", {}, "Evidence & Warrant"));
+      exc.evidence.evidence.forEach((ev) => {
+        sec.append(el("div", { class: "evidence-item" },
+          el("div", { class: "evidence-dot" }),
+          el("div", { class: "evidence-txt" },
+            el("div", { class: "evidence-kind" }, ev.kind.replace(/_/g, " ")),
+            el("div", {}, ev.derived_from.map((s) => el("span", { class: "evidence-src" }, s.replace(/_/g, " ")))),
+            el("div", { class: "evidence-detail" }, ev.detail))));
+      });
+      body.append(sec);
+    }
+
+    body.append(evidencePanel("Bank", exc.bank && exc.bank.found ? [exc.bank] : [], (b) =>
+      `<div class="evidence-kind">${b.reference || ""}</div><div class="evidence-detail">${b.narration || ""} — ${inr(Math.abs(b.amount_paise))} on ${b.value_date}</div>`));
+    if (exc.bank && !exc.bank.found) {
+      body.append(el("div", { class: "slideout-section" }, el("h4", {}, "Bank"),
+        el("div", { class: "evidence-detail" }, exc.bank.detail)));
+    }
+    body.append(evidencePanel("PSP Ledger", exc.psp, (r) =>
+      `<div class="evidence-kind">${r.entity_id}</div><div class="evidence-detail">${r.type || ""} — ${inr(Math.abs(r.credit || r.debit || r.amount || 0))}${r.settlement_id ? " — settlement " + r.settlement_id : ""}</div>`));
+    body.append(evidencePanel("Settlement Report", exc.settlement_report, (r) =>
+      `<div class="evidence-kind">Batch ${r.reported_reference || "—"}</div><div class="evidence-detail">${inr(Math.abs(r.reported_amount || 0))} initiated ${r.initiated_at || "—"}</div>`));
+    body.append(evidencePanel("ERP", exc.erp, (r) =>
+      `<div class="evidence-kind">${r.invoice_no}</div><div class="evidence-detail">₹${r.amount} invoiced ${r.invoice_date}</div>`));
+    body.append(evidencePanel("Disputes", exc.disputes, (r) =>
+      `<div class="evidence-kind">${r.id || ""}</div><div class="evidence-detail">${r.status || ""} — opened ${r.opened_at || "—"}</div>`));
+
+    body.append(el("div", { class: "slideout-section" },
+      el("h4", {}, "Actions"),
+      el("div", { style: "display:flex;flex-wrap:wrap;gap:8px;" },
+        exceptionAction(exc, "Match manually", "matched manually"),
+        exceptionAction(exc, "Mark timing difference", "timing difference"),
+        exceptionAction(exc, "Create adjustment", "adjustment created"),
+        exceptionAction(exc, "Escalate", "escalated"),
+        exceptionAction(exc, "Ignore with reason", "ignored"))));
+
+    slideout.append(body);
+    $("#scrim").classList.add("show");
+    slideout.classList.add("show");
+  }
+
+  function setupExceptionsPage() {
+    $$("#excTabs button").forEach((btn) => btn.addEventListener("click", () => {
+      $$("#excTabs button").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      excTab = btn.dataset.tab;
+      renderExceptions();
+    }));
+    $("#excSearch").addEventListener("input", (e) => { excSearch = e.target.value; renderExceptions(); });
+  }
+
+  /* ============================== RUNS ============================== */
+  function renderRuns() {
+    const body = $("#runsTableBody");
+    body.innerHTML = "";
+    D.runs_table.forEach((r) => {
+      const tr = el("tr", { onclick: () => {
+        if (r.is_flagship) return; // the diff panel above already covers it
+        const entity = D.entities.find((e) => e.axis_point === r.axis_point);
+        if (entity) openEntityDrilldown(entity);
+      } },
+        el("td", { class: "name" }, r.label, el("span", { class: "axis" }, r.axis_point)),
+        el("td", {}, r.family),
+        el("td", { class: "num" }, r.sources + "/6"),
+        el("td", { class: "num" }, r.match_rate.toFixed(1) + "%"),
+        el("td", { class: "num" }, r.open_exceptions),
+        el("td", {}, el("span", { class: "status-pill", style: r.passed
+          ? "background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)"
+          : "background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)" }, r.passed ? "Passed gate" : "Failed gate")));
+      body.append(tr);
+    });
+
+    const diff = D.run_diff;
+    const panel = $("#runsDiffPanel");
+    panel.innerHTML = "";
+    panel.append(el("h4", { style: "font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin-bottom:10px;" },
+      "What changed: run " + diff.run_a.slice(0, 10) + "… → run " + diff.run_b.slice(0, 10) + "…"));
+    panel.append(el("div", { class: "evidence-detail", style: "margin-bottom:12px;" },
+      `Same dataset (${D.meta.flagship_dataset}), different solver settings — cap ${diff.cap_a}→${diff.cap_b}, ` +
+      `time_budget ${diff.time_budget_a}s→${diff.time_budget_b}s. Not a time-sequential rerun: this corpus has no date dimension.`));
+    panel.append(el("div", { class: "kv" },
+      el("div", { class: "cell" }, el("div", { class: "k" }, "Rows unchanged"), el("div", { class: "v" }, diff.unchanged)),
+      el("div", { class: "cell" }, el("div", { class: "k" }, "Breaks resolved"), el("div", { class: "v", style: "color:var(--green)" }, diff.resolved)),
+      el("div", { class: "cell" }, el("div", { class: "k" }, "New breaks"), el("div", { class: "v", style: "color:var(--red)" }, diff.new_breaks)),
+      el("div", { class: "cell" }, el("div", { class: "k" }, "Reclassified"), el("div", { class: "v" }, diff.reclassified))));
+  }
+
+  /* ============================== ACCOUNTING ============================== */
+  const ACCT_STEPS = ["Draft", "Review", "Approved", "Posted to ERP", "Reconciled"];
+  let acctStep = 0;
+
+  function renderAccounting() {
+    const a = D.accounting;
+    statCards("#acctSummaryRow", [
+      { lbl: "Gross Payments", val: inr(a.gross_paise), trend: "Σ amount, Verified/Reconstructed lines", tone: "warn" },
+      { lbl: "Processing Fees", val: inr(a.fees_paise), trend: "Σ fee, incl. GST (SETTLEMENT_SPEC §4)", tone: "down" },
+      { lbl: "Net to Bank", val: inr(a.net_paise), trend: `refunds ${inr(a.refunds_paise)}`, tone: "up" },
+    ]);
+
+    $("#acctDisclosure").innerHTML = "";
+    $("#acctDisclosure").append(el("div", { class: "evidence-detail" },
+      el("b", { style: "color:var(--amber)" }, "Illustrative convention, not an engine assertion: "),
+      "the amounts below are real (Σfee/Σcredit/Σdebit from this run's own ledger rows). The account " +
+      "names (PSP Clearing, Processing Fees, Refund Liability, Bank) are a standard double-entry layout " +
+      "applied to those real numbers for readability — this repository defines no chart of accounts " +
+      "(DECISIONS §100)."));
+
+    const body = $("#acctTableBody");
+    body.innerHTML = "";
+    a.lines.forEach((l) => {
+      body.append(el("tr", {},
+        el("td", { class: "name" }, l.account),
+        el("td", { class: "num" }, l.debit_paise ? inr(l.debit_paise) : ""),
+        el("td", { class: "num" }, l.credit_paise ? inr(l.credit_paise) : ""),
+        el("td", {}, el("span", { class: "status-pill", style: "background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)" }, "Ready"))));
+    });
+
+    renderAcctWorkflow();
+  }
+
+  function renderAcctWorkflow() {
+    const panel = $("#acctWorkflowPanel");
+    panel.innerHTML = "";
+    panel.append(el("h4", { style: "font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin-bottom:10px;" },
+      "Journal workflow (session only, no real posting occurs)"));
+    const stepsRow = el("div", { style: "display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;" });
+    ACCT_STEPS.forEach((s, i) => {
+      stepsRow.append(el("span", {
+        class: "status-pill",
+        style: i <= acctStep
+          ? "background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)"
+          : "background:rgba(255,255,255,.05);color:var(--text-3);border:1px solid var(--border-strong)",
+      }, s));
+    });
+    panel.append(stepsRow);
+    const nextLabel = acctStep < ACCT_STEPS.length - 1
+      ? ["Generate journal", "Review", "Approve", "Post to ERP", "Reconcile again"][acctStep]
+      : null;
+    if (nextLabel) {
+      panel.append(el("button", { class: "btn btn-primary", onclick: () => {
+        acctStep++;
+        showToast(`${ACCT_STEPS[acctStep]} (session only, not persisted)`);
+        renderAcctWorkflow();
+      } }, nextLabel + " →"));
+    } else {
+      panel.append(el("div", { class: "evidence-detail", style: "color:var(--green)" }, "Cycle complete for this session."));
+    }
+  }
+
   /* ============================== PAGE SWITCHING ============================== */
-  const PAGES = ["overview", "close", "entities", "ingestion", "trust", "matching", "connectors"];
+  const PAGES = ["overview", "exceptions", "runs", "accounting", "close", "entities", "ingestion", "trust", "matching", "connectors"];
 
   function switchPage(name) {
     if (!PAGES.includes(name)) name = "overview";
@@ -1556,6 +1845,10 @@
   renderStability();
   renderMatchingGrid();
   renderConnectors();
+  renderExceptions();
+  setupExceptionsPage();
+  renderRuns();
+  renderAccounting();
   setupMatchingFilter();
   setupAiPanel();
   setupAvatarMenu();

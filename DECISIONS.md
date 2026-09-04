@@ -6633,3 +6633,126 @@ connector rendering, the `CandidateSet.candidates.length` fix).
 `dashboard/index.html` regenerated. Nothing under `resolver/`,
 `resolver_contract/`, `matching/`, `engine/`, or any frozen dataset path
 touched.
+
+## 100. Three actionable pages -- Exceptions/Investigation, Runs, Accounting -- turning the dashboard from read-only into a workflow, with three scope decisions recorded before writing any code -- 2026-09-04
+
+**Request.** The dashboard had no working screen for a reconciliation
+operator to actually investigate an exception, no run history, and no
+answer to "what gets posted to the books." Two research passes against the
+live codebase, before writing anything, found three real gaps that had to
+be handled honestly rather than papered over -- each was put to the user as
+an explicit choice before implementation, not assumed.
+
+**Gap 1 — no chart of accounts exists anywhere in this repo.** Grepped
+`resolver/loaders.py`, `engine/simulator.py`, `SETTLEMENT_SPEC.md`,
+`DECISIONS.md` for `journal`/`GL`/`clearing`/`chart_of_accounts` — zero
+hits. Real per-row `fee`/`tax`/`credit`/`debit` fields exist
+(`recon_combined.json`, already paise, `resolver/loaders.py:289` keeps them
+unparsed) and a real net-to-bank identity is spec'd
+(`SETTLEMENT_SPEC.md` §4: `credit = amount − fee`, verified against a real
+`GET /v1/balance` call, delta 0) — but naming accounts ("PSP Clearing",
+"Refund Liability") would be inventing a model with no source of truth.
+**Decision (user-confirmed): show the real aggregates, and apply the
+conventional 4-line journal layout as a disclosed "illustrative
+convention," never asserted as this repo's own chart of accounts.** The
+Accounting page's disclosure banner states this in the UI itself, not just
+in this entry. Rejected: real aggregates only, no named accounts at all —
+the user found the disclosed-convention version more useful and no less
+honest, since the disclosure is prominent and the amounts underneath are
+100% real.
+
+**Gap 2 — the 4 persisted flagship runs share identical input data.**
+They vary only `(cap, time_budget)`; "N new transactions" between them is
+structurally always 0 (row/line set never changes). This corpus also has
+no date dimension at all — no entity in `corpus/oracle_results.json`
+carries a period/timestamp. **Decision (user-confirmed): diff two of the 4
+real runs and report whatever genuinely differs, explicitly labeled "same
+dataset, different solver settings" — never framed as a time period.**
+Rejected: also adding a cross-dataset comparison (e.g. against
+`A20_B75_Cmax`) for a richer story — the user chose the simpler, single
+honest diff. The real result (`build_run_diff`, DECISIONS-grade honesty):
+101 unmatched rows unchanged, 0 resolved, 0 new breaks, 0 reclassified
+between cap 40→45 on this run pair — reported as-is, not massaged into a
+more interesting-looking number.
+
+**Gap 3 — `OpenBreak.warrant` is always `None`.** Confirmed again (third
+time this session, after Sec.94 and Sec.95) by reading every
+`OpenBreak(...)` construction site in `resolver/breaks.py` — none passes
+`warrant=`. Only line-level `Unresolved` (real `warrant`/`detail`) and
+`AttestationDiscrepancy` (real `contradiction`) carry genuine evidence.
+**Resolved the only honest way: the Investigation workspace states "No
+warrant on file — the resolver has not classified this with evidence.
+Stating a cause here would be invented, not real" for bare `OpenBreak`
+exceptions, and shows the real `detail`/evidence text only where the
+resolver actually produced one.** This wasn't put to the user as a choice
+because there was no second honest option.
+
+**Feature A — Exceptions.** `build_exceptions` (dashboard/build_dashboard.py)
+builds one real exception per `Unresolved` line, `AttestationDiscrepancy`
+line, and `OpenBreak` row -- 91 on the flagship run (5 + 2 + 84). Each joins
+real PSP-ledger (`rows_by_id`), ERP (`erp_by_order`), and dispute
+(`disputes_by_id`) records already embedded, plus a **new**
+`build_settlement_report_lookup` (reads `Dataset.settlement_report`,
+already parsed by `resolver.loaders.load()` -- a lookup, not a fresh
+read, unlike `build_erp_lookup`). `rows_by_id` was widened to stop
+stripping `fee`/`tax` (`build_dashboard.py`, previously only
+`entity_id/type/amount/credit/debit/settlement_id/order_id/method/
+description/dispute_id` survived). The UI (`data-page="exceptions"`)
+reuses the existing `.slideout`/`.etable`/`.seg`/`.status-pill` vocabulary
+rather than inventing new visual language. Actions (Match manually / Mark
+timing difference / Create adjustment / Escalate / Ignore with reason) are
+session-only local state, toast-confirmed "(session only, not persisted)"
+-- the exact honesty convention `postVariance`/`openDispute` already
+established.
+
+**Feature B — Runs.** `build_runs_table` adds two real-but-missing columns
+to the 30 `oracle_results.json` entities: `sources` (real per-entity file
+count against the same 6 `ARTIFACT_SOURCES`, previously only computed for
+the flagship) and `match_rate` (`verified / bank_lines`, a real division,
+not a stored field). No `period` column, per the Gap-2 decision.
+`build_run_diff` computes the real disposition diff via `row_outcomes`
+(the same table `store.queries.open_breaks` reads).
+
+**Feature C — Accounting.** `build_accounting_summary` sums real
+`fee`/`tax`/`credit`/`debit` from every row referenced by a
+Verified/Reconstructed line's real composition. **A real bug, caught by
+the identity check the plan itself specified, not by inspection**: the
+first draft gated debit-side handling on `row["type"] == "refund"`, but
+this corpus's real `adjustment` rows include genuine debit-side chargebacks
+(e.g. `adj_8hLzehpYsMYjdI`, debit=1,079,900 paise, per
+`SETTLEMENT_SPEC.md`'s own documented "lost disputes surface as type:
+adjustment debit rows"). Those were silently added into gross instead of
+debits, and `net_paise` disagreed with `Σ(credit − debit)` by exactly the
+sum of the misclassified chargebacks (₹44,998). Fixed by gating on the
+real `debit` field instead of the `type` label — the two now reconcile to
+0, verified live. **A second real bug, caught the same way earlier in this
+same build script**: an `OpenBreak` exception's `amount_paise` was computed
+as `int(float(raw["amount"]) * 100)`, but `dataset.rows`' `amount` field is
+already integer paise (`resolver/loaders.py:289` never runs it through
+`paise()`) — every OpenBreak amount was 100x inflated until cross-checked
+against the same row's real ERP invoice total.
+
+**New primary nav.** `Exceptions`, `Runs`, `Accounting` promoted to
+`.navlinks` (unlike Connectors, which stays behind the avatar menu) --
+these are daily-use workflows, not admin/setup.
+
+**Verified live** against the running dashboard server
+(`http://localhost:8935`): a real `AttestationDiscrepancy` exception's
+drawer (EX-L12) shows its real contradiction, 15 real PSP-ledger rows, 4
+real ERP invoices, 2 real disputes, and an action click produces the
+correctly-labeled session-only toast; the Runs page's diff panel shows the
+real 101/0/0/0 numbers with the correct "different solver settings" label;
+the Accounting page's three summary cards and four-line journal table show
+the real, now-reconciling numbers, and the workflow button correctly
+advances Draft → Review. The "By Owner" tab correctly groups by real
+`BREAK_ROUTING` owners (investigation: 32, whoever owns the causing
+finding: 15, disputes ops: 7, none -- carry forward: 30). Console clean
+throughout.
+
+**Scope.** Modified: `dashboard/build_dashboard.py` (new
+`build_exceptions`, `build_settlement_report_lookup`, `build_run_diff`,
+`build_runs_table`, `build_accounting_summary`; `rows_by_id` widened),
+`dashboard/web/template.html` (three new pages, nav entries), `dashboard/web/app.js`
+(render/interaction functions for all three pages). `dashboard/index.html`
+regenerated. Nothing under `resolver/`, `resolver_contract/`, `matching/`,
+`engine/`, or any frozen dataset path touched.

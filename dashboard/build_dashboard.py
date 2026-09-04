@@ -54,7 +54,7 @@ from service.pipeline import run_pipeline  # noqa: E402
 from store.codec import to_jsonable  # noqa: E402
 from store.db import connect  # noqa: E402
 from store.queries import (get_run, line_outcome, open_breaks,  # noqa: E402
-                            row_history, runs_for_dataset)
+                            owner_for_reason, row_history, runs_for_dataset)
 
 FLAGSHIP_DIR = ROOT / "corpus" / "datasets" / "A20_B50_Cmax"
 #: The flagship carries zero itc_risk-flagged breaks (confirmed, DECISIONS
@@ -221,7 +221,11 @@ def build_lines_and_rows(dataset, conn, run_id: str) -> tuple[list[dict], dict[s
                     debit=raw.get("debit"), settlement_id=raw.get("settlement_id"),
                     order_id=raw.get("order_id"), method=raw.get("method"),
                     description=raw.get("description"),
-                    dispute_id=raw.get("dispute_id"))
+                    dispute_id=raw.get("dispute_id"),
+                    # fee/tax were stripped here before -- real fields
+                    # (SETTLEMENT_SPEC.md Sec.4: credit = amount - fee),
+                    # needed by the Accounting page's real aggregate math.
+                    fee=raw.get("fee"), tax=raw.get("tax"))
 
         lines.append(entry)
     return lines, rows_by_id
@@ -240,6 +244,18 @@ def build_erp_lookup(dataset_dir: Path, order_ids: set[str]) -> dict[str, dict]:
                     order_id=row["order_id"], invoice_no=row["invoice_no"],
                     amount=row["amount"], invoice_date=row["invoice_date"])
     return lookup
+
+
+def build_settlement_report_lookup(dataset, settlement_ids: set[str]) -> dict[str, dict]:
+    """Real PSP settlement-report records for the settlement ids referenced
+    by the flagship's ledger rows. `resolver.loaders.load()` already parses
+    `settlement_report.csv` into `Dataset.settlement_report`
+    (`resolver/loaders.py:88`) -- this is a lookup into data that was
+    already loaded, not a fresh read, unlike `build_erp_lookup` (which
+    re-reads `erp_orders.csv` because `Dataset.erp_order_ids` only keeps a
+    bare id set, not the richer per-order fields this dashboard shows)."""
+    return {sid: dict(dataset.settlement_report[sid])
+            for sid in settlement_ids if sid in dataset.settlement_report}
 
 
 def build_row_history_sample(conn, dataset_name: str, row_ids: list[str]) -> dict[str, list[dict]]:
@@ -348,6 +364,226 @@ def build_stability_panel(conn, dataset_name: str, run_metas: list[dict]) -> dic
         identical_outcomes=identical,
         distinct_fingerprints=len(set(fingerprints)),
     )
+
+
+#: Which bank-line kinds carry real, citable evidence for an investigation
+#: workspace. `Ambiguous` is deliberately excluded here -- it already has
+#: its own dedicated workspace (the matching grid's drill-down, and the
+#: Ambiguous Batch Arbiter agent); the exceptions list is for lines/rows
+#: that need explaining, not lines with too many equally-valid explanations.
+_EVIDENCED_LINE_KINDS = ("Unresolved", "AttestationDiscrepancy")
+
+
+def build_run_diff(conn, run_a: str, run_b: str, *, cap_a: int, cap_b: int,
+                    time_budget_a: float, time_budget_b: float) -> dict:
+    """A real diff between two of the 4 persisted flagship runs, via
+    `row_outcomes.disposition` -- the same table `store.queries.open_breaks`
+    reads. Both runs are the SAME dataset (`A20_B50_Cmax`) at different
+    solver settings, never a different time period (this corpus has no date
+    dimension) -- the caller must label it that way, not as "since last
+    run" in a time sense. `row_outcomes` only ever holds UNMATCHED rows
+    (`store/writer.py`), so a row absent from both is a row matched in both
+    -- genuinely uninteresting to this diff, correctly excluded rather than
+    counted as a fabricated "0 rows changed."""
+    def row_states(run_id: str) -> dict[str, str]:
+        rows = conn.execute(
+            "SELECT row_id, disposition FROM row_outcomes WHERE run_id = ?", (run_id,)
+        ).fetchall()
+        return {r["row_id"]: r["disposition"] for r in rows}
+
+    a_states, b_states = row_states(run_a), row_states(run_b)
+    unchanged = resolved = new_breaks = reclassified = 0
+    for row_id in set(a_states) | set(b_states):
+        sa, sb = a_states.get(row_id), b_states.get(row_id)
+        if sa == sb:
+            unchanged += 1
+        elif sa == "OpenBreak":
+            resolved += 1
+        elif sb == "OpenBreak":
+            new_breaks += 1
+        else:
+            reclassified += 1
+
+    return dict(run_a=run_a, run_b=run_b, cap_a=cap_a, cap_b=cap_b,
+                time_budget_a=time_budget_a, time_budget_b=time_budget_b,
+                unchanged=unchanged, resolved=resolved,
+                new_breaks=new_breaks, reclassified=reclassified)
+
+
+def build_runs_table(entities: list[dict]) -> list[dict]:
+    """One row per real `corpus/oracle_results.json` entity -- no `period`
+    column: this corpus has no date dimension, and inventing one would be
+    exactly the fabrication this repo's discipline forbids. `sources` and
+    `match_rate` are real, computed here rather than stored, because
+    neither is a field oracle_results.json happens to carry."""
+    table = []
+    for e in entities:
+        dataset_dir = ROOT / "corpus" / e["id"]
+        sources = sum(1 for filename in ARTIFACT_SOURCES if (dataset_dir / filename).exists())
+        match_rate = (e["verified"] / e["bank_lines"] * 100) if e["bank_lines"] else 0.0
+        table.append(dict(
+            axis_point=e["axis_point"], label=e["label"], family=e["family"],
+            sources=sources, match_rate=match_rate,
+            open_exceptions=e["open_breaks"], passed=e["passed"],
+            is_flagship=(e["axis_point"] == "A20_B50_Cmax" and e["family"] == "datasets")))
+    return table
+
+
+def build_accounting_summary(lines: list[dict], rows_by_id: dict[str, dict]) -> dict:
+    """Real Sigma(fee)/Sigma(credit)/Sigma(debit) from this run's own
+    Verified/Reconstructed lines -- the only lines the resolver closed with
+    a real composition. Money fields (`amount`,`fee`,`tax`,`credit`,`debit`)
+    are real, per-row, already integer paise (`resolver/loaders.py:289`
+    keeps `dataset.rows` unparsed JSON -- SETTLEMENT_SPEC.md Sec.4 confirms
+    the money keys are already paise). The four-line journal layout is an
+    illustrative convention (DECISIONS Sec.100), never asserted as this
+    repo's own chart of accounts."""
+    gross = fees = tax = refunds = net_credit = 0
+    seen: set[str] = set()
+    for entry in lines:
+        outcome = entry["outcome"]
+        if not outcome or outcome.get("__type__") not in ("Verified", "Reconstructed"):
+            continue
+        comp = outcome.get("composition")
+        if not comp:
+            continue
+        for row_id in comp["credit_ids"] + comp["debit_ids"]:
+            if row_id in seen:
+                continue
+            seen.add(row_id)
+            row = rows_by_id.get(row_id)
+            if not row:
+                continue
+            amount, fee = row.get("amount") or 0, row.get("fee") or 0
+            tax_amt, credit, debit = row.get("tax") or 0, row.get("credit") or 0, row.get("debit") or 0
+            # Gate on the real `debit` field, not `type`: a debit-side
+            # "adjustment" row (a chargeback, real in this corpus -- e.g.
+            # adj_8hLzehpYsMYjdI, debit=1,079,900 paise) is a debit-side
+            # item exactly like a refund, and an earlier draft that gated
+            # on `type == "refund"` silently added those chargeback amounts
+            # into gross instead. Caught by cross-checking net_paise against
+            # Sigma(credit - debit), the SETTLEMENT_SPEC.md Sec.4 identity
+            # -- the two disagreed by exactly the sum of the debit
+            # adjustments this branch had misclassified.
+            if debit:
+                refunds += debit
+            else:
+                gross += amount
+                fees += fee
+                tax += tax_amt
+            net_credit += credit - debit
+
+    net = gross - fees - refunds
+    return dict(
+        gross_paise=gross, fees_paise=fees, tax_paise=tax,
+        refunds_paise=refunds, net_paise=net, net_credit_check_paise=net_credit,
+        lines=[
+            dict(account="PSP Clearing", debit_paise=gross, credit_paise=0),
+            dict(account="Processing Fees", debit_paise=fees, credit_paise=0),
+            dict(account="Refund Liability", debit_paise=0, credit_paise=refunds),
+            dict(account="Bank", debit_paise=0, credit_paise=net),
+        ])
+
+
+def build_exceptions(dataset, lines: list[dict], rows_by_id: dict[str, dict],
+                      erp_by_order: dict[str, dict], disputes_by_id: dict[str, dict],
+                      settlement_by_id: dict[str, dict],
+                      open_break_buckets: dict[str, list[dict]]) -> list[dict]:
+    """One real exception per item that genuinely has something to
+    investigate -- never a synthesized example. Two shapes, deliberately
+    not unified into one, because they carry different real evidence:
+
+    Line-level (`Unresolved`/`AttestationDiscrepancy`): the resolver DOES
+    classify these with a real `warrant`/`detail` (or `contradiction`) --
+    `resolver_contract/types.py:829-845` (Unresolved), `:697-723`
+    (AttestationDiscrepancy). This is the one case a real "likely
+    explanation" can be shown.
+
+    Row-level (`OpenBreak`): `resolver/breaks.py`'s only `OpenBreak(...)`
+    call site never passes `warrant=`, so `OpenBreak.warrant` is `None`,
+    always (confirmed by reading every construction site, not assumed).
+    These exceptions carry real `reason`/`age_days`/`itc_risk` but
+    explicitly `warrant: None` -- the UI must render "no warrant on file"
+    for these, never invent an explanation the engine did not produce.
+    """
+    row_lookup = {r["entity_id"]: r for r in dataset.rows}
+    exceptions = []
+
+    for entry in lines:
+        outcome = entry["outcome"]
+        if not outcome or outcome.get("__type__") not in _EVIDENCED_LINE_KINDS:
+            continue
+        kind = outcome["__type__"]
+        if kind == "Unresolved":
+            warrant = outcome.get("warrant")
+            reason = outcome.get("reason")
+            likely_explanation = outcome.get("detail")
+            referenced_ids = []
+        else:  # AttestationDiscrepancy
+            warrant = outcome.get("warrant")
+            contradiction = outcome["contradiction"]
+            reason = contradiction["kind"]
+            likely_explanation = contradiction["detail"]
+            referenced_ids = contradiction["row_ids"]
+
+        psp, erp, settlement, disputes = [], [], [], []
+        for rid in referenced_ids:
+            row = rows_by_id.get(rid)
+            if not row:
+                continue
+            psp.append(row)
+            if row.get("order_id") in erp_by_order:
+                erp.append(erp_by_order[row["order_id"]])
+            if row.get("settlement_id") in settlement_by_id:
+                settlement.append(settlement_by_id[row["settlement_id"]])
+            if row.get("dispute_id") in disputes_by_id:
+                disputes.append(disputes_by_id[row["dispute_id"]])
+
+        exceptions.append(dict(
+            id=f"EX-L{entry['index']}", scope="line", kind=kind,
+            bank_index=entry["index"], amount_paise=entry["amount_paise"],
+            reference=entry["reference"], value_date=entry["value_date"],
+            reason=reason, has_warrant=warrant is not None,
+            evidence=to_jsonable(warrant) if warrant else None,
+            likely_explanation=likely_explanation,
+            bank=dict(found=True, reference=entry["reference"], value_date=entry["value_date"],
+                      amount_paise=entry["amount_paise"], narration=entry["narration"]),
+            psp=psp, erp=erp, settlement_report=settlement, disputes=disputes,
+            age_days=None, owner=None,
+        ))
+
+    for bucket_name, rows in open_break_buckets.items():
+        for r in rows:
+            row_id = r["row_id"]
+            raw = row_lookup.get(row_id)
+            owner, close_condition = owner_for_reason(r["reason"])
+            erp = ([erp_by_order[raw["order_id"]]]
+                   if raw and raw.get("order_id") in erp_by_order else [])
+            settlement = ([settlement_by_id[raw["settlement_id"]]]
+                          if raw and raw.get("settlement_id") in settlement_by_id else [])
+            disputes = ([disputes_by_id[raw["dispute_id"]]]
+                       if raw and raw.get("dispute_id") in disputes_by_id else [])
+            exceptions.append(dict(
+                id=f"EX-{row_id}", scope="row", kind="OpenBreak",
+                bank_index=None,
+                # `dataset.rows` is `json.loads(recon_combined.json)["items"]`
+                # untouched (`resolver/loaders.py:289`) -- `amount` is
+                # already an integer in paise, same units as everywhere
+                # else in this repo. No *100 conversion belongs here; an
+                # earlier draft applied one anyway and inflated every
+                # OpenBreak amount 100x, caught by cross-checking this
+                # exact row's PSP amount against its real ERP invoice total.
+                amount_paise=int(raw["amount"]) if raw and raw.get("amount") is not None else None,
+                reference=row_id, value_date=r.get("first_seen"),
+                reason=r["reason"], has_warrant=False, evidence=None,
+                likely_explanation=None,
+                bank=dict(found=False, detail="No matching bank credit found for this row."),
+                psp=[raw] if raw else [], erp=erp, settlement_report=settlement, disputes=disputes,
+                age_days=r["age_days"], age_bucket=bucket_name,
+                owner=owner, close_condition=close_condition,
+            ))
+
+    return exceptions
 
 
 #: One line per agent, taken from the real module's own docstring at build
@@ -518,6 +754,9 @@ def main() -> int:
         run_metas = [get_run(conn, rid) for rid in run_ids]
         gst = build_gst_panel(FLAGSHIP_DIR, conn, run_ids)
         stability = build_stability_panel(conn, "A20_B50_Cmax", run_metas)
+        run_diff = build_run_diff(conn, run_ids[0], run_ids[1],
+                                   cap_a=RUN_PARAMS[0][0], cap_b=RUN_PARAMS[1][0],
+                                   time_budget_a=RUN_PARAMS[0][1], time_budget_b=RUN_PARAMS[1][1])
 
         # A second, real dataset, only for the ITC Drafter agent preview
         # (see ITC_EXAMPLE_DIR's own comment above) -- never touches any
@@ -530,6 +769,8 @@ def main() -> int:
     entities = build_entities()
     ingestion = build_ingestion_status(FLAGSHIP_DIR)
     discrepancies = build_discrepancies(lines)
+    runs_table = build_runs_table(entities)
+    accounting = build_accounting_summary(lines, rows_by_id)
 
     ingested_artifacts = {f["artifact"] for f in ingestion}
     connectors = []
@@ -539,11 +780,25 @@ def main() -> int:
             c["status"] = "connected"
         connectors.append(c)
 
-    order_ids = {r["order_id"] for r in rows_by_id.values() if r.get("order_id")}
+    # Widened to also cover OpenBreak rows -- those are never in
+    # `rows_by_id` (a row referenced by no line's outcome, by definition of
+    # being an open break), but `build_exceptions` still needs their real
+    # ERP/settlement/dispute records where they exist.
+    open_break_row_ids = {r["row_id"] for rows in buckets.values() for r in rows}
+    row_lookup_for_widening = {r["entity_id"]: r for r in dataset.rows}
+    all_raw_rows = ([r for r in rows_by_id.values()] +
+                     [row_lookup_for_widening[rid] for rid in open_break_row_ids
+                      if rid in row_lookup_for_widening])
+    order_ids = {r["order_id"] for r in all_raw_rows if r.get("order_id")}
+    settlement_ids = {r["settlement_id"] for r in all_raw_rows if r.get("settlement_id")}
+    dispute_ids = {r["dispute_id"] for r in all_raw_rows if r.get("dispute_id")}
     erp_by_order = build_erp_lookup(FLAGSHIP_DIR, order_ids)
+    settlement_by_id = build_settlement_report_lookup(dataset, settlement_ids)
     disputes_by_id = {did: dict(dataset.disputes[did])
-                       for r in rows_by_id.values()
-                       if (did := r.get("dispute_id"))}
+                       for did in dispute_ids if did in dataset.disputes}
+
+    exceptions = build_exceptions(dataset, lines, rows_by_id, erp_by_order,
+                                   disputes_by_id, settlement_by_id, aging_rows)
 
     coverage_all = dashboard_data["coverage"]["all"]
 
@@ -586,6 +841,10 @@ def main() -> int:
         stability=stability,
         agents=agents_panel,
         connectors=connectors,
+        exceptions=exceptions,
+        runs_table=runs_table,
+        run_diff=run_diff,
+        accounting=accounting,
     )
 
     template = TEMPLATE_PATH.read_text()
