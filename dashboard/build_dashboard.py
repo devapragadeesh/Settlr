@@ -57,8 +57,8 @@ from store.codec import to_jsonable  # noqa: E402
 from store.approvals import list_approval_requests  # noqa: E402
 from store.db import connect  # noqa: E402
 from store.queries import (get_run, line_outcome, open_breaks,  # noqa: E402
-                            owner_for_reason, row_history, runs_for_dataset,
-                            sources_for_run)
+                            owner_for_reason, row_history,
+                            runs_for_dataset, sources_for_run)
 
 FLAGSHIP_DIR = ROOT / "corpus" / "datasets" / "A20_B50_Cmax"
 #: The flagship carries zero itc_risk-flagged breaks (confirmed, DECISIONS
@@ -268,6 +268,13 @@ def build_entities() -> list[dict]:
             unresolved=unresolved,
             ambiguous=ambiguous,
             proven_unmatched=acc["proven_unmatched"],
+            # Real per-entity detail already in oracle_results.json and
+            # previously discarded -- what KIND of break, at what age, and
+            # whether foreign lines were correctly left alone.
+            unresolved_by_reason=row["measured"].get("unresolved_by_reason") or {},
+            breaks_by_reason=(row["measured"].get("open_break") or {}).get("by_reason") or {},
+            breaks_by_age=(row["measured"].get("open_break") or {}).get("by_age") or {},
+            foreign_lines=row["measured"].get("foreign_lines") or {},
         ))
     return entities
 
@@ -535,6 +542,43 @@ def build_source_provenance(conn, run_id: str) -> list[dict]:
             fetched_at=record["fetched_at"],
         ))
     return out
+
+
+#: `break_history` is deliberately NOT surfaced. It records, per row, the
+#: run a break first appeared in and whether it ever closed -- the shape of
+#: the "what changed since this account was last reconciled" feature. But
+#: its `first_seen_at` is the wall-clock time of THIS BUILD (the store is
+#: regenerated from scratch on every run of this script), and with four runs
+#: over identical data nothing ever closes, so every row reads "first seen
+#: <build time>, never closed". That is a build artefact wearing the costume
+#: of business history, which is the same failure as citing a decision
+#: record at a user. The business first-seen date and age DO exist and are
+#: real -- `row_outcomes.first_seen`, already shown per exception. The
+#: feature becomes honest the day this store persists across scheduled runs.
+#: The GST panel showed five aggregate counts over a file with twelve real
+#: columns per invoice. The per-invoice detail is what someone actually
+#: works from when an input-tax-credit claim is challenged: which supplier,
+#: which invoice, how much tax, has the supplier filed, is there an IRN.
+def build_gst_invoices(dataset) -> list[dict]:
+    out = []
+    for line in dataset.gstr2b:
+        igst, cgst, sgst = line.igst, line.cgst, line.sgst
+        out.append(dict(
+            gstin=line.gstin,
+            invoice_no=line.invoice_no,
+            invoice_date=line.invoice_date.isoformat() if line.invoice_date else None,
+            taxable_value=line.taxable_value,
+            # tax_total is a @property and would not survive to_jsonable --
+            # recomputed here from the three real component fields.
+            tax_total=igst + cgst + sgst,
+            igst=igst, cgst=cgst, sgst=sgst,
+            has_irn=bool(line.irn),
+            filing_period=line.gstr1_filing_period or None,
+            supplier_filed=line.supplier_gstr3b_filed,
+            itc_availability=line.itc_availability,
+        ))
+    return sorted(out, key=lambda i: ((i["itc_availability"] or "").lower() != "no",
+                                       i["supplier_filed"] == "Y", i["invoice_no"]))
 
 
 def build_ingestion_status(dataset_dir: Path) -> list[dict]:
@@ -1252,6 +1296,7 @@ def main() -> int:
         kpis=kpis,
         approvals=approvals,
         provenance=provenance,
+        gst_invoices=build_gst_invoices(dataset),
         run_diff=run_diff,
         accounting=accounting,
     )

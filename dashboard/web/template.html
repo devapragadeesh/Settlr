@@ -968,7 +968,16 @@ body,.panel,.topbar,.etable td,.etable th,.slideout,.ai-panel{transition:backgro
     <div class="tabpanel" data-tabpanel="tax">
       <h2 class="section-title">Tax &amp; Input Tax Credit</h2>
       <p class="section-sub">The GST leg of the same reconciliation — supplier filing status and input-tax-credit exposure on purchase invoices.</p>
-      <div class="panel" id="gstPanel"></div>
+      <div class="panel" id="gstPanel" style="margin-bottom:22px;"></div>
+      <div class="etable-wrap panel">
+        <table class="etable">
+          <thead><tr>
+            <th>Invoice</th><th>Supplier GSTIN</th><th>Date</th><th>Taxable</th>
+            <th>Tax</th><th>e-Invoice</th><th>Supplier filed</th><th>Credit</th>
+          </tr></thead>
+          <tbody id="gstTableBody"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 

@@ -334,6 +334,29 @@
         (r.sha256 || "").slice(0, 20) + "\u2026"))));
   }
 
+  // Per-invoice tax detail. The interesting column is the combination:
+  // a supplier who has NOT filed their GSTR-3B while the portal still shows
+  // credit available is a real Rule 37A exposure, and that pairing is only
+  // visible per invoice -- the aggregate counts above cannot show it.
+  function renderGstInvoices() {
+    const body = $("#gstTableBody");
+    const pill = (text, tone) => el("span", { class: "status-pill", style:
+      `background:transparent;color:${tone};border:1px solid ${tone}` }, text);
+    (D.gst_invoices || []).forEach((g) => {
+      const blocked = (g.itc_availability || "").toLowerCase() === "no";
+      const unfiled = g.supplier_filed !== "Y";
+      body.append(el("tr", {},
+        el("td", {}, el("b", {}, g.invoice_no)),
+        el("td", { style: "font-family:monospace;font-size:11.5px;color:var(--text-2)" }, g.gstin),
+        el("td", {}, fmtDate(g.invoice_date)),
+        el("td", {}, inr(g.taxable_value)),
+        el("td", {}, inr(g.tax_total)),
+        el("td", {}, g.has_irn ? pill("Present", "var(--green)") : pill("Missing", "var(--amber)")),
+        el("td", {}, unfiled ? pill("Not filed", "var(--red)") : pill("Filed", "var(--green)")),
+        el("td", {}, blocked ? pill("Blocked", "var(--red)") : pill("Available", "var(--green)"))));
+    });
+  }
+
   /* ============================== STAT CARDS ============================== */
   function renderStatRow() {
     const totalOpen = Object.values(D.aging).reduce((a, b) => a + b, 0);
@@ -1022,6 +1045,35 @@
     slideout.classList.add("show");
   }
 
+  // Per-entity detail that was loaded and discarded before now. A count of
+  // open breaks says how much work there is; the breakdown by cause says
+  // what KIND of work, which is what decides who picks it up.
+  function breakdownSection(title, counts, labelFn) {
+    const entries = Object.entries(counts || {}).sort((a, b) => b[1] - a[1]);
+    if (!entries.length) return null;
+    const max = Math.max(...entries.map((e) => e[1]), 1);
+    return el("div", { class: "slideout-section" }, el("h4", {}, title),
+      el("div", { class: "bars" }, ...entries.map(([k, n]) =>
+        el("div", { class: "bar-row" },
+          el("div", { class: "bl" }, labelFn(k)),
+          el("div", { class: "bar-track" },
+            el("div", { class: "bar-fill", style: `width:${(n / max) * 100}%;background:var(--blue-1)` })),
+          el("div", { class: "bv" }, fmtNum(n))))));
+  }
+
+  // "Foreign" lines are bank credits that belong to someone else entirely.
+  // Correctly leaving them alone is a real result worth stating -- silence
+  // here would read as the case never having been tested.
+  function foreignLinesSection(fl) {
+    if (!fl || fl.in_file == null) return null;
+    return el("div", { class: "slideout-section" }, el("h4", {}, "Third-party Credits"),
+      el("div", { class: "evidence-detail" },
+        `${fl.in_file} bank credit${fl.in_file === 1 ? "" : "s"} in this statement belong to another party. `,
+        fl.falsely_adopted === 0
+          ? "None were wrongly claimed as ours."
+          : `${fl.falsely_adopted} were wrongly claimed as ours.`));
+  }
+
   function openEntityDrilldown(entity) {
     const slideout = $("#slideout");
     slideout.innerHTML = "";
@@ -1042,7 +1094,11 @@
             el("div", { class: "cell" }, el("div", { class: "k" }, "Open breaks"), el("div", { class: "v" }, entity.open_breaks)),
             el("div", { class: "cell" }, el("div", { class: "k" }, "Unresolved"), el("div", { class: "v" }, entity.unresolved)),
             el("div", { class: "cell" }, el("div", { class: "k" }, "Ambiguous"), el("div", { class: "v" }, entity.ambiguous)),
-            el("div", { class: "cell" }, el("div", { class: "k" }, "Verification"), el("div", { class: "v", style: `color:${entity.passed ? "var(--green)" : "var(--red)"}` }, entity.passed ? "Passed" : "Failed"))))
+            el("div", { class: "cell" }, el("div", { class: "k" }, "Verification"), el("div", { class: "v", style: `color:${entity.passed ? "var(--green)" : "var(--red)"}` }, entity.passed ? "Passed" : "Failed")))),
+        breakdownSection("Open Breaks by Cause", entity.breaks_by_reason, prettyReason),
+        breakdownSection("Open Breaks by Age", entity.breaks_by_age, (k) => k + " days"),
+        breakdownSection("Unresolved by Cause", entity.unresolved_by_reason, prettyReason),
+        foreignLinesSection(entity.foreign_lines)
       )
     );
     $("#scrim").classList.add("show");
@@ -2135,6 +2191,7 @@
   renderIngestionFull();
   renderTrust();
   renderGst();
+  renderGstInvoices();
   renderStability();
   renderMatchingGrid();
   renderMethods();

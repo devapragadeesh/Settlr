@@ -7205,3 +7205,73 @@ copy change look like a behaviour regression.
 `fmtDate`), `dashboard/web/template.html` (KPI band, timing panels, method and
 provenance tables, approval card styles),
 `agents/tests/test_chat_answerer.py`, `dashboard/index.html` regenerated.
+
+## 106. Per-invoice tax detail and per-entity break composition -- and `break_history` withheld, because its dates are build artefacts -- 2026-09-04
+
+The last three items of the dashboard reform. Two shipped; one did not, and
+the one that did not is the more interesting decision.
+
+**Withheld: the break lifecycle / "what changed since last reconciled" view.**
+`store`'s `break_history` table holds, per row, the run a break first appeared
+in, when it was first seen, and if/when it closed -- exactly the shape of the
+feature close-management products market as their headline. It has 84 real
+rows and was already queryable via the never-called `break_lifecycle()`. It
+was built, wired, and then removed before commit, because reading the actual
+output showed what it contains here:
+
+```
+first_seen_at: 2026-09-04T14:22:39   closed_at: None   reason: ""
+```
+
+`first_seen_at` is the wall-clock time of **this build**. The store is
+regenerated from scratch every time `build_dashboard.py` runs, so "first seen"
+is "a moment ago", identically for all 84 rows; with four runs over identical
+data nothing ever closes; and `reason` comes back empty. Rendering that as
+business history would put a build timestamp in front of a user wearing the
+costume of a reconciliation record -- the same category of dishonesty as
+citing a decision-record number at them (Sec.104), and harder to catch because
+it looks like data rather than like jargon.
+
+The business first-seen date and age **do** exist and are real
+(`row_outcomes.first_seen`, already shown on every exception with its age
+bucket). The feature becomes honest the day this store persists across
+scheduled runs rather than being rebuilt; the reasoning is recorded in a
+comment at the call site so the next person does not rediscover the trap by
+shipping it.
+
+**Rejected alternative: show it with a caveat.** "First seen (this build)"
+would be accurate and useless -- a column whose every cell is the same
+timestamp is not information, and the caveat would be doing all the work.
+
+**Shipped: per-invoice tax detail.** The GST panel showed five aggregate
+counts over a file carrying twelve real columns per invoice. The aggregate
+cannot express the thing that actually matters, which is a *combination*: a
+supplier who has not filed their GSTR-3B while the portal still shows credit
+available is a live Rule 37A exposure, and that pairing is only visible per
+invoice. The table sorts blocked credits first, then unfiled suppliers.
+`Gstr2bLine.tax_total` is a `@property` and would not survive `to_jsonable`,
+so it is recomputed in Python from the three real component fields -- the
+serialization trap that has now bitten this codebase four times.
+
+**Shipped: per-entity break composition.** `oracle_results.json` carries
+`open_break.by_reason`, `by_age`, `unresolved_by_reason` and `foreign_lines`
+per entity; `build_entities` kept six scalars and discarded all of it. A count
+of open breaks says how much work there is; the breakdown by cause says what
+*kind*, which is what decides who picks it up. `foreign_lines` is included
+because "8 bank credits belong to another party, none wrongly claimed as ours"
+is a real result -- staying silent about it would read as the case never
+having been tested.
+
+**Verification.** Both shipped figures were cross-checked against source
+independently: the GST table against `gstr2b.csv` directly (23 invoices, 7
+blocked, 16 with IRN, 21 filed, taxable total Rs 3,89,183.97 = 38,918,397
+paise -- exact on all five), and additionally against the pre-existing
+aggregate panel, which it now agrees with. The per-entity cause breakdown sums
+to exactly that entity's own open-break total (84 = 84). Accounting identity
+still zero; payload and rendered copy still pass the Sec.104 leak gate.
+
+**Files:** `dashboard/build_dashboard.py` (`build_gst_invoices`,
+per-entity detail in `build_entities`, and the withheld-lifecycle comment),
+`dashboard/web/app.js` (`renderGstInvoices`, `breakdownSection`,
+`foreignLinesSection`), `dashboard/web/template.html` (GST invoice table),
+`dashboard/index.html` regenerated.
