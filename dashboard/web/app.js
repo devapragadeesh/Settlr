@@ -49,7 +49,7 @@
     awaiting_approval: { label: "Awaiting Approval", color: "var(--red)", cls: "badge-awaiting-approval" },
     certified: { label: "Certified", color: "var(--green)", cls: "badge-certified" },
   };
-  const AGING_COLORS = { "0-30": "#2ecf7a", "31-60": "#f5c453", "61-90": "#f5a524", "90+": "#f0475a" };
+  const AGING_COLORS = { "0-30": "var(--green)", "31-60": "var(--amber)", "61-90": "var(--amber)", "90+": "var(--red)" };
   // Mirrors resolver_contract.types.SOURCE_PARTY -- independence is counted
   // over parties, not sources; resolver_internal never corroborates.
   const SOURCE_PARTY = {
@@ -85,7 +85,7 @@
     const id = "g" + Math.random().toString(36).slice(2, 8);
     return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="transform:rotate(-90deg)">
       <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="${color}"/>
+        <stop offset="0%" stop-color="var(--text-on-accent)"/><stop offset="100%" stop-color="${color}"/>
       </linearGradient></defs>
       <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${trackColor}" stroke-width="${stroke}"/>
       <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="url(#${id})" stroke-width="${stroke}"
@@ -108,13 +108,13 @@
       el("div", { class: "hero-desc" },
         `${fmtNum(h.answered)} of ${fmtNum(h.determinable)} determinable settlement lines are answered with stated evidence, across ${h.datasets} entities.`),
       el("div", { class: "hero-donut-wrap" },
-        el("div", { html: donutSVG(h.on_determinable_pct, size, stroke, "#ffffff", "rgba(255,255,255,.16)") }),
+        el("div", { html: donutSVG(h.on_determinable_pct, size, stroke, "var(--text-on-accent)", "rgba(255,255,255,.16)") }),
         el("div", { class: "hero-donut-center" },
           el("div", { class: "pct num" }, h.on_determinable_pct.toFixed(1), el("sub", {}, "%")),
           el("div", { class: "lbl" }, "on determinable lines"))
       ),
       el("div", { class: "hero-legend" },
-        el("div", { class: "item" }, el("span", { class: "sw", style: "background:#fff" }), "Answered ", el("b", {}, fmtNum(h.answered))),
+        el("div", { class: "item" }, el("span", { class: "sw", style: "background:var(--text-on-accent)" }), "Answered ", el("b", {}, fmtNum(h.answered))),
         el("div", { class: "item" }, el("span", { class: "sw", style: "background:rgba(255,255,255,.3)" }), "Determinable ", el("b", {}, fmtNum(h.determinable)))
       ),
       el("div", { class: "hero-foot" },
@@ -127,6 +127,20 @@
     requestAnimationFrame(() => {
       const circle = wrap.querySelector("circle[data-target]");
       if (circle) circle.style.strokeDashoffset = circle.dataset.target;
+    });
+  }
+
+  /* ============================== THEME ==============================
+     The <head> already stamped data-theme before first paint; this only
+     handles the toggle and persistence. Colors all resolve through the
+     token set in template.html, so flipping the attribute is the whole
+     switch -- no per-component re-render. */
+  function setupTheme() {
+    $("#themeBtn").addEventListener("click", () => {
+      const next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", next);
+      try { localStorage.setItem("settlr-theme", next); } catch (e) { /* private mode */ }
+      showToast(next === "light" ? "Light theme" : "Dark theme");
     });
   }
 
@@ -317,11 +331,11 @@
         el("div", { class: "cell" }, el("div", { class: "k" }, "IRN present"), el("div", { class: "v" }, g.irn_present + " / " + g.invoices)),
         el("div", { class: "cell" }, el("div", { class: "k" }, "Supplier GSTR-3B filed"), el("div", { class: "v" }, g.filed + " / " + g.invoices)),
         el("div", { class: "cell" }, el("div", { class: "k" }, "ITC available"), el("div", { class: "v" }, g.itc_available + " / " + g.invoices))),
-      el("div", { style: "margin-top:16px;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-2);line-height:1.6" },
+      el("div", { style: "margin-top:16px;padding:12px 14px;background:rgba(var(--ink),.03);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-2);line-height:1.6" },
         el("b", { style: "color:var(--text-1)" }, g.flagged_at_risk + " rows flagged at-risk"),
         ` across ${g.runs_checked} persisted runs. Not a bug: `,
-        el("code", { style: "background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px" }, "EvidenceKind.GST_DOCUMENT"),
-        " is bound to ", el("code", { style: "background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px" }, "Attests.ROW_EXISTENCE"),
+        el("code", { style: "background:rgba(var(--ink),.06);padding:1px 5px;border-radius:4px" }, "EvidenceKind.GST_DOCUMENT"),
+        " is bound to ", el("code", { style: "background:rgba(var(--ink),.06);padding:1px 5px;border-radius:4px" }, "Attests.ROW_EXISTENCE"),
         " in the resolver's own contract — a tax document can annotate an open item but can never license a bank-credit composition. This entity's tax feed genuinely has nothing flagged; that is the architecture working as designed, not the feature being untested.")
     );
   }
@@ -348,8 +362,8 @@
     panel.append(el("div", {
       style: `margin-top:14px;padding:12px 14px;border-radius:var(--radius-sm);font-size:12px;line-height:1.6;` +
         (s.identical_outcomes
-          ? "background:var(--green-bg);border:1px solid var(--green-border);color:#b8f5cf"
-          : "background:var(--red-bg);border:1px solid var(--red-border);color:#ffb3bc"),
+          ? "background:var(--green-bg);border:1px solid var(--green-border);color:var(--green)"
+          : "background:var(--red-bg);border:1px solid var(--red-border);color:var(--red)"),
     }, s.identical_outcomes
       ? `Identical outcome on every bank line across all ${s.runs.length} runs — real reproducibility, not asserted.`
       : `${s.distinct_fingerprints} distinct outcome sets across ${s.runs.length} runs — a genuine finding, not hidden.`));
@@ -585,7 +599,7 @@
         cols.append(c.root);
       }
       if (erpRows.length) {
-        const c = matchColumn("ERP Order Book", "#c98bff", erpRows.length);
+        const c = matchColumn("ERP Order Book", "var(--source-erp)", erpRows.length);
         erpRows.forEach((r) => c.body.append(erpRowEl(r)));
         cols.append(c.root);
       }
@@ -631,7 +645,7 @@
     if (line.kind === "AttestationDiscrepancy") cls.push("anomaly");
     if (line.kind === "Ambiguous") cls.push("partial");
     const row = el("div", { class: cls.join(" ") },
-      el("div", { class: "chk" }, el("svg", { width: "10", height: "8", viewBox: "0 0 10 8", fill: "none", html: '<path d="M1 4l2.5 2.5L9 1" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' })),
+      el("div", { class: "chk" }, el("svg", { width: "10", height: "8", viewBox: "0 0 10 8", fill: "none", html: '<path d="M1 4l2.5 2.5L9 1" stroke="var(--text-on-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' })),
       el("div", { class: "txrow-body" },
         el("div", { class: "txrow-top" },
           el("div", { class: "txrow-ref" }, line.reference || "(no reference)"),
@@ -651,7 +665,7 @@
   function ledgerRowEl(r, line) {
     const checked = selectedRowIds.has(r.entity_id);
     const row = el("div", { class: "txrow" + (checked ? " selected" : "") },
-      el("div", { class: "chk" }, el("svg", { width: "10", height: "8", viewBox: "0 0 10 8", fill: "none", html: '<path d="M1 4l2.5 2.5L9 1" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' })),
+      el("div", { class: "chk" }, el("svg", { width: "10", height: "8", viewBox: "0 0 10 8", fill: "none", html: '<path d="M1 4l2.5 2.5L9 1" stroke="var(--text-on-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' })),
       el("div", { class: "txrow-body" },
         el("div", { class: "txrow-top" },
           el("div", { class: "txrow-ref" }, r.entity_id),
@@ -781,7 +795,7 @@
     if (o && o.contradiction) {
       body.append(el("div", { class: "slideout-section" },
         el("h4", {}, "Contradiction"),
-        el("div", { class: "evidence-detail", style: "color:#ff9aa5" }, o.contradiction.detail)));
+        el("div", { class: "evidence-detail", style: "color:var(--red)" }, o.contradiction.detail)));
     }
 
     if (o && o.candidate_set) {
@@ -1086,37 +1100,6 @@
     }
 
     return null;
-  }
-
-  // Composed live from the actual filtered set on every keystroke -- no
-  // canned strings, no server round-trip.
-  function generateAnswer(lines, query) {
-    if (!query) {
-      return {
-        headline: "Ask about unmatched lines, entities, health, aging, GST, or trust — Settlr answers from this run's real data.",
-        sub: "",
-      };
-    }
-    if (!lines.length) {
-      return {
-        headline: `No bank lines match “${query}.”`,
-        sub: "Try one of the quick filters below, or clear the search.",
-      };
-    }
-    const byKind = {};
-    let total = 0;
-    let oldest = null;
-    lines.forEach((l) => {
-      byKind[l.kind] = (byKind[l.kind] || 0) + 1;
-      total += Math.abs(l.amount_paise);
-      if (!oldest || l.value_date < oldest) oldest = l.value_date;
-    });
-    const breakdown = Object.entries(byKind)
-      .map(([k, n]) => `${n} ${KIND_WORD[k] || k.toLowerCase()}`)
-      .join(", ");
-    const headline = `${lines.length} line${lines.length === 1 ? "" : "s"} match — ${breakdown}, totaling ${inr(total)}.`;
-    const sub = oldest ? `Earliest value date in this set: ${oldest}.` : "";
-    return { headline, sub };
   }
 
   /* ============================== MATCHING-PAGE FILTER ============================== */
@@ -1462,7 +1445,7 @@
   // local file, not that transport. "planned" is a genuine, named gap.
   const CONNECTOR_STATUS_META = {
     connected: { label: "Connected", pill: "background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);" },
-    available: { label: "Available", pill: "background:rgba(61,116,255,.14);color:#a9c0ff;border:1px solid rgba(61,116,255,.35);" },
+    available: { label: "Available", pill: "background:rgba(61,116,255,.14);color:var(--blue-soft);border:1px solid rgba(61,116,255,.35);" },
     planned: { label: "Planned", pill: "background:var(--slate-bg);color:var(--slate);border:1px solid var(--border-strong);" },
   };
 
@@ -1623,7 +1606,7 @@
       const groups = {};
       list.forEach((e) => { const k = key(e); (groups[k] = groups[k] || []).push(e); });
       Object.entries(groups).forEach(([groupName, items]) => {
-        body.append(el("tr", {}, el("td", { colspan: "7", style: "font-weight:700;color:var(--text-1);background:rgba(255,255,255,.03);" },
+        body.append(el("tr", {}, el("td", { colspan: "7", style: "font-weight:700;color:var(--text-1);background:rgba(var(--ink),.03);" },
           `${groupName} (${items.length})`)));
         items.forEach((e) => body.append(exceptionRow(e)));
       });
@@ -1835,7 +1818,7 @@
         class: "status-pill",
         style: i <= acctStep
           ? "background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)"
-          : "background:rgba(255,255,255,.05);color:var(--text-3);border:1px solid var(--border-strong)",
+          : "background:rgba(var(--ink),.05);color:var(--text-3);border:1px solid var(--border-strong)",
       }, s));
     });
     panel.append(stepsRow);
@@ -1908,6 +1891,7 @@
   renderAccounting();
   setupMatchingFilter();
   setupAiPanel();
+  setupTheme();
   setupAvatarMenu();
   setupNotifications();
   setupPageSwitching();

@@ -6861,3 +6861,84 @@ explicitly closed instead of living only in a tempdir), `dashboard/web/app.js`
 (`AGENT_API_BASE`, async `answerFreeText`, `localHeuristicAnswer` renamed
 from the old body), `.gitignore` (`dashboard/data/`), `dashboard/index.html`
 regenerated.
+
+## 102. A real design-token system, and a light theme the dashboard could not previously have had -- 2026-09-04
+
+**The ask.** Add a light mode (warm paper beige) alongside the existing dark
+one, as the first phase of reforming the dashboard into something that reads
+as an actual product rather than a research artifact with a UI.
+
+**Why this could not be done by flipping `:root`.** The stylesheet declared
+**34 custom properties** but contained **47 raw hex literals and 112
+`rgba(...)`/`rgb(...)` literals**, with another ~21 hex and 9 rgba built into
+inline `style=` strings in `dashboard/web/app.js`. A token swap would have
+recolored roughly a third of the UI and left the rest dark-on-light. The
+tokenization *is* the feature; the palette is the easy half.
+
+**The mechanism: `--ink` is an RGB triplet, not a color.** Every translucent
+overlay in the sheet -- borders, hover fills, dividers, the dozens of
+`rgba(255,255,255,.0X)` washes that give the dark theme its depth -- is now
+written `rgba(var(--ink), A)`. One token flips all ~50 of them from a white
+tint on dark to a dark tint on paper, without touching a single alpha value.
+This is why the dark theme is byte-for-byte visually unchanged: the same
+alphas over the same triplet produce the same colors.
+
+Colors that must *not* flip got their own tokens rather than being swept into
+`--ink`, because they sit on surfaces that stay the same in both themes:
+- `--text-on-accent` -- text on the blue accent (buttons, active segments,
+  selection).
+- `--ink-on-accent` -- a **fixed white triplet** for the hero card, which keeps
+  its blue gradient in both themes. This was a real bug caught in Chrome: the
+  hero's twelve `rgba(var(--ink), …)` values correctly flipped to dark, and
+  produced dark-grey text on a saturated blue card. Tokenizing by *surface*
+  rather than by *theme* is the fix.
+- `--text-on-green` (the toast), `--chip-invert-bg`/`-text`, `--ring`,
+  `--code-bg`/`-text`/`-key`/`-str`/`-num` (the JSON viewer), `--float-bg`
+  (menus/popovers), `--scrim`, `--glow-1`/`-2` (the body's radial gradients),
+  `--blue-soft` (accent text on a tinted blue ground, previously `#a9c0ff`
+  in seven places), `--source-erp` (previously a hardcoded `#c98bff`).
+
+**Three-state theming, not two.** The viewer has three states, not two: an
+explicit light choice, an explicit dark choice, and no choice at all. The bare
+`:root` carries the light palette; `@media (prefers-color-scheme: dark)`
+restates the dark palette guarded as `:root:not([data-theme="light"])` so an
+explicit light choice beats a dark OS; `:root[data-theme="dark"]` restates it
+again so the toggle wins in the other direction. A `<head>` script stamps the
+saved theme before first paint, so a light-mode user never sees a dark flash.
+
+**Rejected alternative: default to the OS preference.** Dark is this product's
+identity -- every screenshot, the logo treatment, the hero. An unset preference
+therefore resolves to **dark**, not to `prefers-color-scheme`. Light is a
+deliberate choice a user makes and we remember (`localStorage.settlr-theme`),
+not something an OS setting imposes on first visit.
+
+**Rejected alternative: a `.light` body class with a parallel stylesheet.**
+Two stylesheets drift. One token set with three resolution paths cannot: every
+component reads `var(--…)` and is theme-agnostic by construction, which is also
+why the toggle needs no re-render -- flipping one attribute is the entire switch.
+
+**Semantic colors were re-tuned, not reused.** `--green:#2ecf7a`,
+`--amber:#f5a524` and `--red:#f0475a` are legible on `#05070d` and fail on
+`#f6f2ea`. The light palette uses `#12924f` / `#a86c00` / `#c62839`, chosen for
+contrast on paper. Reusing the dark values would have been the invisible version
+of the same bug the hero had.
+
+**Two dead-code fixes found while tokenizing** (both real, both pre-existing):
+- `generateAnswer` was **defined twice** in `app.js`; the second definition
+  silently shadowed the first, so the earlier no-sources version was dead code.
+  Removed.
+- `AGING_COLORS` hardcoded the four semantic hexes instead of referencing the
+  tokens that already existed. Now `var(--green)`/`var(--amber)`/`var(--red)`,
+  so aging bars follow the theme.
+
+**Verification.** Rebuilt and checked live in Chrome in both themes: Overview
+(hero, donut, stat cards), Exceptions (tables, pills, stat row), Matching (the
+densest surface -- four source columns), a full line drilldown (evidence chips,
+independence note, audit timeline, raw JSON viewer), and the AI panel (the
+heaviest translucency cluster). Console clean on a fresh load; theme persisted
+across reload with no flash. Dark rendering is unchanged from before this entry.
+
+**Files:** `dashboard/web/template.html` (token blocks, `--ink` migration,
+theme toggle button + icons, no-flash head script), `dashboard/web/app.js`
+(`setupTheme`, JS color literals moved onto tokens, dead `generateAnswer`
+removed), `dashboard/index.html` regenerated. No Python, no data, no engine.
