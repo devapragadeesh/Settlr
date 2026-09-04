@@ -7106,3 +7106,102 @@ docstrings, connector copy rewritten, claims ledger dropped),
 `dashboard/web/template.html` (page intro, table headers),
 `agents/chat_answerer.py` (its two degraded messages are user-facing in the
 panel), `dashboard/index.html` regenerated.
+
+## 105. The time dimension was there all along -- settlement timing, KPIs, method concentration, a real maker-checker queue, and provenance -- 2026-09-04
+
+**The finding that drove this entry: this corpus has a real time dimension,
+and this file's own comments said it did not.** `build_run_diff` and
+`build_runs_table` both carried the note "this corpus has no date dimension".
+That is true of `oracle_results.json`'s per-run scoring rows and false of the
+records themselves. Verified directly against
+`corpus/datasets/A20_B50_Cmax/recon_combined.json` (314 rows):
+
+| Field | Real value |
+|---|---|
+| `created_at` / `settled_at` (unix ts) | 2027-01-03 -> 2027-05-10 |
+| settlement lag | n=251, min 0.16d, **mean 5.35d**, max 55.5d |
+| unsettled | **63 rows, Rs 11,66,871.60** |
+| `on_hold` | 5 rows |
+| `method` | upi 131 / netbanking 79 / card 53 / wallet 36 |
+| `card_network` | MasterCard 16 / Visa 14 / RuPay 12 / Amex 11 |
+
+Every one of these was being **dropped** by `build_lines_and_rows`, which kept
+ten fields off each row and discarded the rest. Nothing here is generated: the
+period chip, the settlement-lag histogram, the unsettled aging profile and the
+method breakdown are all reads of data that was already in the file.
+
+**Aging is measured against the data, not the clock.** The unsettled buckets
+age each payment from its own `created_at` against the **latest timestamp
+present in the dataset** (2027-05-10), not `today`. Using wall-clock time
+would have made the figure drift on every rebuild and be unreproducible --
+the same discipline that makes every other number on this page checkable.
+
+**`straight_through_pct` and `first_pass_pct` are equal on this entity, and
+that is reported rather than hidden.** 10 Verified, 0 Reconstructed of 20
+lines. Two identical KPIs look like a bug, so the card says what the equality
+*means*: every match came from a shared reference, and none needed arithmetic
+reconstruction. Where they differ, the card shows the gap instead. The
+alternative -- dropping one metric because it happens to coincide here --
+would have hidden a real property of this entity.
+
+**The maker-checker queue is real, and this is the substantive change.**
+`agent_approval_requests` and `human_resolutions` are real tables with real
+writers (`break_investigator.propose_reclassification`, `itc_drafter.propose`)
+and a real resolver (`resolve_approval_request`). The dashboard had never
+called any of them, so both tables were empty in every build (verified: 0
+rows) and the agents panel could only show read-only previews. `build_approvals`
+now calls the **real** proposal functions, producing 8 genuine pending requests
+carrying each agent's own drafted `evidence_summary` about genuine open breaks.
+
+The proposed reason is the agent's reading of the facts it gathered, not a
+constant: a break whose cause is already identified upstream is proposed as
+`upstream_unresolved`, otherwise `timing_difference`. Nothing is auto-approved
+-- every request is created `pending`, which is the entire point of the
+control. Approve/reject in the UI is session-only and labelled so; the durable
+artefact is the pending request, and that is genuine.
+
+**Rejected alternative: fabricate a plausible approvals queue in JavaScript.**
+It would have looked identical and demonstrated nothing. The queue is worth
+showing precisely because the proposals are real agent output over real breaks;
+a hand-written array of convincing-looking requests is the exact failure this
+repo exists to avoid.
+
+**Scope of the writes, stated plainly.** `build_approvals` writes only to
+`agent_approval_requests`, only in `dashboard/data/settlr_demo.db` -- a
+database this script generates and `.gitignore`s. No frozen artefact, no
+`row_outcomes`, no `line_outcomes`. It runs **after** `build_agents_panel`
+deliberately: that function is read-only by design, and reading a queue this
+call is about to populate would make its preview depend on ordering.
+
+**Provenance was already being recorded and never read.** `store`'s `sources`
+table holds, per run, every artefact the pipeline read with its checksum,
+format and transport -- 24 real rows. The dashboard recomputed ingestion
+status from disk instead and left the table untouched. It is now shown as-is
+on the Sources page, because "prove this figure came from the file you say it
+did" is a question a customer actually asks, and re-deriving the answer is
+weaker than showing the record.
+
+**Verification.** Every new figure was recomputed independently from
+`recon_combined.json` in a separate process and compared: settled count (251),
+mean lag (5.35), max lag (55.5), unsettled count and value (63 /
+116,687,160 paise), on-hold (5), all five lag buckets (4/13/78/131/25), the
+`as_of` date, and the four method volumes -- all exact matches. The accounting
+balance identity still reconciles to zero. Walked in Chrome: the KPI band and
+period chip, both settlement-timing panels, the method table, the approvals
+queue including an approve action, and the provenance table. Console clean;
+payload and rendered copy still pass the Sec.104 leak gate.
+
+**A test was corrected, not loosened.** `test_fallback_says_it_cannot_answer_an_unrelated_question`
+asserted one exact sentence, and Sec.104 reworded that sentence because it is
+user-facing (it renders in the Ask panel). The test now asserts the contract it
+was actually protecting -- fallback mode, no rows, and an explicit admission --
+rather than the copy. Pinning user-facing prose in an assertion is what made a
+copy change look like a behaviour regression.
+
+**Files:** `dashboard/build_dashboard.py` (`build_period`,
+`build_settlement_timing`, `build_method_breakdown`, `build_kpis`,
+`build_approvals`, `build_source_provenance`, `rows_by_id` widened),
+`dashboard/web/app.js` (KPI band, bar lists, methods, approvals, provenance,
+`fmtDate`), `dashboard/web/template.html` (KPI band, timing panels, method and
+provenance tables, approval card styles),
+`agents/tests/test_chat_answerer.py`, `dashboard/index.html` regenerated.

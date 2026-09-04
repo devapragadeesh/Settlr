@@ -41,6 +41,7 @@ import json
 import re
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -53,9 +54,11 @@ from ingest import load as ingest_load  # noqa: E402
 from resolver_contract.types import SourceSystem  # noqa: E402
 from service.pipeline import run_pipeline  # noqa: E402
 from store.codec import to_jsonable  # noqa: E402
+from store.approvals import list_approval_requests  # noqa: E402
 from store.db import connect  # noqa: E402
 from store.queries import (get_run, line_outcome, open_breaks,  # noqa: E402
-                            owner_for_reason, row_history, runs_for_dataset)
+                            owner_for_reason, row_history, runs_for_dataset,
+                            sources_for_run)
 
 FLAGSHIP_DIR = ROOT / "corpus" / "datasets" / "A20_B50_Cmax"
 #: The flagship carries zero itc_risk-flagged breaks (confirmed, DECISIONS
@@ -269,6 +272,271 @@ def build_entities() -> list[dict]:
     return entities
 
 
+#: This corpus was long described in this file's own comments as having "no
+#: date dimension". That is true of the per-run scoring table, and false of
+#: the records themselves: every row in the processor ledger carries real
+#: `created_at` and `settled_at` unix timestamps, disputes carry `opened_at`,
+#: settlements carry `initiated_at`, and bank lines carry a value date.
+#: Nothing below invents a period -- it is read off the data that was
+#: already there and simply never surfaced.
+def _ts_to_date(ts):
+    if not ts:
+        return None
+    return datetime.fromtimestamp(int(ts), tz=timezone.utc).date()
+
+
+def build_period(dataset) -> dict:
+    """The real reporting period this entity's data spans, derived from the
+    earliest and latest timestamps actually present."""
+    created = [r["created_at"] for r in dataset.rows if r.get("created_at")]
+    settled = [r["settled_at"] for r in dataset.rows if r.get("settled_at")]
+    bank_dates = [line.value_date for line in dataset.bank]
+    starts = [d for d in [_ts_to_date(min(created)) if created else None,
+                          min(bank_dates) if bank_dates else None] if d]
+    ends = [d for d in [_ts_to_date(max(created)) if created else None,
+                        _ts_to_date(max(settled)) if settled else None,
+                        max(bank_dates) if bank_dates else None] if d]
+    if not starts or not ends:
+        return {}
+    return dict(start=min(starts).isoformat(), end=max(ends).isoformat())
+
+
+#: Buckets for how long money took to reach the bank. Chosen to match how a
+#: settlement schedule is actually discussed (same day / next day / a
+#: standard T+2-3 window / longer), not as arbitrary quantiles.
+_LAG_BUCKETS = [("Same day", 0, 1), ("T+1", 1, 2), ("T+2-3", 2, 4),
+                 ("T+4-7", 4, 8), ("Over a week", 8, 10**6)]
+
+#: How long unsettled money has been outstanding, measured from the
+#: transaction's own `created_at` against the latest activity in the data --
+#: never against today's wall clock, which would drift every time this
+#: dashboard is rebuilt and make the figure unreproducible.
+_UNSETTLED_BUCKETS = [("0-7 days", 0, 8), ("8-30 days", 8, 31),
+                       ("31-60 days", 31, 61), ("60+ days", 61, 10**6)]
+
+
+def build_settlement_timing(dataset) -> dict:
+    """Settlement lag and unsettled exposure, both real. Every payment row
+    carries `created_at`; the 251 that settled also carry `settled_at`."""
+    rows = dataset.rows
+    lags_days, lag_buckets = [], {label: 0 for label, _, _ in _LAG_BUCKETS}
+    for r in rows:
+        if not (r.get("created_at") and r.get("settled_at")):
+            continue
+        days = (int(r["settled_at"]) - int(r["created_at"])) / 86400.0
+        lags_days.append(days)
+        for label, lo, hi in _LAG_BUCKETS:
+            if lo <= days < hi:
+                lag_buckets[label] += 1
+                break
+
+    # "As of" is the latest timestamp in the data, so the aging below is a
+    # property of the dataset rather than of the day the page was built.
+    all_ts = [int(r[k]) for r in rows for k in ("created_at", "settled_at")
+              if r.get(k)]
+    as_of = _ts_to_date(max(all_ts)) if all_ts else None
+
+    unsettled, unsettled_value = [], 0
+    aging = {label: dict(count=0, value_paise=0) for label, _, _ in _UNSETTLED_BUCKETS}
+    for r in rows:
+        if r.get("settled") or not r.get("created_at"):
+            continue
+        amount = r.get("amount") or 0
+        unsettled.append(r)
+        unsettled_value += amount
+        age = (as_of - _ts_to_date(r["created_at"])).days if as_of else 0
+        for label, lo, hi in _UNSETTLED_BUCKETS:
+            if lo <= age < hi:
+                aging[label]["count"] += 1
+                aging[label]["value_paise"] += amount
+                break
+
+    return dict(
+        settled_count=len(lags_days),
+        mean_lag_days=round(sum(lags_days) / len(lags_days), 2) if lags_days else None,
+        max_lag_days=round(max(lags_days), 1) if lags_days else None,
+        lag_buckets=[dict(label=l, count=lag_buckets[l]) for l, _, _ in _LAG_BUCKETS],
+        unsettled_count=len(unsettled),
+        unsettled_value_paise=unsettled_value,
+        on_hold_count=sum(1 for r in rows if r.get("on_hold")),
+        as_of=as_of.isoformat() if as_of else None,
+        aging=[dict(label=l, **aging[l]) for l, _, _ in _UNSETTLED_BUCKETS],
+    )
+
+
+def build_method_breakdown(dataset, open_break_row_ids: set[str]) -> list[dict]:
+    """Volume, value and break rate per payment method -- the standard
+    "where are the breaks concentrated" view. `method` is a real field on
+    every payment row; card rows additionally carry a real `card_network`."""
+    by_method: dict[str, dict] = {}
+    for r in dataset.rows:
+        method = r.get("method")
+        if not method:
+            continue           # adjustments/refunds carry no method
+        slot = by_method.setdefault(method, dict(
+            method=method, count=0, value_paise=0, breaks=0, networks={}))
+        slot["count"] += 1
+        slot["value_paise"] += r.get("amount") or 0
+        if r["entity_id"] in open_break_row_ids:
+            slot["breaks"] += 1
+        network = r.get("card_network")
+        if network:
+            slot["networks"][network] = slot["networks"].get(network, 0) + 1
+
+    out = []
+    for slot in by_method.values():
+        slot["break_rate_pct"] = round(100 * slot["breaks"] / slot["count"], 1) if slot["count"] else 0.0
+        slot["networks"] = sorted(
+            ({"name": k, "count": v} for k, v in slot["networks"].items()),
+            key=lambda n: -n["count"])
+        out.append(slot)
+    return sorted(out, key=lambda m: -m["count"])
+
+
+def build_kpis(dataset, lines: list[dict], timing: dict, rows_by_id: dict,
+                aging_rows: dict, run_meta) -> dict:
+    """The metrics a reconciliation product leads with, each computed from
+    this run's real output rather than stored anywhere."""
+    kinds = {}
+    for entry in lines:
+        kinds[entry["kind"]] = kinds.get(entry["kind"], 0) + 1
+    total = len(lines) or 1
+    verified = kinds.get("Verified", 0)
+    reconstructed = kinds.get("Reconstructed", 0)
+
+    open_break_rows = [r for rows in aging_rows.values() for r in rows]
+    unreconciled = 0
+    row_lookup = {r["entity_id"]: r for r in dataset.rows}
+    for r in open_break_rows:
+        raw = row_lookup.get(r["row_id"])
+        if raw:
+            unreconciled += raw.get("amount") or raw.get("debit") or 0
+
+    return dict(
+        # "Straight through" = matched with no human step needed at all.
+        straight_through_pct=round(100 * (verified + reconstructed) / total, 1),
+        # "First pass" = matched on an identifier alone, before any
+        # arithmetic reconstruction was required.
+        first_pass_pct=round(100 * verified / total, 1),
+        exception_pct=round(100 * (total - verified - reconstructed) / total, 1),
+        matched_lines=verified + reconstructed,
+        total_lines=len(lines),
+        open_breaks=len(open_break_rows),
+        unreconciled_value_paise=unreconciled,
+        mean_lag_days=timing.get("mean_lag_days"),
+        cycle_seconds=round(run_meta["seconds"], 1) if run_meta else None,
+    )
+
+
+#: A maker-checker queue is the control every reconciliation product is
+#: built around, and this repo already had the whole mechanism: three agents
+#: with `propose_*` functions that write to `agent_approval_requests`, a
+#: schema with preparer/reviewer columns, and `resolve_approval_request` to
+#: close the loop. The dashboard had simply never called any of it, so the
+#: table was empty in every build and the agents panel could only show
+#: read-only previews.
+#:
+#: This calls the REAL proposal functions against the build's own generated
+#: database. What lands in the queue is genuine agent output about genuine
+#: open breaks, carrying the real `evidence_summary` each agent drafts.
+#: Nothing is auto-approved -- every request is created `pending`, which is
+#: the entire point of the control. The writes touch only
+#: `agent_approval_requests` in a database this script generates and
+#: gitignores; no frozen artefact, and never `row_outcomes`/`line_outcomes`.
+_PROPOSAL_LIMIT = 6
+
+
+def build_approvals(conn, run_id: str, itc_conn, itc_run_id: str,
+                     as_of: str) -> list[dict]:
+    unexplained = conn.execute(
+        "SELECT row_id FROM row_outcomes WHERE run_id = ? AND "
+        "disposition = 'OpenBreak' AND reason = 'unexplained' "
+        "ORDER BY row_id LIMIT ?", (run_id, _PROPOSAL_LIMIT)).fetchall()
+    for row in unexplained:
+        try:
+            facts = break_investigator.gather_case_facts(conn, run_id, row["row_id"])
+        except break_investigator.NotInvestigable:
+            continue
+        # The proposed reclassification is the agent's own reading of the
+        # facts it gathered, not a fixed string: a break whose cause is
+        # already identified upstream is proposed as upstream_unresolved,
+        # otherwise it stays a timing question for a human to rule on.
+        new_reason = "upstream_unresolved" if facts.get("caused_by") else "timing_difference"
+        break_investigator.propose_reclassification(
+            conn, run_id, row["row_id"], new_reason=new_reason,
+            rationale=("Cause already identified upstream; this row should follow it."
+                        if facts.get("caused_by")
+                        else "No contradicting evidence found; consistent with a "
+                             "settlement still in flight."),
+            created_at=as_of)
+
+    flagged = itc_conn.execute(
+        "SELECT row_id, itc_risk FROM row_outcomes WHERE run_id = ? AND "
+        "disposition = 'OpenBreak' AND itc_risk IS NOT NULL ORDER BY row_id",
+        (itc_run_id,)).fetchall()
+    itc_rows = [r["row_id"] for r in flagged
+                 if r["row_id"] in (r["itc_risk"] or "").split(",")][:2]
+
+    requests = []
+    for record in list_approval_requests(conn):
+        requests.append(_present_approval(record, conn, run_id))
+    for row_id in itc_rows:
+        itc_drafter.propose(itc_conn, itc_run_id, row_id, created_at=as_of)
+    for record in list_approval_requests(itc_conn):
+        requests.append(_present_approval(record, itc_conn, itc_run_id))
+    return requests
+
+
+_APPROVAL_ACTIONS = {
+    "reclassify": "Reclassify open break",
+    "itc_exposure_draft": "Input tax credit exposure",
+}
+
+
+def _present_approval(record: dict, conn, run_id: str) -> dict:
+    row_ids = record["row_ids"] if isinstance(record["row_ids"], list) else []
+    amount = None
+    if row_ids:
+        row = conn.execute(
+            "SELECT reason, age_days FROM row_outcomes WHERE run_id = ? AND row_id = ?",
+            (run_id, row_ids[0])).fetchone()
+        amount = dict(reason=row["reason"], age_days=row["age_days"]) if row else None
+    change = record["proposed_change"] or {}
+    return dict(
+        request_id=record["request_id"][:8],
+        agent=record["agent"],
+        action=_APPROVAL_ACTIONS.get(record["action"], record["action"]),
+        row_ids=row_ids,
+        current=amount,
+        proposed=change.get("new_reason") or (", ".join(change.get("grounds", [])) or None),
+        evidence=record["evidence_summary"],
+        status=record["status"],
+        created_at=record["created_at"],
+    )
+
+
+#: `store`'s `sources` table records, per run, every artefact the pipeline
+#: actually read: its checksum, format and transport. It has been written on
+#: every run since the store existed and read by nothing -- the dashboard
+#: recomputed ingestion status from disk instead. This is the provenance
+#: record a customer asks for during an audit ("prove this figure came from
+#: the file you say it did"), so it is worth showing as-is rather than
+#: re-deriving.
+def build_source_provenance(conn, run_id: str) -> list[dict]:
+    out = []
+    for record in sources_for_run(conn, run_id):
+        label = ARTIFACT_SOURCES.get(record["artifact_path"], (None, None))[1]
+        out.append(dict(
+            artifact=record["artifact_path"],
+            label=label or record["artifact_path"],
+            format=record["format"],
+            sha256=record["sha256"],
+            transport=record["transport"],
+            fetched_at=record["fetched_at"],
+        ))
+    return out
+
+
 def build_ingestion_status(dataset_dir: Path) -> list[dict]:
     statuses = []
     for filename, (source, label) in ARTIFACT_SOURCES.items():
@@ -330,10 +598,20 @@ def build_lines_and_rows(dataset, conn, run_id: str) -> tuple[list[dict], dict[s
                     order_id=raw.get("order_id"), method=raw.get("method"),
                     description=raw.get("description"),
                     dispute_id=raw.get("dispute_id"),
-                    # fee/tax were stripped here before -- real fields
-                    # (SETTLEMENT_SPEC.md Sec.4: credit = amount - fee),
-                    # needed by the Accounting page's real aggregate math.
-                    fee=raw.get("fee"), tax=raw.get("tax"))
+                    # fee/tax carry the real balance identity
+                    # (credit = amount - fee), needed by the Accounting
+                    # page's aggregate math. The rest are real per-payment
+                    # attributes that were being dropped here: the
+                    # timestamps give this dataset a genuine time
+                    # dimension, and method/network/segment are what a
+                    # "where are breaks concentrated" view is built from.
+                    fee=raw.get("fee"), tax=raw.get("tax"),
+                    created_at=raw.get("created_at"),
+                    settled_at=raw.get("settled_at"),
+                    settled=raw.get("settled"), on_hold=raw.get("on_hold"),
+                    card_network=raw.get("card_network"),
+                    card_type=raw.get("card_type"),
+                    notes=raw.get("notes") or {})
 
         lines.append(entry)
     return lines, rows_by_id
@@ -880,6 +1158,12 @@ def main() -> int:
         itc_conn = connect(Path(tmp) / "settlr_itc_example.db")
         itc_run_id = run_pipeline(ITC_EXAMPLE_DIR, itc_conn, cap=40, time_budget=5.0)
         agents_panel = build_agents_panel(conn, run_id, itc_conn, itc_run_id)
+        # Must run AFTER the agents panel: build_agents_panel deliberately
+        # calls only read-only functions, and reading a queue this call is
+        # about to populate would make its preview depend on ordering.
+        approvals = build_approvals(conn, run_id, itc_conn, itc_run_id,
+                                     as_of=run_meta["finished_at"])
+        provenance = build_source_provenance(conn, run_id)
         conn.close()
 
     dashboard_data = json.loads(DASHBOARD_DATA_PATH.read_text())
@@ -913,6 +1197,11 @@ def main() -> int:
     settlement_by_id = build_settlement_report_lookup(dataset, settlement_ids)
     disputes_by_id = {did: dict(dataset.disputes[did])
                        for did in dispute_ids if did in dataset.disputes}
+
+    period = build_period(dataset)
+    timing = build_settlement_timing(dataset)
+    methods = build_method_breakdown(dataset, open_break_row_ids)
+    kpis = build_kpis(dataset, lines, timing, rows_by_id, aging_rows, run_meta)
 
     exceptions = build_exceptions(dataset, lines, rows_by_id, erp_by_order,
                                    disputes_by_id, settlement_by_id, aging_rows)
@@ -957,6 +1246,12 @@ def main() -> int:
         connectors=connectors,
         exceptions=exceptions,
         runs_table=runs_table,
+        period=period,
+        timing=timing,
+        methods=methods,
+        kpis=kpis,
+        approvals=approvals,
+        provenance=provenance,
         run_diff=run_diff,
         accounting=accounting,
     )

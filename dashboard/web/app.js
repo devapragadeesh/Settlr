@@ -42,6 +42,15 @@
       .replace(/^/, "₹");
   };
   const fmtNum = (n) => new Intl.NumberFormat("en-IN").format(n);
+  // Dates arrive as plain ISO day strings with no timezone. Parsing them
+  // through Date.UTC and formatting in UTC keeps them from shifting a day
+  // for viewers west of Greenwich.
+  const fmtDate = (iso) => {
+    if (!iso) return "\u2014";
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-IN",
+      { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  };
 
   const STATUS_META = {
     not_started: { label: "Not Started", color: "var(--slate)", cls: "badge-not-started" },
@@ -143,6 +152,186 @@
       try { localStorage.setItem("settlr-theme", next); } catch (e) { /* private mode */ }
       showToast(next === "light" ? "Light theme" : "Dark theme");
     });
+  }
+
+  /* ============================== KPI BAND ==============================
+     The metrics a reconciliation product leads with. Every one is computed
+     in build_dashboard.py from this run's real output -- none is stored,
+     and none is a ratio invented to look good.
+
+     straight_through and first_pass coincide on this entity (10 Verified,
+     0 Reconstructed of 20 lines). That is worth saying rather than hiding:
+     it means every match was made on an identifier alone, with no
+     arithmetic reconstruction needed. Where they differ, the gap is shown
+     instead. */
+  function renderKpiBand() {
+    const k = D.kpis, t = D.timing;
+    const band = $("#kpiBand");
+    const period = D.period && D.period.start
+      ? `${fmtDate(D.period.start)} – ${fmtDate(D.period.end)}` : null;
+
+    const cards = [
+      { k: "Straight-through rate", v: k.straight_through_pct.toFixed(1) + "%",
+        d: `${k.matched_lines} of ${k.total_lines} bank lines matched automatically`,
+        tone: k.straight_through_pct >= 80 ? "var(--green)" : "var(--amber)" },
+      { k: "Matched on identifier alone",
+        v: k.first_pass_pct.toFixed(1) + "%",
+        d: k.first_pass_pct === k.straight_through_pct
+          ? "Every match came from a shared reference — none needed reconstructing"
+          : `${(k.straight_through_pct - k.first_pass_pct).toFixed(1)}% required reconstruction`,
+        tone: "var(--blue-1)" },
+      { k: "Unreconciled value", v: inr(k.unreconciled_value_paise, { compact: true }),
+        d: `across ${fmtNum(k.open_breaks)} open items`, tone: "var(--red)" },
+      { k: "Mean time to settle", v: (t.mean_lag_days ?? "—") + "d",
+        d: `${fmtNum(t.settled_count)} settled payments · longest ${t.max_lag_days}d`,
+        tone: "var(--text-1)" },
+      { k: "Unsettled exposure", v: inr(t.unsettled_value_paise, { compact: true }),
+        d: `${t.unsettled_count} payments not yet paid out` +
+           (t.on_hold_count ? ` · ${t.on_hold_count} on hold` : ""),
+        tone: "var(--amber)" },
+    ];
+    cards.forEach((c, i) => band.append(
+      el("div", { class: "kpi fadein", style: `animation-delay:${i * 50}ms` },
+        el("div", { class: "k" }, c.k),
+        el("div", { class: "v num", style: `color:${c.tone}` }, c.v),
+        el("div", { class: "d" }, c.d))));
+
+    if (period) {
+      $("#metaChips").append(el("div", { class: "meta-chip" }, "Period ", el("b", {}, period)));
+    }
+  }
+
+  // A horizontal bar list -- reused by the settlement-lag histogram, the
+  // unsettled aging profile and the payment-method breakdown.
+  function barList(rows, color) {
+    const max = Math.max(...rows.map((r) => r.count), 1);
+    const wrap = el("div", { class: "bars" });
+    rows.forEach((r) => wrap.append(el("div", { class: "bar-row" },
+      el("div", { class: "bl" }, r.label),
+      el("div", { class: "bar-track" },
+        el("div", { class: "bar-fill", style: `width:${(r.count / max) * 100}%;background:${r.color || color}` })),
+      el("div", { class: "bv" }, r.value != null ? r.value : fmtNum(r.count)))));
+    return wrap;
+  }
+
+  function renderSettlementTiming() {
+    const t = D.timing;
+    $("#lagPanel").append(
+      el("div", { class: "panel-head" },
+        el("div", {}, el("h3", {}, "Time to Settle"),
+          el("div", { class: "sub" }, `${fmtNum(t.settled_count)} settled payments · mean ${t.mean_lag_days} days`))),
+      barList(t.lag_buckets.map((b) => ({ label: b.label, count: b.count })), "var(--blue-1)"));
+
+    const aging = t.aging.map((b) => ({
+      label: b.label, count: b.count,
+      value: b.count ? `${b.count} · ${inr(b.value_paise, { compact: true })}` : "0",
+      color: b.label === "60+ days" ? "var(--red)"
+           : b.label === "31-60 days" ? "var(--amber)" : "var(--green)",
+    }));
+    $("#unsettledPanel").append(
+      el("div", { class: "panel-head" },
+        el("div", {}, el("h3", {}, "Unsettled Funds"),
+          el("div", { class: "sub" },
+            `${t.unsettled_count} payments · ${inr(t.unsettled_value_paise)} · aged as at ${fmtDate(t.as_of)}`))),
+      barList(aging, "var(--amber)"));
+  }
+
+  const AGENT_LABELS = {
+    break_investigator: "Break Investigator", itc_drafter: "Tax Credit Drafter",
+    ambiguous_arbiter: "Ambiguity Arbiter", sla_watchdog: "SLA Watchdog",
+    queue_cleaner: "Queue Cleaner", chat_answerer: "Assistant",
+  };
+
+  const METHOD_LABELS = { upi: "UPI", netbanking: "Net banking", card: "Card",
+                           wallet: "Wallet", emi: "EMI", paylater: "Pay later" };
+
+  // Break rate per method, from the real `method` field on every payment row
+  // cross-referenced against the run's real open-break row ids. The point of
+  // the view is the RATE, not the volume -- a method can be small and still
+  // be where the problems are.
+  function renderMethods() {
+    const body = $("#methodTableBody");
+    const worst = Math.max(...D.methods.map((m) => m.break_rate_pct), 0);
+    D.methods.forEach((m) => {
+      const hot = m.break_rate_pct === worst && worst > 0;
+      body.append(el("tr", {},
+        el("td", {}, el("b", {}, METHOD_LABELS[m.method] || m.method)),
+        el("td", {}, fmtNum(m.count)),
+        el("td", {}, inr(m.value_paise, { compact: true })),
+        el("td", {}, fmtNum(m.breaks)),
+        el("td", {}, el("span", { class: "status-pill", style: hot
+            ? "background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)"
+            : "background:var(--slate-bg);color:var(--text-2);border:1px solid var(--border)" },
+          m.break_rate_pct.toFixed(1) + "%")),
+        el("td", { style: "color:var(--text-3);font-size:11.5px" },
+          m.networks.length ? m.networks.map((n) => `${n.name} ${n.count}`).join(" · ") : "—")));
+    });
+  }
+
+  /* ============================== APPROVALS (maker-checker) ==============
+     Real rows from the run's own `agent_approval_requests` table, created
+     by the agents' real proposal functions at build time. Approve/reject
+     here is session-only -- the durable record is the pending request
+     itself, which is genuine. */
+  const approvalState = {};
+
+  function renderApprovals() {
+    const panel = $("#approvalsPanel");
+    panel.innerHTML = "";
+    const rows = D.approvals || [];
+    const pending = rows.filter((r) => (approvalState[r.request_id] || r.status) === "pending");
+    panel.append(el("div", { class: "panel-head" },
+      el("div", {}, el("h3", {}, "Awaiting Review"),
+        el("div", { class: "sub" }, pending.length + " of " + rows.length +
+          " proposals still need a decision · proposed by an agent, applied by a person"))));
+
+    if (!rows.length) {
+      panel.append(el("div", { class: "evidence-detail" }, "No proposals outstanding."));
+      return;
+    }
+    rows.forEach((r) => {
+      const status = approvalState[r.request_id] || r.status;
+      const tone = status === "approved" ? "var(--green)"
+                 : status === "rejected" ? "var(--red)" : "var(--amber)";
+      const card = el("div", { class: "approval" },
+        el("div", { class: "approval-head" },
+          el("div", {},
+            el("div", { class: "approval-title" }, r.action),
+            el("div", { class: "approval-meta" },
+              AGENT_LABELS[r.agent] || r.agent, " · ", r.row_ids.join(", "),
+              r.current ? ` · currently ${prettyReason(r.current.reason)}` : "")),
+          el("span", { class: "status-pill", style:
+            `background:transparent;color:${tone};border:1px solid ${tone}` }, status)),
+        r.proposed ? el("div", { class: "approval-change" },
+          "Proposed: ", el("b", {}, prettyReason(r.proposed))) : null,
+        el("div", { class: "approval-evidence" }, r.evidence));
+
+      if (status === "pending") {
+        card.append(el("div", { class: "approval-actions" },
+          el("button", { class: "btn btn-primary btn-sm", onclick: () => {
+            approvalState[r.request_id] = "approved"; renderApprovals();
+            showToast("Approved — session only, not persisted");
+          } }, "Approve"),
+          el("button", { class: "btn btn-ghost btn-sm", onclick: () => {
+            approvalState[r.request_id] = "rejected"; renderApprovals();
+            showToast("Rejected — session only, not persisted");
+          } }, "Reject")));
+      }
+      panel.append(card);
+    });
+  }
+
+  const TRANSPORT_LABELS = { local: "Local file", sftp: "SFTP", s3: "S3", api: "API" };
+
+  function renderProvenance() {
+    const body = $("#provenanceBody");
+    (D.provenance || []).forEach((r) => body.append(el("tr", {},
+      el("td", {}, el("b", {}, r.label)),
+      el("td", { style: "font-family:monospace;font-size:11.5px;color:var(--text-2)" }, r.artifact),
+      el("td", {}, (r.format || "").toUpperCase()),
+      el("td", {}, TRANSPORT_LABELS[r.transport] || r.transport || "—"),
+      el("td", { style: "font-family:monospace;font-size:11px;color:var(--text-3)" },
+        (r.sha256 || "").slice(0, 20) + "\u2026"))));
   }
 
   /* ============================== STAT CARDS ============================== */
@@ -1935,7 +2124,9 @@
 
   /* ============================== BOOT ============================== */
   renderMetaChips();
+  renderKpiBand();
   renderHero();
+  renderSettlementTiming();
   renderStatRow();
   renderAging();
   renderIngestionSmall();
@@ -1946,9 +2137,12 @@
   renderGst();
   renderStability();
   renderMatchingGrid();
+  renderMethods();
+  renderProvenance();
   renderConnectors();
   renderExceptions();
   setupExceptionsPage();
+  renderApprovals();
   renderRuns();
   renderAccounting();
   setupMatchingFilter();

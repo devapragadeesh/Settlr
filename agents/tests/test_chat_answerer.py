@@ -70,7 +70,17 @@ def test_fallback_says_it_cannot_answer_an_unrelated_question(
     finally:
         conn.close()
     assert result["mode"] == "fallback"
-    assert "could not answer" in result["answer"].lower()
+    # The contract under test is the honest degrade: when the model is
+    # unreachable AND the question matches none of the deterministic
+    # patterns, the answer must ADMIT it cannot answer rather than guess.
+    # Asserting one exact sentence pinned the copy instead of the contract
+    # -- this text is user-facing (it renders in the dashboard's Ask panel)
+    # and was reworded once already for that reason. Assert the admission
+    # and the absence of an answer, not the wording.
+    assert result["rows"] == []
+    answer = result["answer"].lower()
+    assert any(marker in answer for marker in
+               ("could not answer", "cannot answer", "can only answer", "offline")), answer
 
 
 def test_a_hostile_model_response_cannot_write_to_the_store(

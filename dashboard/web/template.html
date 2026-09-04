@@ -473,6 +473,25 @@ body,.panel,.topbar,.etable td,.etable th,.slideout,.ai-panel{transition:backgro
 .hero-title{color:var(--text-on-accent);}
 
 /* ============================== STAT CARDS ============================== */
+.kpi-band{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
+.kpi{background:linear-gradient(160deg,var(--panel-2),var(--panel));border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow-panel);}
+.kpi .k{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);font-weight:700;}
+.kpi .v{font-family:'Outfit';font-variant-numeric:tabular-nums;font-size:27px;font-weight:800;letter-spacing:-.02em;margin-top:7px;line-height:1.05;}
+.kpi .d{font-size:11.5px;color:var(--text-2);margin-top:6px;line-height:1.45;}
+.approval{border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;margin-top:12px;background:rgba(var(--ink),.02);}
+.approval-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;}
+.approval-title{font-family:'Outfit';font-weight:700;font-size:13.5px;}
+.approval-meta{font-size:11.5px;color:var(--text-3);margin-top:3px;}
+.approval-change{font-size:12.5px;color:var(--text-2);margin-top:9px;}
+.approval-evidence{font-size:12px;color:var(--text-2);line-height:1.55;margin-top:9px;white-space:pre-wrap;
+  border-left:2px solid var(--border-strong);padding-left:11px;}
+.approval-actions{display:flex;gap:9px;margin-top:12px;}
+.bars{display:flex;flex-direction:column;gap:9px;margin-top:14px;}
+.bar-row{display:grid;grid-template-columns:96px 1fr auto;align-items:center;gap:12px;font-size:12px;}
+.bar-row .bl{color:var(--text-2);}
+.bar-track{height:9px;border-radius:99px;background:rgba(var(--ink),.07);overflow:hidden;}
+.bar-fill{height:100%;border-radius:99px;transition:width .5s var(--ease);}
+.bar-row .bv{font-family:'Outfit';font-variant-numeric:tabular-nums;font-weight:700;color:var(--text-1);min-width:64px;text-align:right;}
 .stat-card{padding:20px 22px;display:flex;flex-direction:column;gap:10px;justify-content:space-between;}
 .stat-card .lbl{font-size:12.5px;color:var(--text-2);font-weight:500;}
 .stat-card .val{font-size:30px;font-weight:700;letter-spacing:-.02em;}
@@ -815,6 +834,7 @@ body,.panel,.topbar,.etable td,.etable th,.slideout,.ai-panel{transition:backgro
     </div>
 
     <div class="tabpanel active" data-tabpanel="summary">
+      <div class="kpi-band" id="kpiBand"></div>
       <div class="grid-row1" id="heroRow">
         <div id="heroSlot"></div>
         <div class="hero-side">
@@ -825,6 +845,13 @@ body,.panel,.topbar,.etable td,.etable th,.slideout,.ai-panel{transition:backgro
       <h2 class="section-title" id="aging-section">Exception Aging — Priority Queue</h2>
       <p class="section-sub">Open exceptions on this entity's latest run, grouped by age. Click a bar to filter the transaction grid to the oldest, highest-risk breaks first.</p>
       <div class="panel" id="agingPanel"></div>
+
+      <h2 class="section-title" style="margin-top:26px;">Settlement Timing</h2>
+      <p class="section-sub">How long money takes to reach the bank, and what is still outstanding.</p>
+      <div class="grid-row2">
+        <div class="panel" id="lagPanel"></div>
+        <div class="panel" id="unsettledPanel"></div>
+      </div>
     </div>
 
     <div class="tabpanel" data-tabpanel="entities">
@@ -834,6 +861,10 @@ body,.panel,.topbar,.etable td,.etable th,.slideout,.ai-panel{transition:backgro
     </div>
 
     <div class="tabpanel" data-tabpanel="audit">
+      <h2 class="section-title">Pending Approvals</h2>
+      <p class="section-sub">Changes proposed by Settlr's agents, each waiting on a human decision. Nothing here has been applied.</p>
+      <div class="panel" id="approvalsPanel" style="margin-bottom:26px;"></div>
+
       <h2 class="section-title">Run History</h2>
       <p class="section-sub">Every reconciliation run on record, and — where an entity has been run more than once — what actually changed between two of them.</p>
       <div class="panel" id="runsDiffPanel" style="margin-bottom:16px;"></div>
@@ -875,6 +906,18 @@ body,.panel,.topbar,.etable td,.etable th,.slideout,.ai-panel{transition:backgro
       </div>
     </div>
     <div class="panel" id="matchingPanel"></div>
+
+    <h2 class="section-title" style="margin-top:26px;">By Payment Method</h2>
+    <p class="section-sub">Where volume sits, and where breaks concentrate.</p>
+    <div class="etable-wrap panel">
+      <table class="etable">
+        <thead><tr>
+          <th>Method</th><th>Payments</th><th>Value</th><th>Open breaks</th>
+          <th>Break rate</th><th>Networks</th>
+        </tr></thead>
+        <tbody id="methodTableBody"></tbody>
+      </table>
+    </div>
   </section>
 
   <section class="page" data-page="exceptions">
@@ -939,6 +982,15 @@ body,.panel,.topbar,.etable td,.etable th,.slideout,.ai-panel{transition:backgro
     <h2 class="section-title" id="sources">Sources</h2>
     <p class="section-sub">Where every figure on this dashboard comes from — the feeds behind the latest ingest, and the systems Settlr can connect to.</p>
     <div class="panel" id="ingestionPanel" style="margin-bottom:22px;"></div>
+
+    <h2 class="section-title">Provenance</h2>
+    <p class="section-sub">What this run actually read, and how it arrived — the record to reach for when a figure is challenged.</p>
+    <div class="etable-wrap panel" style="margin-bottom:22px;">
+      <table class="etable">
+        <thead><tr><th>Source</th><th>File</th><th>Format</th><th>Transport</th><th>Checksum</th></tr></thead>
+        <tbody id="provenanceBody"></tbody>
+      </table>
+    </div>
     <h2 class="section-title">Connectors</h2>
     <p class="section-sub">A connected source has data in this reconciliation. An available one is ready to switch on; a planned one is a named gap, not a disabled decoy.</p>
     <div class="connectors-grid" id="connectorsGrid"></div>
