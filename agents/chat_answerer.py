@@ -93,11 +93,12 @@ class ChatAnswerer:
                     target_reason = kind.removesuffix("_count")
                     rows = [r for r in all_rows if r["reason"] == target_reason]
                 return {"question": question, "sql": None, "rows": rows,
-                        "answer": f"{len(rows)} row(s), from a real query "
-                                  f"(Claude unavailable: {reason}).",
+                        "answer": f"{len(rows)} row(s), from a live query of "
+                                  f"this run's own results.",
                         "mode": "fallback"}
         return {"question": question, "sql": None, "rows": [],
-                "answer": f"Could not answer this without Claude ({reason}). "
-                          "Try asking about open breaks, unexplained rows, "
-                          "or unresolved rows.",
+                "answer": "The AI assistant is offline, so I can only answer "
+                          "a few questions directly right now -- try asking "
+                          "about open breaks, unexplained rows, or unresolved "
+                          "rows.",
                 "mode": "fallback"}

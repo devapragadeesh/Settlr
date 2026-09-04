@@ -7009,3 +7009,100 @@ menu's Connectors item now routing to `#sources`. Console clean.
 markup, `.tabstrip`/`.tabpanel` CSS), `dashboard/web/app.js` (`PAGES`,
 `switchPage`/`switchTab`/`setupTabs`, `matching`→`transactions` route rename),
 `dashboard/index.html` regenerated.
+
+## 104. The dashboard stops speaking to its maintainers -- every internal reference removed, and one panel deleted rather than mistranslated -- 2026-09-04
+
+**The problem.** The dashboard talked about itself the way this repository
+talks about itself. A user reading it saw "this repository's own benchmark
+corpus", an **Oracle Gate** column, source citations that printed
+`corpus/oracle_results.json` and `store/queries.py::open_breaks`, a connector
+card quoting `spike/raw/008_rest_recon_combined_current_month.json (DECISIONS
+Sec.96)`, an agent described as investigating breaks "per DECISIONS.md
+Sec.94", and -- when the AI backend was down -- an instruction to "Start
+service/asgi.py and set ANTHROPIC_API_KEY". None of that belongs on a screen a
+finance team uses.
+
+**Two rules, applied at the point of baking rather than in the renderer.**
+
+1. **If the UI does not render a field, it is not shipped.** `artefact`,
+   `how`, `modelling_assumption`, `source_ref`, `trust.*.source` and
+   `citation` were all payload-only -- never rendered, but sitting in
+   `window.SETTLR_DATA` where anyone opening the page source could read them.
+   A recursive `_strip_payload_only` drops them as the last step before the
+   JSON is written into the page. What is not shipped cannot leak.
+2. **If the UI does render it, it is scrubbed at build time.** `_scrub()`
+   removes internal citations and translates this project's vocabulary
+   ("the oracle" -> verification, "frozen cascade" -> previous engine).
+
+**The claims ledger is deleted, and that is the substantive decision here.**
+It is a genuinely valuable artefact -- every figure this engine publishes,
+with denominator and scope -- and the first attempt was to scrub it like
+everything else. That attempt is what settled the question. It produced
+"30 entitys" (a term-map ordering bug), "fixtures generated from our own /"
+(a path stripped mid-sentence), and rows that survived scrubbing intact but
+still read "0 of 275 verified -- 30 entities, gate G1". The last one is the
+real point: **a row a reconciliation operator cannot act on does not become a
+product feature by having its file paths removed.** The ledger is written for
+maintainers, in gate identifiers and CP-SAT solve counts, and mechanical
+translation of maintainer prose produces mangled maintainer prose. The health
+drill-down keeps coverage-by-scope and the abstention record, both of which
+mean something to a user.
+
+**Rejected alternative: keep the ledger and hand-rewrite all 25 rows.** Some
+rows would translate ("verified assignments that are wrong: 0 of 275"); many
+would not, because the thing being counted is internal. Rewriting the
+translatable subset and dropping the rest would leave a "complete ledger" that
+is silently incomplete -- worse than not showing one, given this repo's whole
+argument rests on published figures being complete.
+
+**Rejected alternative: hide the leaks in the renderer.** Faster, and wrong:
+the strings would still ship in the payload. Fixing it at the bake step is why
+the verification below can assert on the payload itself rather than on what
+happens to be rendered.
+
+**Vocabulary, not underscore-replacement.** Break reasons and evidence kinds
+were shown as their enum names with underscores swapped for spaces, which is
+not a translation -- `upstream_unresolved` still reads as jargon as "upstream
+unresolved". `REASON_LABELS`, `EVIDENCE_LABELS`, `SOURCE_LABELS` and
+`FAMILY_LABELS` map them to what an operator would call the same state
+("Blocked by an upstream item", "Only one combination balances", "Processor
+ledger", "Independent re-run"), each falling back to the old behaviour when
+unmapped rather than rendering blank. "Oracle Gate" became **Verification**;
+"Passed gate"/"Failed gate" became **Verified**/**Needs review**.
+
+**The four coverage scope labels are written, not regexed.** One of them
+("the original 14 -- the scope THREE_SYSTEMS.md publishes") mangles under
+citation-stripping into "the scope publishes". Where a set is this small and
+this visible, writing the four strings beats regexing them -- the same
+judgement as the claims ledger, at a scale where the rewrite is actually
+possible.
+
+**Entity identity.** Display names already existed (`ENTITY_LABELS`); they are
+now shown *with* the real dataset id beneath them in monospace, in the header
+chip, the runs table and drill-downs. The label is presentation; the id is the
+traceability, and removing it would have severed the link that lets any figure
+on the page be checked against source.
+
+**A real bug this caught: no syntax gate existed.** One replacement closed a
+template literal with `"` instead of a backtick, and the entire dashboard went
+blank -- a page-wide `SyntaxError`, found only because it was opened in a
+browser. `node --check dashboard/web/app.js` now runs before every rebuild.
+
+**Verification.** A three-surface gate, because the first version of it had a
+hole: it checked the baked payload and the static HTML but not string literals
+inside `app.js`, which is where four leaks were still hiding (`SETTLEMENT_SPEC
+§4`, `DECISIONS §100`, "Naive GROUP BY / Frozen cascade", "Flagship entity").
+All three surfaces -- payload, rendered HTML, and `app.js` string literals --
+now report clean against 21 terms. The accounting balance identity still
+reconciles exactly (`net_paise == net_credit_check_paise`, diff 0), and health
+(276/297), exception (91) and entity (30) counts are unchanged. Walked in
+Chrome in both themes: Overview, the Audit tab's entity table, Exceptions with
+an evidence drawer, Accounting, Transactions. Console clean.
+
+**Files:** `dashboard/build_dashboard.py` (`_scrub`, `_strip_payload_only`,
+`_SCOPE_LABELS`, agent descriptions written rather than scraped from
+docstrings, connector copy rewritten, claims ledger dropped),
+`dashboard/web/app.js` (label maps, all rendered copy),
+`dashboard/web/template.html` (page intro, table headers),
+`agents/chat_answerer.py` (its two degraded messages are user-facing in the
+panel), `dashboard/index.html` regenerated.

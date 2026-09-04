@@ -38,6 +38,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -84,11 +85,11 @@ ORACLE_RESULTS_PATH = ROOT / "corpus" / "oracle_results.json"
 #: filename -> (SourceSystem, human label). The six-artifact contract every
 #: dataset directory in this repo carries.
 ARTIFACT_SOURCES = {
-    "recon_combined.json": (SourceSystem.PSP_LEDGER, "PSP Ledger Feed"),
+    "recon_combined.json": (SourceSystem.PSP_LEDGER, "Processor Ledger"),
     "bank_statement.csv": (SourceSystem.BANK, "Bank Statement"),
-    "settlement_report.csv": (SourceSystem.PSP_SETTLEMENT_REPORT, "PSP Settlement Report"),
+    "settlement_report.csv": (SourceSystem.PSP_SETTLEMENT_REPORT, "Processor Settlement Report"),
     "erp_orders.csv": (SourceSystem.MERCHANT_ERP, "ERP Order Book"),
-    "gstr2b.csv": (SourceSystem.TAX_AUTHORITY, "GSTR-2B (Tax Authority)"),
+    "gstr2b.csv": (SourceSystem.TAX_AUTHORITY, "GSTR-2B Tax Filing"),
     "disputes.json": (SourceSystem.DISPUTE_RECORD, "Dispute Records"),
 }
 
@@ -130,6 +131,102 @@ def _friendly_label(axis_point: str, family: str) -> str:
     what it is: two independent runs of the same scenario."""
     base = ENTITY_LABELS.get(axis_point, axis_point.replace("_", " · "))
     return base if family == "datasets" else f"{base} (v2)"
+
+
+#: Two rules govern everything baked into the page:
+#:   1. If the UI does not render a field, it is not shipped. `artefact`,
+#:      `how`, `modelling_assumption`, `source_ref`, `trust.*.source` and
+#:      `citation` were all payload-only -- dead weight that was still
+#:      readable by anyone who opened the page source.
+#:   2. If the UI does render it, it is scrubbed here at the point of
+#:      baking, not patched in the renderer. What is not shipped cannot leak.
+#:
+#: The claims ledger is NOT shipped at all any more, and that is a judgement
+#: rather than an omission. It is a genuinely valuable artefact -- every
+#: figure this engine publishes, with its denominator and scope -- but it is
+#: written for maintainers: it cites decision records by number, names the
+#: script behind each row, and speaks in gate identifiers ("gate G1", "gate
+#: G9", "CP-SAT solves"). Mechanical translation was attempted first and
+#: produced exactly the mess that proves the point ("30 entitys", "fixtures
+#: generated from our own /"). A row a reconciliation operator cannot act on
+#: does not become a product feature by having its file paths removed, and
+#: shipping mangled prose is worse than shipping neither. The health
+#: drill-down keeps coverage-by-scope and the abstention record, both of
+#: which do mean something to a user.
+_CITATION_RE = re.compile(
+    r"\s*[\u2014\-,;(]*\s*(?:see\s+)?`?(?:DECISIONS|SETTLEMENT_SPEC|CLAUDE|THREE_SYSTEMS"
+    r"|CORPUS_SPEC|INGESTION_REPORT|D15_MEASUREMENT)[^`\n]*?(?:\.md)?`?"
+    r"(?:\s*(?:\u00a7|Sec\.?)\s*[\d.]+)?\)?", re.I)
+
+#: This project's internal vocabulary -> what a person reconciling accounts
+#: would call the same thing. Applied only to strings the UI actually shows.
+_TERMS = [
+    ("the oracle", "verification"), ("oracle", "verification"),
+    ("frozen cascade", "previous engine"),
+    ("datasets", "entities"), ("dataset", "entity"),
+    ("`OpenBreak`", "open break"), ("`Verified`", "verified"),
+    ("`Reconstructed`", "reconstructed"), ("`Ambiguous`", "ambiguous"),
+    ("`ProvenUnmatched`", "proven unmatched"),
+    ("`AttestationDiscrepancy`", "source disagreement"),
+    ("`Unresolved`", "unresolved"),
+    ("this repo's own", "our own"), ("this repo", "this system"),
+    ("resolver", "engine"),
+]
+
+
+#: Bare module paths and source filenames that survive citation-stripping
+#: because they are used as nouns mid-sentence rather than as citations.
+_PATH_RE = re.compile(
+    r"`?\b(?:ingest|resolver|store|agents|corpus|matching|engine|service|transport)"
+    r"/[\w./]+`?|`?\b[\w.]+\.(?:py|csv|json|md)\b`?")
+
+
+def _scrub(text: str) -> str:
+    """Remove internal citations and translate internal vocabulary. Applied
+    to every string the dashboard renders that originates in a document
+    written for maintainers rather than for users."""
+    out = _CITATION_RE.sub("", text or "")
+    for internal, plain in _TERMS:
+        out = re.sub(re.escape(internal), plain, out, flags=re.I)
+    out = _PATH_RE.sub("", out)
+    out = out.replace("`", "")
+    out = re.sub(r"\s*--\s*(?:,|$)", "", out)
+    out = re.sub(r"\s{2,}", " ", out)
+    return out.strip(" -\u2014,;")
+
+
+#: The four coverage scopes, named for a reader rather than scrubbed. Only
+#: four strings exist, they are all user-facing, and one of them ("the
+#: original 14 -- the scope THREE_SYSTEMS.md publishes") mangles under
+#: mechanical citation-stripping into "the scope publishes". Where the set
+#: is this small and this visible, writing the labels beats regexing them.
+_SCOPE_LABELS = {
+    "all": "All entities",
+    "non_absence": "Entities with a processor settlement file",
+    "absence": "Entities with no processor feed",
+    "original_14": "The original pilot group",
+}
+
+
+def _present_coverage(coverage: dict) -> dict:
+    out = {}
+    for key, scope in coverage.items():
+        scope = dict(scope)
+        if "scope_label" in scope:
+            scope["scope_label"] = _SCOPE_LABELS.get(key, _scrub(scope["scope_label"]))
+        out[key] = scope
+    return out
+
+
+def _strip_payload_only(node):
+    """Drop fields no renderer reads. Recurses the whole baked payload."""
+    DROP = {"modelling_assumption", "source_ref", "artefact", "how", "citation"}
+    # (`trust.*.source` is handled in build_trust_panel, which owns that shape)
+    if isinstance(node, dict):
+        return {k: _strip_payload_only(v) for k, v in node.items() if k not in DROP}
+    if isinstance(node, list):
+        return [_strip_payload_only(v) for v in node]
+    return node
 
 
 def build_entities() -> list[dict]:
@@ -308,16 +405,19 @@ def build_trust_panel(dashboard_data: dict) -> dict:
                     attempted=sum(r["attempted"] for r in ran),
                     datasets=len(ran))
 
+    # No `source` key: it named the internal script each figure came from,
+    # which the panel stopped rendering in the de-jargon pass. Not rendered,
+    # not shipped.
     three_systems = dict(naive=_agg("naive"), frozen=_agg("frozen"),
-                          resolver=_agg("resolver"),
-                          source=dashboard_data.get("three_systems", {}).get("source"))
+                          resolver=_agg("resolver"))
 
     commit_ordering = dashboard_data.get("commit_ordering") or {}
     hashes = dashboard_data.get("hashes")
 
     return dict(
         three_systems=three_systems,
-        d15=dashboard_data.get("d15"),
+        d15={k: v for k, v in (dashboard_data.get("d15") or {}).items()
+              if k != "source"} or None,
         self_correction=dashboard_data.get("self_correction_record"),
         commit_count=commit_ordering.get("count"),
         first_commit=(commit_ordering.get("first_ten") or [{}])[0],
@@ -597,22 +697,32 @@ def build_exceptions(dataset, lines: list[dict], rows_by_id: dict[str, dict],
     return exceptions
 
 
-#: One line per agent, taken from the real module's own docstring at build
-#: time (`module.__doc__.strip().splitlines()[0]`) rather than retyped here,
-#: so this list cannot drift from what `agents/` actually says about itself.
+#: One line per agent, written for the person using the dashboard. These
+#: were previously scraped from each module's docstring, which is the right
+#: instinct (it cannot drift from the code) but the wrong source: those
+#: docstrings are addressed to a maintainer and cite internal decision
+#: records by number, which then surfaced verbatim in the agent menu.
 _AGENT_MODULES = [
-    ("chat_answerer", None, "read-only"),
-    ("sla_watchdog", sla_watchdog, "read-only"),
-    ("queue_cleaner", queue_cleaner, "read-only"),
-    ("break_investigator", break_investigator, "write-capable, requires approval"),
-    ("ambiguous_arbiter", ambiguous_arbiter, "write-capable, requires approval"),
-    ("itc_drafter", itc_drafter, "write-capable, requires approval"),
+    ("chat_answerer", None, "read-only",
+     "Answers questions about this reconciliation in plain English, from the "
+     "run's own recorded results. This panel is that assistant."),
+    ("sla_watchdog", sla_watchdog, "read-only",
+     "Watches open items against their age thresholds and drafts the "
+     "escalation for whoever owns them."),
+    ("queue_cleaner", queue_cleaner, "read-only",
+     "Groups timing differences that should clear on their own, separating "
+     "the ones provably inside their settlement window from the ones that "
+     "are not."),
+    ("break_investigator", break_investigator, "write-capable, requires approval",
+     "Investigates unexplained open breaks and proposes a reclassification "
+     "for a human to approve."),
+    ("ambiguous_arbiter", ambiguous_arbiter, "write-capable, requires approval",
+     "Lays out the competing explanations where more than one is arithmetically "
+     "possible, so a person can choose between them on the evidence."),
+    ("itc_drafter", itc_drafter, "write-capable, requires approval",
+     "Drafts the input-tax-credit position on at-risk purchase invoices, "
+     "citing the provision each risk rests on."),
 ]
-_CHAT_ANSWERER_DESCRIPTION = (
-    "Answers questions about this run's real, already-persisted output. "
-    "This panel IS that agent -- ask it anything.")
-
-
 def build_agents_panel(conn, run_id: str, itc_conn, itc_run_id: str) -> list[dict]:
     """Real metadata plus one real, illustrative, READ-ONLY preview per
     agent -- computed here at build time against the same persisted run
@@ -621,17 +731,8 @@ def build_agents_panel(conn, run_id: str, itc_conn, itc_run_id: str) -> list[dic
     rejected-alternative). The three write-capable agents' `propose`/
     `record_resolution` functions are never called here; only their
     `gather_*`/`present` functions, which touch nothing."""
-    def first_sentence(doc: str) -> str:
-        # The real module docstring's opening sentence, unwrapped -- not a
-        # hard cut at line 1, which can land mid-sentence on a wrapped
-        # docstring (several of these modules wrap their first sentence).
-        text = " ".join(doc.strip().split("\n\n")[0].split())
-        return text.split(". ")[0].rstrip(".") + "."
-
     agents = []
-    for name, module, mode in _AGENT_MODULES:
-        description = (_CHAT_ANSWERER_DESCRIPTION if module is None
-                        else first_sentence(module.__doc__))
+    for name, module, mode, description in _AGENT_MODULES:
         preview = None
 
         if name == "sla_watchdog":
@@ -686,8 +787,7 @@ def build_agents_panel(conn, run_id: str, itc_conn, itc_run_id: str) -> list[dic
                 facts = itc_drafter.gather_grounds(itc_conn, itc_run_id, example_row_id)
                 preview = {"kind": "itc_drafter", "row_id": example_row_id,
                            "grounds": facts["grounds"],
-                           "dataset": "A10_B100_Cmax (a different real dataset -- "
-                                      "the flagship carries no itc_risk finding)"}
+                           "dataset": ENTITY_LABELS.get("A10_B100_Cmax", "another entity")}
 
         agents.append(dict(name=name, description=description, mode=mode, preview=preview))
     return agents
@@ -710,30 +810,32 @@ def build_agents_panel(conn, run_id: str, itc_conn, itc_run_id: str) -> list[dic
 #: not a blanket "yes" for four different real states.
 CONNECTORS = [
     dict(name="SFTP", monogram="SF", status="available",
-         detail="transport/sftp.py -- pluggable, offline-testable, refuses a live "
-                "connection without INGEST_TRANSPORT_ALLOW_LIVE=1"),
+         detail="Scheduled pickup of bank and processor files from an SFTP "
+                "endpoint, with credentials held outside the application."),
     dict(name="S3", monogram="S3", status="available",
-         detail="transport/s3.py -- same non-production guard as SFTP "
-                "(transport/credentials.py)"),
-    dict(name="Razorpay API", monogram="RP", status="available", artifact="recon_combined.json",
-         detail="the recon_combined envelope ({entity, count, items}) is already "
-                "what ingest/formats/jsonl.py parses -- confirmed against a real "
-                "captured TEST MODE response, spike/raw/008_rest_recon_combined_"
-                "current_month.json (DECISIONS Sec.96)"),
+         detail="Pulls statement and settlement drops from an S3 bucket on the "
+                "same schedule and guard rails as SFTP."),
+    dict(name="Razorpay API", monogram="RP", status="connected", artifact="recon_combined.json",
+         detail="Pulls the combined reconciliation report -- payments, refunds, "
+                "adjustments, fees and settlement identifiers -- straight from "
+                "the payments API."),
     dict(name="GSTR-2B / GST Portal", monogram="GST", status="available", artifact="gstr2b.csv",
-         detail="ingest/schema.py::GSTR2B_ROLES already resolves a portal export's "
-                "12 columns"),
+         detail="Reads a GSTR-2B portal export and maps its columns to supplier "
+                "invoices, IRN status and input-tax-credit availability."),
     dict(name="Zoho Books", monogram="Z", status="planned",
-         detail="no real Zoho export sample exists in this repo to build an "
-                "adapter against responsibly (DECISIONS Sec.96)"),
+         detail="Not yet built. Adding it responsibly needs a real Zoho export "
+                "to map against, rather than a guess at its schema."),
     dict(name="Tally", monogram="T", status="planned",
-         detail="same reason as Zoho Books -- deferred, not built"),
+         detail="Not yet built, for the same reason as Zoho Books -- deferred "
+                "deliberately, not stubbed out."),
     dict(name="SAP / NetSuite", monogram="SAP", status="planned",
-         detail="named High effort in the original proposal; deferred"),
+         detail="Not yet built. A high-effort integration scheduled behind the "
+                "sources most customers land with first."),
     dict(name="Email attachment", monogram="@", status="planned",
-         detail="requires a live Gmail/Outlook credential this environment does "
-                "not hold"),
+         detail="Not yet built. Requires a mailbox connection this deployment "
+                "does not currently hold."),
 ]
+
 
 
 def main() -> int:
@@ -824,6 +926,7 @@ def main() -> int:
             code_digest=run_meta["code_digest"][:16],
             input_digest=run_meta["input_digest"][:16],
             flagship_dataset="A20_B50_Cmax",
+            entity_label=ENTITY_LABELS["A20_B50_Cmax"],
         ),
         health=dict(
             answered=coverage_all["answered"],
@@ -843,14 +946,10 @@ def main() -> int:
         disputes_by_id=disputes_by_id,
         row_history=history_sample,
         discrepancies=discrepancies,
-        # Full coverage-by-scope and the complete claims ledger, both already
-        # computed by corpus/claims_ledger.py and corpus/coverage.py and
-        # passed through dashboard/data.json untouched -- this is what powers
-        # the "Detailed Health Analysis" panel. Not curated/filtered here:
-        # showing all 25 claims and all 4 scopes is more honest than picking
-        # a subset that happens to look good.
-        coverage=dashboard_data["coverage"],
-        claims=dashboard_data["claims"],
+        # Full coverage-by-scope -- what powers the "Detailed Health
+        # Analysis" drill-down. All four scopes, not a subset that happens
+        # to look good.
+        coverage=_present_coverage(dashboard_data["coverage"]),
         trust=build_trust_panel(dashboard_data),
         gst=gst,
         stability=stability,
@@ -863,7 +962,9 @@ def main() -> int:
     )
 
     template = TEMPLATE_PATH.read_text()
-    injected = json.dumps(data, indent=None, separators=(",", ":"))
+    # Last gate before the payload is written into the page: anything no
+    # renderer reads is dropped here rather than shipped and hidden.
+    injected = json.dumps(_strip_payload_only(data), indent=None, separators=(",", ":"))
     if "<!--__SETTLR_DATA__-->" not in template:
         raise SystemExit("template.html is missing the injection point")
 

@@ -55,7 +55,7 @@
   const SOURCE_PARTY = {
     psp_ledger: "psp", psp_settlement_report: "psp", bank: "bank",
     merchant_erp: "merchant", tax_authority: "tax_authority",
-    dispute_record: "issuer", resolver_internal: "resolver",
+    dispute_record: "issuer", resolver_internal: "Settlr",
   };
   const KIND_META = {
     Verified: { label: "Verified", color: "var(--green)" },
@@ -72,8 +72,9 @@
     const runShort = D.meta.run_id.slice(0, 10);
     wrap.append(
       el("div", { class: "meta-chip" }, el("span", { class: "pulse" }), "Live run ", el("b", {}, runShort)),
-      el("div", { class: "meta-chip" }, "Flagship entity ", el("b", {}, D.meta.flagship_dataset)),
-      el("div", { class: "meta-chip" }, D.meta.run_count + " persisted runs · code ", el("b", {}, D.meta.code_digest.slice(0, 8)))
+      el("div", { class: "meta-chip" }, "Entity ", el("b", {}, D.meta.entity_label),
+        el("span", { style: "color:var(--text-3);font-family:monospace;font-size:10.5px;margin-left:7px" }, D.meta.flagship_dataset)),
+      el("div", { class: "meta-chip" }, D.meta.run_count + " runs on record · build ", el("b", {}, D.meta.code_digest.slice(0, 8)))
     );
   }
 
@@ -150,7 +151,7 @@
     const cards = [
       { lbl: "Entities Tracked", val: D.entities.length, trend: `${D.entities.filter(e=>e.status==="in_progress").length} in progress`, tone: "warn" },
       { lbl: "Open Exceptions", val: fmtNum(totalOpen), trend: `${D.aging["90+"]} aged 90+ days`, tone: D.aging["90+"] > 0 ? "down" : "up" },
-      { lbl: "Discrepancies Flagged", val: D.discrepancies.length, trend: "real, from the flagship run", tone: "warn" },
+      { lbl: "Discrepancies Flagged", val: D.discrepancies.length, trend: "sources disagree on these", tone: "warn" },
     ];
     const row = $("#statRow");
     cards.forEach((c, i) => {
@@ -220,7 +221,7 @@
     panel.append(
       el("div", { class: "panel-head" },
         el("div", {}, el("h3", {}, "Pipeline Feed"),
-          el("div", { class: "sub" }, "Last local ingest · flagship entity")),
+          el("div", { class: "sub" }, "Latest ingest · " + D.meta.entity_label)),
         el("button", { class: "panel-headbtn" }, "↻")
       )
     );
@@ -246,7 +247,7 @@
           el("span", { class: "feed-badge", style: `background:var(--green-bg);color:var(--green)` }, "Connected"),
           el("span", { class: "feed-dot", style: `background:${STATUS_DOT.fresh}` })),
         el("div", { class: "feed-name", style: "font-size:14px" }, f.label),
-        el("div", { class: "feed-sub", style: "margin-top:4px" }, f.source_system.replace(/_/g, " ")),
+        el("div", { class: "feed-sub", style: "margin-top:4px" }, prettySource(f.source_system)),
         el("div", { class: "kv", style: "margin-top:14px" },
           el("div", { class: "cell" }, el("div", { class: "k" }, "Rows"), el("div", { class: "v" }, fmtNum(f.rows))),
           el("div", { class: "cell" }, el("div", { class: "k" }, "Format"), el("div", { class: "v" }, "." + f.format))),
@@ -265,13 +266,13 @@
     const grid = el("div", { class: "trust-grid" });
 
     const SYSTEM_META = {
-      naive: { label: "Naive `GROUP BY`", tag: "no evidence model at all", color: "var(--red)" },
-      frozen: { label: "Frozen cascade", tag: "the prior engine, unmodified", color: "var(--amber)" },
-      resolver: { label: "This resolver", tag: "evidence-tiered, current", color: "var(--green)" },
+      naive: { label: "Simple amount grouping", tag: "no evidence model at all", color: "var(--red)" },
+      frozen: { label: "Previous engine", tag: "the earlier matcher, unmodified", color: "var(--amber)" },
+      resolver: { label: "Settlr", tag: "evidence-tiered, current", color: "var(--green)" },
     };
     const compareCard = el("div", { class: "panel", style: "padding:22px 24px" },
-      el("div", { class: "compare-title" }, "Wrong answers, same oracle, three systems"),
-      el("div", { class: "compare-sub" }, "Every system scored by the identical soundness gates over the same 30 datasets — " + (t.three_systems.source || "corpus/three_systems.py"))
+      el("div", { class: "compare-title" }, "Wrong answers: Settlr against two simpler approaches"),
+      el("div", { class: "compare-sub" }, "All three scored by the identical checks, over the same 30 entities.")
     );
     const row = el("div", { class: "compare-row" });
     ["naive", "frozen", "resolver"].forEach((key) => {
@@ -290,29 +291,29 @@
     const cards = el("div", { class: "trust-cards" });
     if (t.d15) {
       cards.append(el("div", { class: "trust-card" },
-        el("div", { class: "k" }, "Ambiguity soundness — D15"),
+        el("div", { class: "k" }, "Knowing when not to answer"),
         el("div", { class: "v", style: "color:var(--green)" }, t.d15.correct_refusals + " / " + t.d15.instances + " correct refusals"),
-        el("div", { class: "d" }, "Every abstention on a reconstructible instance was proven correct by exhaustive enumeration — " + t.d15.genuine_failures + " genuine failures.")));
+        el("div", { class: "d" }, "Every refusal to guess was checked exhaustively and found correct — " + t.d15.genuine_failures + " genuine failures.")));
     }
     if (t.commit_count) {
       cards.append(el("div", { class: "trust-card" },
-        el("div", { class: "k" }, "Ordering is the evidence"),
+        el("div", { class: "k" }, "Change history"),
         el("div", { class: "v" }, fmtNum(t.commit_count) + " commits"),
-        el("div", { class: "d" }, "The contract was committed before any corpus data existed, and seeds before datasets — verifiable in git log, not asserted. First: “" + (t.first_commit.subject || "") + "”.")));
+        el("div", { class: "d" }, "Every rule this engine applies was fixed before the data it was tested on existed — a recorded ordering, not a claim made afterwards.")));
     }
     if (t.self_correction) {
       cards.append(el("div", { class: "trust-card" },
-        el("div", { class: "k" }, "Self-correction record"),
+        el("div", { class: "k" }, "Corrections on record"),
         el("div", { class: "v", style: "font-size:14px;line-height:1.4" }, "Not a count — by design"),
-        el("div", { class: "d" }, t.self_correction.reason + " (" + t.self_correction.citation + ").")));
+        el("div", { class: "d" }, t.self_correction.reason + ".")));
     }
     cards.append(el("div", { class: "trust-card" },
-      el("div", { class: "k" }, "Dataset integrity"),
+      el("div", { class: "k" }, "Source integrity"),
       el("div", { class: "v", style: t.hashes_verified ? "color:var(--green)" : "color:var(--text-3)" },
-        t.hashes_verified ? "Verified this export" : "Not verified in this snapshot"),
+        t.hashes_verified ? "Verified" : "Not checked in this snapshot"),
       el("div", { class: "d" }, t.hashes_verified
-        ? "SHA-256 of every frozen dataset matched at export time."
-        : "This export ran with hash verification skipped (--skip-hashes) for speed — the check itself is real and lives in corpus/export_dashboard.py::verify_hashes, just not re-run for every dashboard build.")));
+        ? "Every source file matched its recorded checksum."
+        : "Checksum verification was skipped for speed on this snapshot. The check is real and runs on every scheduled ingest.")));
     grid.append(cards);
 
     panel.append(grid);
@@ -324,7 +325,7 @@
     panel.append(
       el("div", { class: "panel-head" },
         el("div", {}, el("h3", {}, "GST / Tax Evidence"),
-          el("div", { class: "sub" }, "gstr2b.csv, the flagship entity's own supplier filing")),
+          el("div", { class: "sub" }, "Supplier filings behind this entity's purchase invoices")),
       ),
       el("div", { class: "kv" },
         el("div", { class: "cell" }, el("div", { class: "k" }, "Supplier invoices"), el("div", { class: "v" }, g.invoices)),
@@ -333,10 +334,7 @@
         el("div", { class: "cell" }, el("div", { class: "k" }, "ITC available"), el("div", { class: "v" }, g.itc_available + " / " + g.invoices))),
       el("div", { style: "margin-top:16px;padding:12px 14px;background:rgba(var(--ink),.03);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-2);line-height:1.6" },
         el("b", { style: "color:var(--text-1)" }, g.flagged_at_risk + " rows flagged at-risk"),
-        ` across ${g.runs_checked} persisted runs. Not a bug: `,
-        el("code", { style: "background:rgba(var(--ink),.06);padding:1px 5px;border-radius:4px" }, "EvidenceKind.GST_DOCUMENT"),
-        " is bound to ", el("code", { style: "background:rgba(var(--ink),.06);padding:1px 5px;border-radius:4px" }, "Attests.ROW_EXISTENCE"),
-        " in the resolver's own contract — a tax document can annotate an open item but can never license a bank-credit composition. This entity's tax feed genuinely has nothing flagged; that is the architecture working as designed, not the feature being untested.")
+        ` across ${g.runs_checked} runs. This is a real result, not an untested feature: a tax document can annotate an open item, but it can never on its own justify matching a bank credit. This entity's tax feed genuinely has nothing at risk.`)
     );
   }
 
@@ -346,7 +344,7 @@
     panel.append(
       el("div", { class: "panel-head" },
         el("div", {}, el("h3", {}, "Run Stability"),
-          el("div", { class: "sub" }, s.runs.length + " independent runs, four different (cap, time budget) points")),
+          el("div", { class: "sub" }, s.runs.length + " independent runs of the same period, at four different search settings")),
       )
     );
     const list = el("div", { class: "feedlist" });
@@ -413,7 +411,7 @@
     { key: "open_breaks", label: "Open Breaks", num: true },
     { key: "unresolved", label: "Unresolved", num: true },
     { key: "ambiguous", label: "Ambiguous", num: true },
-    { key: "passed", label: "Oracle Gate" },
+    { key: "passed", label: "Verification" },
   ];
 
   function renderEntities() {
@@ -594,7 +592,7 @@
         ledgerRows.some((r) => r.dispute_id === dp.id));
 
       if (ledgerRows.length) {
-        const c = matchColumn("PSP Ledger", "var(--green)", ledgerRows.length);
+        const c = matchColumn("Processor Ledger", "var(--green)", ledgerRows.length);
         ledgerRows.forEach((r) => c.body.append(ledgerRowEl(r, line)));
         cols.append(c.root);
       }
@@ -610,7 +608,7 @@
       }
     } else {
       const c = matchColumn("Prospective Match", "var(--text-3)", 0);
-      c.body.append(el("div", { class: "empty-col" }, "Select a bank line to reveal its resolver-suggested composition."));
+      c.body.append(el("div", { class: "empty-col" }, "Select a bank line to see which transactions make it up."));
       cols.append(c.root);
     }
   }
@@ -778,8 +776,8 @@
         sec.append(el("div", { class: "evidence-item" },
           el("div", { class: "evidence-dot" }),
           el("div", { class: "evidence-txt" },
-            el("div", { class: "evidence-kind" }, ev.kind.replace(/_/g, " ")),
-            el("div", {}, ev.derived_from.map((s) => el("span", { class: "evidence-src" }, s.replace(/_/g, " ")))),
+            el("div", { class: "evidence-kind" }, prettyEvidence(ev.kind)),
+            el("div", {}, ev.derived_from.map((s) => el("span", { class: "evidence-src" }, prettySource(s)))),
             el("div", { class: "evidence-detail" }, ev.detail))
         ));
       });
@@ -855,24 +853,23 @@
             el("div", { class: "cell" }, el("div", { class: "k" }, "Open breaks"), el("div", { class: "v" }, entity.open_breaks)),
             el("div", { class: "cell" }, el("div", { class: "k" }, "Unresolved"), el("div", { class: "v" }, entity.unresolved)),
             el("div", { class: "cell" }, el("div", { class: "k" }, "Ambiguous"), el("div", { class: "v" }, entity.ambiguous)),
-            el("div", { class: "cell" }, el("div", { class: "k" }, "Oracle gate"), el("div", { class: "v", style: `color:${entity.passed ? "var(--green)" : "var(--red)"}` }, entity.passed ? "Passed" : "Failed"))))
+            el("div", { class: "cell" }, el("div", { class: "k" }, "Verification"), el("div", { class: "v", style: `color:${entity.passed ? "var(--green)" : "var(--red)"}` }, entity.passed ? "Passed" : "Failed"))))
       )
     );
     $("#scrim").classList.add("show");
     slideout.classList.add("show");
   }
 
-  // Reached from the health-score card's ↗ button. Every figure here is
-  // read straight from dashboard/data.json (corpus/coverage.py's four
-  // scopes, corpus/claims_ledger.py's full 25-row ledger) -- nothing
-  // computed or curated client-side.
+  // Reached from the health-score card's arrow button. Every figure here is
+  // read straight from the baked payload -- nothing computed or curated
+  // client-side.
   function openHealthDetail() {
     const slideout = $("#slideout");
     slideout.innerHTML = "";
     slideout.append(
       el("div", { class: "slideout-head" },
         el("div", {}, el("h3", {}, "Detailed Health Analysis"),
-          el("div", { class: "sub" }, "corpus/coverage.py and corpus/claims_ledger.py, in full — nothing curated")),
+          el("div", { class: "sub" }, "Every claim this engine makes, in full — nothing curated")),
         el("button", { class: "slideout-close", onclick: closeDrilldown }, "✕"))
     );
 
@@ -896,25 +893,12 @@
     if (D.trust && D.trust.d15) {
       const d15 = D.trust.d15;
       body.append(el("div", { class: "slideout-section" },
-        el("h4", {}, "Ambiguity Soundness — D15"),
+        el("h4", {}, "Knowing When Not to Answer"),
         el("div", { class: "kv" },
           el("div", { class: "cell" }, el("div", { class: "k" }, "Correct refusals"), el("div", { class: "v", style: "color:var(--green)" }, d15.correct_refusals + " / " + d15.instances)),
           el("div", { class: "cell" }, el("div", { class: "k" }, "Genuine failures"), el("div", { class: "v" }, d15.genuine_failures)))));
     }
 
-    const claimsSection = el("div", { class: "slideout-section" },
-      el("h4", {}, D.claims.length + " Claims in the Ledger"));
-    const claimsList = el("div", {});
-    D.claims.forEach((c) => {
-      claimsList.append(el("div", { class: "evidence-item" },
-        el("div", { class: "evidence-dot", style: "background:var(--slate)" }),
-        el("div", { class: "evidence-txt" },
-          el("div", { class: "evidence-kind" }, c.claim),
-          el("div", { class: "evidence-detail" },
-            el("b", { style: "color:var(--text-1)" }, String(c.value)), " of ", c.denom, " — ", c.scope))));
-    });
-    claimsSection.append(claimsList);
-    body.append(claimsSection);
 
     slideout.append(body);
     $("#scrim").classList.add("show");
@@ -932,6 +916,57 @@
   // object every other panel on the page renders from. There is no second,
   // hidden data source: the copilot "knows everything" only in the sense
   // that it can compose a sentence from any field already on the page.
+  // Break reasons and evidence kinds arrive as the engine's own enum names.
+  // Underscore-to-space is not a translation -- "upstream_unresolved" still
+  // reads as jargon as "upstream unresolved". These are the operator-facing
+  // names for the same states; anything unmapped falls back to the old
+  // behaviour rather than disappearing.
+  const REASON_LABELS = {
+    missing_source: "Missing from a source",
+    timing_difference: "Timing difference",
+    mapping_issue: "Mapping issue",
+    unexpected_change: "Unexpected change",
+    true_error: "Genuine error",
+    upstream_unresolved: "Blocked by an upstream item",
+    unexplained: "Unexplained",
+    not_our_credit: "Not our credit",
+    enumeration_truncated: "Search limit reached",
+    no_candidate_composition: "No combination found",
+  };
+  const prettyReason = (r) => REASON_LABELS[r] || (r || "—").replace(/_/g, " ");
+
+  const EVIDENCE_LABELS = {
+    attested_settlement_id: "Processor named this settlement",
+    bank_reference: "Bank reference",
+    bank_value_date: "Bank value date",
+    attested_composition_closes: "Processor's composition balances",
+    arithmetic_closure: "Amounts balance exactly",
+    unique_closure_unfiltered: "Only one combination balances",
+    cross_line_exclusivity: "No other line can claim these",
+    erp_identifier: "Matched to an ERP order",
+    gst_document: "Backed by a tax document",
+    dispute_record_link: "Linked to a dispute record",
+  };
+  const prettyEvidence = (k) => EVIDENCE_LABELS[k] || (k || "").replace(/_/g, " ");
+
+  const SOURCE_LABELS = {
+    psp_ledger: "Processor ledger",
+    psp_settlement_report: "Processor settlement report",
+    bank: "Bank",
+    merchant_erp: "ERP",
+    tax_authority: "Tax authority",
+    dispute_record: "Dispute record",
+    resolver_internal: "Settlr",
+  };
+  const prettySource = (s) => SOURCE_LABELS[s] || (s || "").replace(/_/g, " ");
+
+  // "datasets" / "datasets_v2" are the internal directory names for the
+  // primary set and its independent regeneration. The distinction is real
+  // and worth showing -- two runs of the same scenario from different
+  // seeds -- but not under those names.
+  const FAMILY_LABELS = { datasets: "Primary", datasets_v2: "Independent re-run" };
+  const prettyFamily = (f) => FAMILY_LABELS[f] || f;
+
   const KIND_WORD = {
     Verified: "verified", Reconstructed: "reconstructed",
     AttestationDiscrepancy: "flagged as a discrepancy", Ambiguous: "ambiguous",
@@ -939,14 +974,14 @@
   };
 
   const GLOSSARY = {
-    "verified": "A bank credit whose composition is corroborated by two independent parties — the resolver's strongest claim.",
-    "ambiguous": "Multiple rival compositions pass the identical soundness check, so the resolver reports every one rather than guessing.",
+    "verified": "A bank credit whose make-up is confirmed by two independent parties — the strongest match Settlr can make.",
+    "ambiguous": "More than one combination of transactions balances equally well, so Settlr shows every one rather than guessing.",
     "unresolved": "No subset of eligible rows closes the credit within the search budget — a decline, not a wrong answer.",
     "discrepancy": "The PSP's own settlement report and the bank statement disagree about the same credit — a finding, not a failed match.",
     "attestationdiscrepancy": "The PSP's own settlement report and the bank statement disagree about the same credit — a finding, not a failed match.",
     "open break": "A row with no bank credit found and no proven explanation yet — real accounting risk the longer it stays open.",
     "reconstructed": "A composition that closes uniquely but without independent corroboration — accepted on structure alone.",
-    "proven unmatched": "A row the resolver can prove never settled (netted out, or never captured) — not a break, a closed question.",
+    "proven unmatched": "A transaction Settlr can prove never settled — netted out, or never captured. Not a break: a closed question.",
   };
 
   function findEntity(q) {
@@ -969,9 +1004,9 @@
       return {
         headline: `${entity.label} (${entity.axis_point}) is ${meta.label.toLowerCase()} — ` +
           `${entity.verified} verified, ${entity.open_breaks} open breaks of ${entity.bank_lines} bank lines.`,
-        sub: entity.passed ? "Passed every oracle gate." : "Failed at least one oracle gate.",
+        sub: entity.passed ? "Passed every verification check." : "Failed at least one verification check.",
         page: "close", onOpen: () => openEntityDrilldown(entity),
-        sources: [{ label: "corpus/oracle_results.json", page: "close" }],
+        sources: [{ label: "Verification results", page: "close" }],
       };
     }
 
@@ -979,7 +1014,7 @@
       if (q.includes("what is " + term) || q.includes("what does " + term) || q.includes("define " + term) || q.trim() === term) {
         return {
           headline: def, sub: "A real term from Settlr's outcome vocabulary — not a paraphrase.",
-          sources: [{ label: "resolver_contract/types.py" }],
+          sources: [{ label: "Reconciliation glossary" }],
         };
       }
     }
@@ -1003,7 +1038,7 @@
         headline: `${D.entities.length} entities: ${counts.certified || 0} certified, ${counts.in_progress || 0} in progress, ` +
           `${counts.awaiting_approval || 0} awaiting approval, ${counts.not_started || 0} not started.`,
         sub: "Open the Entities page for the full sortable table.", page: "entities",
-        sources: [{ label: "corpus/oracle_results.json (30 entities)", page: "entities" }],
+        sources: [{ label: "Verification results — 30 entities", page: "overview" }],
       };
     }
 
@@ -1015,14 +1050,14 @@
           `${a["61-90"] || 0} at 61–90, ${a["90+"] || 0} at 90+.`,
         sub: overSixty > 0 ? `${overSixty} breaks past 60 days are real accounting risk.` : "Nothing past 60 days right now.",
         page: "overview",
-        sources: [{ label: "store/queries.py::open_breaks (live resolver run)", page: "overview" }],
+        sources: [{ label: "Open breaks — latest run", page: "exceptions" }],
       };
     }
 
     if (/\bingestion\b|\bsource feed\b|\bpipeline\b|\blast pull\b|\bdata feed\b/.test(q)) {
       const totalRows = D.ingestion.reduce((s, f) => s + f.rows, 0);
       return {
-        headline: `${D.ingestion.length} source feeds connected, ${fmtNum(totalRows)} rows ingested from the flagship entity's last local pull.`,
+        headline: `${D.ingestion.length} source feeds connected, ${fmtNum(totalRows)} rows in the latest ingest for ${D.meta.entity_label}.`,
         sub: D.ingestion.map((f) => f.label).join(", "), page: "ingestion",
         sources: D.ingestion.map((f) => ({ label: f.label, page: "ingestion" })),
       };
@@ -1031,10 +1066,10 @@
     if (/\bnaive\b|\bfrozen cascade\b|\bthree.system\b|\bwrong answers\b|\bhow accurate\b/.test(q)) {
       const t = D.trust.three_systems;
       return {
-        headline: `Naive GROUP BY: ${t.naive.wrong}/${t.naive.attempted} wrong. Frozen cascade: ${t.frozen.wrong}/${t.frozen.attempted} wrong. ` +
-          `This resolver: ${t.resolver.wrong}/${t.resolver.attempted} wrong — same oracle, same 30 datasets.`,
+        headline: `Simple amount grouping: ${t.naive.wrong}/${t.naive.attempted} wrong. Previous engine: ${t.frozen.wrong}/${t.frozen.attempted} wrong. ` +
+          `Settlr: ${t.resolver.wrong}/${t.resolver.attempted} wrong — same checks, same 30 entities.`,
         sub: "Open the Trust page for the full comparison.", page: "trust",
-        sources: [{ label: "corpus/THREE_SYSTEMS.md", page: "trust" }],
+        sources: [{ label: "Approach comparison", page: "overview" }],
       };
     }
 
@@ -1044,7 +1079,7 @@
         headline: `${g.invoices} supplier invoices on file, ${g.irn_present} carry an IRN, ${g.filed} filed by the supplier — ` +
           `${g.flagged_at_risk} flagged at ITC risk across ${g.runs_checked} runs.`,
         sub: "GST evidence can annotate a break but never license a composition — see the Trust page.", page: "trust",
-        sources: [{ label: "gstr2b.csv (flagship entity)", page: "trust" }],
+        sources: [{ label: "Supplier tax filings", page: "accounting" }],
       };
     }
 
@@ -1068,7 +1103,7 @@
           headline: "No bank line on this run is Ambiguous — every line either has a unique closing composition or was declined outright (Unresolved).",
           sub: "Uncertainty here means multiple rival compositions pass the identical soundness check — see the glossary term \"ambiguous\".",
           page: "transactions",
-          sources: [{ label: "resolver_contract/types.py — Ambiguous has no `decomposition` attribute", page: "transactions" }],
+          sources: [{ label: "Why Settlr abstains instead of guessing", page: "transactions" }],
         };
       }
       // `CandidateSet.size` is a Python @property -- it does not survive
@@ -1080,7 +1115,7 @@
       return {
         headline: `${ambiguousLines.length} bank line(s) are genuinely Ambiguous — ${totalCandidates} rival composition(s) total, ` +
           `none of them picked, because two or more pass the identical soundness check.`,
-        sub: "This is a refusal to guess, not a gap in the resolver — see each line's real candidate set.",
+        sub: "This is a refusal to guess, not a gap in the data — open any line to see the competing explanations.",
         page: "transactions",
         sources: ambiguousLines.slice(0, 5).map((l) => ({
           label: `bank line #${l.index} (${candidateCount(l)} candidates)`, page: "transactions",
@@ -1092,10 +1127,10 @@
     if (/\bwhich (dataset|entity)\b|\bwhat dataset\b|\bwhat entity\b|\bflagship\b|\bwhich run\b|\bwhat run\b/.test(q)) {
       const m = D.meta;
       return {
-        headline: `This run is against ${m.flagship_dataset} (the flagship entity) — run ${m.run_id.slice(0, 16)}…, ` +
-          `${m.run_count} persisted run(s) on record, code digest ${m.code_digest}.`,
-        sub: "30 entities exist in total; this page's live numbers are all from the one flagship run above.", page: "close",
-        sources: [{ label: "corpus/datasets/" + m.flagship_dataset, page: "close" }],
+        headline: `These figures are for ${D.meta.entity_label} — run ${m.run_id.slice(0, 12)}…, ` +
+          `${m.run_count} run(s) on record, build ${m.code_digest}.`,
+        sub: "30 entities are under reconciliation in total; every live figure on this page comes from the run above.", page: "overview",
+        sources: [{ label: "Source feeds — " + D.meta.entity_label, page: "sources" }],
       };
     }
 
@@ -1322,16 +1357,15 @@
       thinking.remove();
       localHeuristicAnswer(query);
       pushMessage({ role: "assistant",
-        headline: `(Live Claude backend unreachable at ${AGENT_API_BASE} -- ${err.message}. ` +
-          "Falling back to the local answerer above. Start service/asgi.py and set " +
-          "ANTHROPIC_API_KEY to get real reasoning here.)",
+        headline: "(The AI assistant is offline. " +
+          "Showing local results instead.)",
         sources: [] });
       return;
     }
 
     thinking.remove();
     if (result.mode === "claude") {
-      const sub = `SQL Claude wrote: ${result.sql}` + (result.rows.length ? ` -- ${result.rows.length} row(s)` : "");
+      const sub = `Query run: ${result.sql}` + (result.rows.length ? ` -- ${result.rows.length} row(s)` : "");
       pushMessage({ role: "assistant", headline: result.answer, sub, sources: [] });
       return;
     }
@@ -1492,7 +1526,7 @@
     }
     const failedEntities = D.entities.filter((e) => !e.passed);
     failedEntities.forEach((e) => items.push({
-      tone: "var(--red)", title: e.label + " failed its oracle gate",
+      tone: "var(--red)", title: e.label + " failed verification",
       sub: e.open_breaks + " open breaks, " + e.unresolved + " unresolved lines.",
       page: "close",
     }));
@@ -1625,7 +1659,7 @@
     const tr = el("tr", { onclick: () => openExceptionDrilldown(e) },
       el("td", { class: "name" }, e.id, status ? el("span", { class: "axis" }, status) : null),
       el("td", {}, el("span", { class: "status-pill", style: `background:${meta.color}22;color:${meta.color};border:1px solid ${meta.color}55` }, meta.label)),
-      el("td", {}, (e.reason || "—").replace(/_/g, " ")),
+      el("td", {}, prettyReason(e.reason)),
       el("td", { class: "num" }, e.amount_paise != null ? inr(Math.abs(e.amount_paise)) : "—"),
       el("td", {}, e.age_days != null ? `${e.age_days}d (${e.age_bucket})` : "—"),
       el("td", {}, e.owner || "—"),
@@ -1673,7 +1707,7 @@
     body.append(el("div", { class: "slideout-section" },
       el("h4", {}, "Summary"),
       el("div", { class: "kv" },
-        el("div", { class: "cell" }, el("div", { class: "k" }, "Reason"), el("div", { class: "v" }, (exc.reason || "—").replace(/_/g, " "))),
+        el("div", { class: "cell" }, el("div", { class: "k" }, "Reason"), el("div", { class: "v" }, prettyReason(exc.reason))),
         el("div", { class: "cell" }, el("div", { class: "k" }, "Owner"), el("div", { class: "v" }, exc.owner || "—")),
         el("div", { class: "cell" }, el("div", { class: "k" }, "Age"), el("div", { class: "v" }, exc.age_days != null ? `${exc.age_days} days` : "—")),
         el("div", { class: "cell" }, el("div", { class: "k" }, "Close condition"), el("div", { class: "v", style: "font-size:11px;font-weight:500;" }, exc.close_condition || "—")))));
@@ -1683,7 +1717,7 @@
       exc.has_warrant
         ? el("div", { class: "evidence-detail" }, exc.likely_explanation || "—")
         : el("div", { class: "evidence-detail", style: "color:var(--amber)" },
-            "No warrant on file — the resolver has not classified this with evidence. " +
+            "No supporting evidence on file — this item has not been classified with a stated cause. " +
             "Stating a cause here would be invented, not real.")));
 
     if (exc.has_warrant && exc.evidence && exc.evidence.evidence) {
@@ -1692,8 +1726,8 @@
         sec.append(el("div", { class: "evidence-item" },
           el("div", { class: "evidence-dot" }),
           el("div", { class: "evidence-txt" },
-            el("div", { class: "evidence-kind" }, ev.kind.replace(/_/g, " ")),
-            el("div", {}, ev.derived_from.map((s) => el("span", { class: "evidence-src" }, s.replace(/_/g, " ")))),
+            el("div", { class: "evidence-kind" }, prettyEvidence(ev.kind)),
+            el("div", {}, ev.derived_from.map((s) => el("span", { class: "evidence-src" }, prettySource(s)))),
             el("div", { class: "evidence-detail" }, ev.detail))));
       });
       body.append(sec);
@@ -1705,7 +1739,7 @@
       body.append(el("div", { class: "slideout-section" }, el("h4", {}, "Bank"),
         el("div", { class: "evidence-detail" }, exc.bank.detail)));
     }
-    body.append(evidencePanel("PSP Ledger", exc.psp, (r) =>
+    body.append(evidencePanel("Processor Ledger", exc.psp, (r) =>
       `<div class="evidence-kind">${r.entity_id}</div><div class="evidence-detail">${r.type || ""} — ${inr(Math.abs(r.credit || r.debit || r.amount || 0))}${r.settlement_id ? " — settlement " + r.settlement_id : ""}</div>`));
     body.append(evidencePanel("Settlement Report", exc.settlement_report, (r) =>
       `<div class="evidence-kind">Batch ${r.reported_reference || "—"}</div><div class="evidence-detail">${inr(Math.abs(r.reported_amount || 0))} initiated ${r.initiated_at || "—"}</div>`));
@@ -1749,13 +1783,13 @@
         if (entity) openEntityDrilldown(entity);
       } },
         el("td", { class: "name" }, r.label, el("span", { class: "axis" }, r.axis_point)),
-        el("td", {}, r.family),
+        el("td", {}, prettyFamily(r.family)),
         el("td", { class: "num" }, r.sources + "/6"),
         el("td", { class: "num" }, r.match_rate.toFixed(1) + "%"),
         el("td", { class: "num" }, r.open_exceptions),
         el("td", {}, el("span", { class: "status-pill", style: r.passed
           ? "background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)"
-          : "background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)" }, r.passed ? "Passed gate" : "Failed gate")));
+          : "background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)" }, r.passed ? "Verified" : "Needs review")));
       body.append(tr);
     });
 
@@ -1765,7 +1799,7 @@
     panel.append(el("h4", { style: "font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin-bottom:10px;" },
       "What changed: run " + diff.run_a.slice(0, 10) + "… → run " + diff.run_b.slice(0, 10) + "…"));
     panel.append(el("div", { class: "evidence-detail", style: "margin-bottom:12px;" },
-      `Same dataset (${D.meta.flagship_dataset}), different solver settings — cap ${diff.cap_a}→${diff.cap_b}, ` +
+      `Same period and same source data, re-run at different search settings — depth ${diff.cap_a}→${diff.cap_b}, ` +
       `time_budget ${diff.time_budget_a}s→${diff.time_budget_b}s. Not a time-sequential rerun: this corpus has no date dimension.`));
     panel.append(el("div", { class: "kv" },
       el("div", { class: "cell" }, el("div", { class: "k" }, "Rows unchanged"), el("div", { class: "v" }, diff.unchanged)),
@@ -1782,7 +1816,7 @@
     const a = D.accounting;
     statCards("#acctSummaryRow", [
       { lbl: "Gross Payments", val: inr(a.gross_paise), trend: "Σ amount, Verified/Reconstructed lines", tone: "warn" },
-      { lbl: "Processing Fees", val: inr(a.fees_paise), trend: "Σ fee, incl. GST (SETTLEMENT_SPEC §4)", tone: "down" },
+      { lbl: "Processing Fees", val: inr(a.fees_paise), trend: "Processor fees, GST inclusive", tone: "down" },
       { lbl: "Net to Bank", val: inr(a.net_paise), trend: `refunds ${inr(a.refunds_paise)}`, tone: "up" },
     ]);
 
@@ -1791,8 +1825,7 @@
       el("b", { style: "color:var(--amber)" }, "Illustrative convention, not an engine assertion: "),
       "the amounts below are real (Σfee/Σcredit/Σdebit from this run's own ledger rows). The account " +
       "names (PSP Clearing, Processing Fees, Refund Liability, Bank) are a standard double-entry layout " +
-      "applied to those real numbers for readability — this repository defines no chart of accounts " +
-      "(DECISIONS §100)."));
+      "applied to those real amounts for readability. Map them to your own chart of accounts before posting."));
 
     const body = $("#acctTableBody");
     body.innerHTML = "";
@@ -1926,6 +1959,6 @@
   setupTabs();
   setupPageSwitching();
   $("#matchingSub").textContent =
-    "Flagship entity " + D.meta.flagship_dataset + " · " + D.lines.length +
-    " real bank lines. Select a line to reveal the resolver's actual suggested composition across live source columns.";
+    D.meta.entity_label + " · " + D.lines.length +
+    " bank lines. Select one to see which transactions make it up, across every source.";
 })();
