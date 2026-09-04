@@ -6457,3 +6457,115 @@ relocated filter (the "unmatched" chip narrowing 20 lines to the 10 real
 regenerated. Nothing under `resolver/`, `resolver_contract/`, `matching/`,
 `engine/`, or any frozen dataset path touched. Full suite green after the
 isolation-test fix.
+
+---
+
+## 98. D15's root cause, attacked directly and measured to fail two ways — "let `Reconstructed` consume" is rejected, negative result recorded — 2026-09-04
+
+**What this is.** D15 (`CHECKPOINT.md` §12.4/§14.6, ranked the single most
+interesting open problem this repo contains) is the pool-inflation/
+consumption conflict: only `Verified` calls `state.consumed.update(...)`
+(`resolver/resolve.py:801`, the one call site; contract §2.4/`may_consume()`),
+so at PSP absence the derived pool for unattested reconstruction grows
+monotonically and destroys uniqueness on later lines. Every straightforward
+fix is already measured and rejected — global ILP (§2, 1,347 booleans,
+`UNKNOWN` at 60s), blind chronological reconstruction (§2), column generation
+(`corpus/TECHNIQUES.md` §1), the pseudopolynomial uniqueness oracle (§92),
+date-window partitioning (`TECHNIQUES.md` §3). This entry adds one more,
+measured rather than assumed, to that table.
+
+**The untried idea.** `may_consume()`'s docstring justifies withholding
+consumption on the ground that "an ambiguity is not a reason to believe the
+rows are spent." `Reconstructed` is not ambiguous by construction — it
+already requires exhaustive, unbiased, cross-line-exclusive proof of
+uniqueness (`UNIQUE_CLOSURE_UNFILTERED`, contract §2.1 forbids any objective).
+The stated justification for the blanket rule does not obviously reach this
+case, and nothing in `DECISIONS.md`, `CHECKPOINT.md` or `TECHNIQUES.md` had
+measured it specifically for the current resolver (only for the OLD
+`matching/` cascade's D2, whose `Determinate` was reachable *without* genuine
+uniqueness — a different, weaker guarantee than this resolver's
+`Reconstructed`).
+
+**A hand proof, and the hole named in it before running anything.** If
+`pool_at`'s superset guarantee holds (§45) and lines process in true
+chronological order, induction says the first `Reconstructed` in a batch must
+be correct, and consuming it immediately should only shrink later pools
+toward the truth. The named hole: `resolve()` breaks same-date ties by
+`line.index` (`resolve.py:239`), not true settlement order —
+`_resolve_collisions`'s own docstring already records that two
+`Reconstructed` claims colliding on a row happened once the resolver ran
+across the whole corpus, evidence the tie risk is real.
+
+**The measurement.** `investigation/d15_joint_reasoning/
+track_eager_reconstruction.py` monkeypatches `_tier_c` (no file edited) so a
+`Reconstructed` outcome consumes immediately, and re-resolves all 35
+datasets, diffing every changed line against `ground_truth.json`:
+
+```
+total outcome-class changes: 3
+total CORRECT recoveries:    2
+total WRONG answers introduced: 1
+```
+
+**Zero changes on either D15 dataset.** Almost none of D15's 15 correct-
+refusal lines ever reach an uncontested `Reconstructed` to bootstrap
+consumption from (12 of 13 on `A20_Bnone_Cmax` hit the 200-candidate cap
+directly, per `investigation/D15_MEASUREMENT.md` §2.2). This technique
+cannot touch the gap it targets, independent of whether it is safe.
+
+**One wrong answer, by a more fundamental mechanism than the one predicted.**
+`datasets_gst/A20_B100_Cmax_gst` bank[50]: baseline `Unresolved`, eager
+`Reconstructed`, claiming rows that carry `settlement_id`s
+(`setl_f7kX3leajcF4ej`, `setl_DrqBXAGvpqVPef`) belonging to two *other*,
+genuinely attested settlements bank[50] has no claim to — confirmed directly
+against the dataset, not inferred. Consuming them broke those settlements'
+own attestation: bank[51]/bank[52] flip from `Verified` (correct) to
+`AttestationDiscrepancy` (regression). **The real mechanism is not the
+same-date tie §1 predicted**: `pool_at` filters only on `consumed`, the
+created-at ceiling, capture/T+2 eligibility and `net(row) != 0` — it does
+*not* exclude a row merely because it already carries a `settlement_id` for
+a different, not-yet-processed settlement. A coincidental subset-sum match
+over that unfiltered pool can look "unique, complete, exclusive" — exactly
+`Reconstructed`'s required proof shape — while being factually wrong. This
+generalizes the theoretical risk named in the hand proof: any
+attested-but-unprocessed row is a hazard, on any date, not only same-date
+ties.
+
+**Verdict: rejected.** Does not close D15's coverage gap (zero effect on the
+target datasets) and is unsafe in general (one confirmed regression,
+measured, not assumed). A safe version would need tier C's pool to also
+exclude rows already carrying a `settlement_id` for an unprocessed
+settlement — but narrowing the pool is exactly the direction F1 (§45) already
+measured as dangerous the other way (a narrower pool once hid a real rival
+and let a wrong `Reconstructed` through). That is not a small follow-on fix;
+it needs its own full measurement pass, matching this repo's own standing
+judgment that D15 needs a dedicated design effort, not a patch.
+
+**D15 remains fully open. The 1/24 PSP-absence coverage number is
+unchanged.** The one independently-fixable adjacent issue
+`investigation/D15_MEASUREMENT.md` found — coverage falling as detection
+improves — was already fixed separately (`DECISIONS.md` §48,
+`corpus/coverage.py`'s three-way split); there is no further cheap, safe win
+identified in this pass.
+
+**Rejected: shipping a same-date-tie guard instead of a full negative
+result.** A guard that only blocks eager consumption on same-date collisions
+would not have caught the bank[50] case (a different-date, attestation-based
+hazard), and publishing a narrower fix than the actual failure mode would
+misstate what was tested — exactly the kind of overclaim §39/§92 exist to
+prevent.
+
+**Rejected: also testing the common-rows-propagation direction (the
+originally planned "Track A"/"Track B") in this same pass.** Common-rows
+propagation for `Ambiguous` lines needs a bootstrap from at least one
+uncontested `Reconstructed` consuming first (the same mechanism just
+measured unsafe), and separately, D15's lines are almost entirely
+`complete=False` (200-cap truncated) — only one line
+(`A20_Bnone_Cmax` bank[1], 178/OPTIMAL) has a complete candidate set at all,
+too thin a population to test meaningfully. Not run rather than run on a
+foundation already shown unsound.
+
+**Scope.** `investigation/d15_joint_reasoning/` (new: `FINDINGS.md`,
+`track_eager_reconstruction.py`, `eager_reconstruction_report.json`). No file
+under `resolver/`, `resolver_contract/`, `matching/`, `engine/` or any
+`corpus/` dataset touched. No gate, no dataset, no contract change.
