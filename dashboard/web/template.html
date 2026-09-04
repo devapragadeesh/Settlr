@@ -586,6 +586,9 @@ body,.panel,.topbar,.etable td,.etable th,.slideout,.ai-panel{transition:backgro
 .grid-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;}
 .seg{display:flex;background:rgba(var(--ink),.04);border:1px solid var(--border);border-radius:99px;padding:3px;gap:2px;}
 .seg button{border:none;background:none;color:var(--text-2);font-size:12px;font-weight:600;padding:7px 14px;border-radius:99px;transition:.18s;}
+.tabstrip{margin-bottom:20px;}
+.tabpanel{display:none;}
+.tabpanel.active{display:block;animation:fadein .3s var(--ease) both;}
 .seg button.active{background:var(--blue-1);color:var(--text-on-accent);box-shadow:0 4px 14px -4px rgba(61,116,255,.7);}
 .grid-count{font-size:12px;color:var(--text-3);}
 
@@ -722,14 +725,11 @@ body,.panel,.topbar,.etable td,.etable th,.slideout,.ai-panel{transition:backgro
     </a>
     <div class="navlinks">
       <a href="#overview" data-page="overview" class="active">Overview</a>
+      <a href="#transactions" data-page="transactions">Transactions</a>
       <a href="#exceptions" data-page="exceptions">Exceptions</a>
-      <a href="#runs" data-page="runs">Runs</a>
       <a href="#accounting" data-page="accounting">Accounting</a>
-      <a href="#close" data-page="close">Close Progression</a>
-      <a href="#entities" data-page="entities">Entities</a>
-      <a href="#ingestion" data-page="ingestion">Ingestion</a>
-      <a href="#trust" data-page="trust">Trust</a>
-      <a href="#matching" data-page="matching">Matching</a>
+      <a href="#close" data-page="close">Close</a>
+      <a href="#sources" data-page="sources">Sources</a>
     </div>
     <div class="topbar-spacer"></div>
     <div class="topbar-actions">
@@ -760,7 +760,7 @@ body,.panel,.topbar,.etable td,.etable th,.slideout,.ai-panel{transition:backgro
           </div>
           <div class="avatar-menu-item" data-action="profile"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M5 20c1.6-3.6 4.4-5.4 7-5.4S17.4 16.4 19 20" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>Profile</div>
           <div class="avatar-menu-item" data-action="settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M12 3v2.4M12 18.6V21M21 12h-2.4M5.4 12H3M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3 5.6 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>Settings</div>
-          <div class="avatar-menu-item" data-action="connectors" data-page="connectors"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 15l6-6M8 9.5 6.5 8a3.5 3.5 0 015-5L13 4.5M16 14.5l1.5 1.5a3.5 3.5 0 01-5 5L11 19.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>Connectors</div>
+          <div class="avatar-menu-item" data-action="connectors" data-page="sources"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 15l6-6M8 9.5 6.5 8a3.5 3.5 0 015-5L13 4.5M16 14.5l1.5 1.5a3.5 3.5 0 01-5 5L11 19.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>Connectors</div>
           <div class="avatar-menu-item" data-action="signout"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3M10 16l4-4-4-4M14 12H3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>Sign out</div>
         </div>
       </div>
@@ -808,22 +808,78 @@ body,.panel,.topbar,.etable td,.etable th,.slideout,.ai-panel{transition:backgro
   <div id="pageContainer">
 
   <section class="page" data-page="overview">
-    <div class="grid-row1" id="heroRow">
-      <div id="heroSlot"></div>
-      <div class="hero-side">
-        <div class="stat-row" id="statRow"></div>
-        <div class="panel" id="ingestionPanelSmall"></div>
-      </div>
+    <div class="seg tabstrip" data-tabs="overview">
+      <button class="active" data-tab="summary">Summary</button>
+      <button data-tab="entities">Entities</button>
+      <button data-tab="audit">Audit</button>
     </div>
 
-    <h2 class="section-title" id="aging-section">Exception Aging — Priority Queue</h2>
-    <p class="section-sub">Open exceptions on the flagship entity's live run, grouped by age. Click a bar to filter the matching grid to the oldest, highest-risk breaks first.</p>
-    <div class="panel" id="agingPanel"></div>
+    <div class="tabpanel active" data-tabpanel="summary">
+      <div class="grid-row1" id="heroRow">
+        <div id="heroSlot"></div>
+        <div class="hero-side">
+          <div class="stat-row" id="statRow"></div>
+          <div class="panel" id="ingestionPanelSmall"></div>
+        </div>
+      </div>
+      <h2 class="section-title" id="aging-section">Exception Aging — Priority Queue</h2>
+      <p class="section-sub">Open exceptions on this entity's latest run, grouped by age. Click a bar to filter the transaction grid to the oldest, highest-risk breaks first.</p>
+      <div class="panel" id="agingPanel"></div>
+    </div>
+
+    <div class="tabpanel" data-tabpanel="entities">
+      <h2 class="section-title">Entities</h2>
+      <p class="section-sub">Every entity under reconciliation, searchable and sortable — the same measured fields the Close board summarises, in full.</p>
+      <div class="panel" id="entitiesPanel"></div>
+    </div>
+
+    <div class="tabpanel" data-tabpanel="audit">
+      <h2 class="section-title">Run History</h2>
+      <p class="section-sub">Every reconciliation run on record, and — where an entity has been run more than once — what actually changed between two of them.</p>
+      <div class="panel" id="runsDiffPanel" style="margin-bottom:16px;"></div>
+      <div class="etable-wrap panel">
+        <table class="etable">
+          <thead><tr>
+            <th>Entity</th><th>Family</th><th>Sources</th><th>Match rate</th>
+            <th>Open exceptions</th><th>Status</th>
+          </tr></thead>
+          <tbody id="runsTableBody"></tbody>
+        </table>
+      </div>
+      <h2 class="section-title" style="margin-top:26px;">Evidence &amp; Provenance</h2>
+      <p class="section-sub">Why these numbers can be relied on, not just what they say — every match carries the evidence it was decided on, and repeat runs are checked for agreement.</p>
+      <div class="panel" id="trustPanel"></div>
+      <div id="trustRow2" style="margin-top:20px;">
+        <div class="panel" id="stabilityPanel"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" data-page="transactions">
+    <h2 class="section-title" id="transactions">Transaction Matching</h2>
+    <p class="section-sub" id="matchingSub"></p>
+    <div class="mfilter-bar">
+      <div class="mfilter-field">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="mFilterInput" type="text" placeholder="Filter this grid — “unmatched”, “verified”, “discrepancy”, “over ₹50,000”…" autocomplete="off">
+      </div>
+      <div class="mfilter-row">
+        <div class="mfilter-chips">
+          <span class="mfilter-chip" data-q="unmatched">unmatched</span>
+          <span class="mfilter-chip" data-q="verified">verified</span>
+          <span class="mfilter-chip" data-q="over 50000">over ₹50,000</span>
+          <span class="mfilter-chip" data-q="discrepancy">discrepancy</span>
+          <span class="mfilter-chip" data-q="clear">clear</span>
+        </div>
+        <div class="mfilter-count"><b id="mFilterResultCount">—</b></div>
+      </div>
+    </div>
+    <div class="panel" id="matchingPanel"></div>
   </section>
 
   <section class="page" data-page="exceptions">
     <h2 class="section-title" id="exceptions">Exceptions — Investigation Queue</h2>
-    <p class="section-sub">Every real Unresolved line, AttestationDiscrepancy, and OpenBreak row on the flagship entity's live run. Click one to open its full evidence workspace.</p>
+    <p class="section-sub">Every unresolved line, source disagreement and open break on this entity's latest run. Click one to open its full evidence workspace.</p>
     <div class="entities-toolbar">
       <div class="seg" id="excTabs">
         <button class="active" data-tab="all">All</button>
@@ -846,88 +902,45 @@ body,.panel,.topbar,.etable td,.etable th,.slideout,.ai-panel{transition:backgro
     </div>
   </section>
 
-  <section class="page" data-page="runs">
-    <h2 class="section-title" id="runs">Runs</h2>
-    <p class="section-sub">Every one of the 30 real benchmark entities, and — for the flagship, which alone has multiple real persisted runs — a genuine diff between two of them.</p>
-    <div class="panel" id="runsDiffPanel" style="margin-bottom:16px;"></div>
-    <div class="etable-wrap panel">
-      <table class="etable">
-        <thead><tr>
-          <th>Entity</th><th>Family</th><th>Sources</th><th>Match rate</th>
-          <th>Open exceptions</th><th>Status</th>
-        </tr></thead>
-        <tbody id="runsTableBody"></tbody>
-      </table>
-    </div>
-  </section>
-
   <section class="page" data-page="accounting">
-    <h2 class="section-title" id="accounting">Accounting</h2>
-    <p class="section-sub">Real money-movement aggregates from the flagship entity's Verified/Reconstructed lines — the journal layout below is a disclosed illustrative convention, not something this repository's engine asserts.</p>
-    <div class="stat-row" id="acctSummaryRow" style="margin-bottom:16px;"></div>
-    <div class="panel" id="acctDisclosure" style="margin-bottom:16px;"></div>
-    <div class="etable-wrap panel">
-      <table class="etable">
-        <thead><tr><th>Account</th><th>Debit</th><th>Credit</th><th>Status</th></tr></thead>
-        <tbody id="acctTableBody"></tbody>
-      </table>
+    <div class="seg tabstrip" data-tabs="accounting">
+      <button class="active" data-tab="journal">Journal</button>
+      <button data-tab="tax">Tax &amp; ITC</button>
     </div>
-    <div class="panel" id="acctWorkflowPanel" style="margin-top:16px;"></div>
+
+    <div class="tabpanel active" data-tabpanel="journal">
+      <h2 class="section-title" id="accounting">Journal</h2>
+      <p class="section-sub">Money-movement aggregates from this entity's matched lines. The account names below are a standard illustrative convention applied to those amounts.</p>
+      <div class="stat-row" id="acctSummaryRow" style="margin-bottom:16px;"></div>
+      <div class="panel" id="acctDisclosure" style="margin-bottom:16px;"></div>
+      <div class="etable-wrap panel">
+        <table class="etable">
+          <thead><tr><th>Account</th><th>Debit</th><th>Credit</th><th>Status</th></tr></thead>
+          <tbody id="acctTableBody"></tbody>
+        </table>
+      </div>
+      <div class="panel" id="acctWorkflowPanel" style="margin-top:16px;"></div>
+    </div>
+
+    <div class="tabpanel" data-tabpanel="tax">
+      <h2 class="section-title">Tax &amp; Input Tax Credit</h2>
+      <p class="section-sub">The GST leg of the same reconciliation — supplier filing status and input-tax-credit exposure on purchase invoices.</p>
+      <div class="panel" id="gstPanel"></div>
+    </div>
   </section>
 
   <section class="page" data-page="close">
     <h2 class="section-title" id="close">Account Close Progression</h2>
-    <p class="section-sub">All 30 benchmark entities, status derived live from the resolver's actual gate results and open-exception counts for each — never hand-set.</p>
+    <p class="section-sub">Every entity's close status, derived live from its actual verification results and open-exception counts — never hand-set.</p>
     <div class="panel" id="kanbanPanel"></div>
   </section>
 
-  <section class="page" data-page="entities">
-    <h2 class="section-title" id="entities">Entities</h2>
-    <p class="section-sub">Every one of the 30 benchmark axis points, searchable and sortable — the same measured fields the Close Progression board summarises, in full.</p>
-    <div class="panel" id="entitiesPanel"></div>
-  </section>
-
-  <section class="page" data-page="ingestion">
-    <h2 class="section-title" id="ingestion">System Ingestion Status</h2>
-    <p class="section-sub">The six source feeds behind the flagship entity's last local ingest — file, party, row count and content hash, each real.</p>
-    <div class="panel" id="ingestionPanel"></div>
-  </section>
-
-  <section class="page" data-page="trust">
-    <h2 class="section-title" id="trust">Evidence &amp; Provenance</h2>
-    <p class="section-sub">Why this engine's numbers can be trusted, not just what they say — a naive baseline and the frozen cascade scored against the same oracle, the project's own commit history as a verifiable timeline, and a citation for the one place this project caught and corrected its own published claim.</p>
-    <div class="panel" id="trustPanel"></div>
-    <div class="grid-row2" id="trustRow2">
-      <div class="panel" id="gstPanel"></div>
-      <div class="panel" id="stabilityPanel"></div>
-    </div>
-  </section>
-
-  <section class="page" data-page="matching">
-    <h2 class="section-title" id="matching">Side-by-Side Matching Grid</h2>
-    <p class="section-sub" id="matchingSub"></p>
-    <div class="mfilter-bar">
-      <div class="mfilter-field">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <input id="mFilterInput" type="text" placeholder="Filter this grid — “unmatched”, “verified”, “discrepancy”, “over ₹50,000”…" autocomplete="off">
-      </div>
-      <div class="mfilter-row">
-        <div class="mfilter-chips">
-          <span class="mfilter-chip" data-q="unmatched">unmatched</span>
-          <span class="mfilter-chip" data-q="verified">verified</span>
-          <span class="mfilter-chip" data-q="over 50000">over ₹50,000</span>
-          <span class="mfilter-chip" data-q="discrepancy">discrepancy</span>
-          <span class="mfilter-chip" data-q="clear">clear</span>
-        </div>
-        <div class="mfilter-count"><b id="mFilterResultCount">—</b></div>
-      </div>
-    </div>
-    <div class="panel" id="matchingPanel"></div>
-  </section>
-
-  <section class="page" data-page="connectors">
-    <h2 class="section-title" id="connectors">Connectors</h2>
-    <p class="section-sub">Grounded in this repo's actual code state — an "available" connector has working, tested code behind it; a "planned" one is a real, named gap, not a disabled decoy.</p>
+  <section class="page" data-page="sources">
+    <h2 class="section-title" id="sources">Sources</h2>
+    <p class="section-sub">Where every figure on this dashboard comes from — the feeds behind the latest ingest, and the systems Settlr can connect to.</p>
+    <div class="panel" id="ingestionPanel" style="margin-bottom:22px;"></div>
+    <h2 class="section-title">Connectors</h2>
+    <p class="section-sub">A connected source has data in this reconciliation. An available one is ready to switch on; a planned one is a named gap, not a disabled decoy.</p>
     <div class="connectors-grid" id="connectorsGrid"></div>
   </section>
 

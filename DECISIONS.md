@@ -6942,3 +6942,70 @@ across reload with no flash. Dark rendering is unchanged from before this entry.
 theme toggle button + icons, no-flash head script), `dashboard/web/app.js`
 (`setupTheme`, JS color literals moved onto tokens, dead `generateAnswer`
 removed), `dashboard/index.html` regenerated. No Python, no data, no engine.
+
+## 103. Ten pages become six -- consolidating an information architecture that had grown by accretion -- 2026-09-04
+
+**The problem.** The dashboard had accumulated nine primary nav items plus a
+tenth page (`connectors`) with **no nav link at all**, reachable only through
+the avatar dropdown. Two of the pages were five lines of markup each
+(`ingestion`, `connectors`), and `ingestion` largely duplicated a panel already
+on Overview. This is what an information architecture looks like when each new
+feature gets a nav slot rather than a home.
+
+**The consolidation** (six items, matching how BlackLine/Numeric-class products
+organise):
+
+| New page | Absorbs |
+|---|---|
+| Overview | Overview + Entities + Runs + Trust, behind a **Summary / Entities / Audit** tab strip |
+| Transactions | Matching, renamed to what it is |
+| Exceptions | unchanged -- already the strongest page |
+| Accounting | Accounting + the GST panel, behind a **Journal / Tax & ITC** tab strip |
+| Close | unchanged |
+| Sources | Ingestion + Connectors |
+
+Three groupings drove it. **Runs and Trust are both audit surfaces** -- run
+history, what changed between runs, repeat-run agreement, and provenance are
+one question ("can I rely on this?"), not four pages. **The GST leg is
+accounting**, not "trust"; it was only living on the Trust page because that is
+where evidence panels happened to go. **Ingestion and Connectors are one
+question** -- where does the data come from -- split across a page and a
+hidden page.
+
+**Tabs address into the hash: `#overview/audit` is a real location.** Folding
+distinct views behind one nav entry means the URL has to name them, or those
+views become unlinkable client state. `switchPage(name, tab)` and `switchTab()`
+parse `#page/tab`; the existing `hashchange` listener (which already made
+browser back/forward work) routes both segments. Clicking a tab
+`replaceState`s the compound hash.
+
+**Rejected alternative: a nested/secondary nav bar.** A second row of links
+under the topbar would have preserved every page as a first-class destination
+without deciding anything -- ten items in two rows is still ten items. Tabs
+force the grouping to mean something: things sharing a tab strip are answers to
+the same question.
+
+**Rejected alternative: merge Entities into Close.** Both render the same 30
+entities and both are thin, so this looks tempting. They answer different
+questions -- Close is "what is left to certify this period" (a workflow board),
+Entities is "show me everything, sortable" (a data table). Merging them would
+have forced one of the two into the wrong shape. Entities became a tab on
+Overview instead, next to the summary it details.
+
+**Mechanically cheap by design.** `template.html` is almost entirely empty
+`<div id="…">` slots that `app.js` fills, so moving a panel between pages is
+moving a `<div>` -- no render function changed, no CSS changed. The only new
+CSS is `.tabstrip`/`.tabpanel` (five lines), and `.tabstrip` reuses the existing
+`.seg` pill component rather than introducing a second segmented-control style.
+`#excTabs` deliberately keeps `.seg` **without** `.tabstrip`, so the Exceptions
+page's own filter tabs are not hijacked by the generic tab wiring.
+
+**Verification.** Rebuilt and walked in Chrome: the six-item nav, deep links to
+`#overview/audit` and `#accounting/tax` both landing on the right tab on a cold
+load, the merged Sources page showing feeds above connectors, and the avatar
+menu's Connectors item now routing to `#sources`. Console clean.
+
+**Files:** `dashboard/web/template.html` (nav, six `<section>` blocks, tab
+markup, `.tabstrip`/`.tabpanel` CSS), `dashboard/web/app.js` (`PAGES`,
+`switchPage`/`switchTab`/`setupTabs`, `matching`→`transactions` route rename),
+`dashboard/index.html` regenerated.

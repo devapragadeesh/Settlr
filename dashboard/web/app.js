@@ -207,7 +207,7 @@
     $$(".aging-bar").forEach((b) => b.classList.toggle("active", b.parentElement.parentElement.dataset.bucket === agingFilter));
     applyFilters();
     if (agingFilter) {
-      switchPage("matching");
+      switchPage("transactions");
       history.replaceState(null, "", "#matching");
     }
   }
@@ -1067,8 +1067,8 @@
         return {
           headline: "No bank line on this run is Ambiguous — every line either has a unique closing composition or was declined outright (Unresolved).",
           sub: "Uncertainty here means multiple rival compositions pass the identical soundness check — see the glossary term \"ambiguous\".",
-          page: "matching",
-          sources: [{ label: "resolver_contract/types.py — Ambiguous has no `decomposition` attribute", page: "matching" }],
+          page: "transactions",
+          sources: [{ label: "resolver_contract/types.py — Ambiguous has no `decomposition` attribute", page: "transactions" }],
         };
       }
       // `CandidateSet.size` is a Python @property -- it does not survive
@@ -1081,10 +1081,10 @@
         headline: `${ambiguousLines.length} bank line(s) are genuinely Ambiguous — ${totalCandidates} rival composition(s) total, ` +
           `none of them picked, because two or more pass the identical soundness check.`,
         sub: "This is a refusal to guess, not a gap in the resolver — see each line's real candidate set.",
-        page: "matching",
+        page: "transactions",
         sources: ambiguousLines.slice(0, 5).map((l) => ({
-          label: `bank line #${l.index} (${candidateCount(l)} candidates)`, page: "matching",
-          onOpen: () => { switchPage("matching"); selectedLineIndex = l.index; renderMatchColumns(); openLineDrilldown(l); },
+          label: `bank line #${l.index} (${candidateCount(l)} candidates)`, page: "transactions",
+          onOpen: () => { switchPage("transactions"); selectedLineIndex = l.index; renderMatchColumns(); openLineDrilldown(l); },
         })),
       };
     }
@@ -1146,10 +1146,10 @@
     const headline = `${lines.length} line${lines.length === 1 ? "" : "s"} match — ${breakdown}, totaling ${inr(total)}.`;
     const sub = oldest ? `Earliest value date in this set: ${oldest}.` : "";
     return {
-      headline, sub, page: "matching",
+      headline, sub, page: "transactions",
       sources: lines.slice(0, 5).map((l) => ({
-        label: `bank line #${l.index} (${l.kind})`, page: "matching",
-        onOpen: () => { switchPage("matching"); selectedLineIndex = l.index; renderMatchColumns(); openLineDrilldown(l); },
+        label: `bank line #${l.index} (${l.kind})`, page: "transactions",
+        onOpen: () => { switchPage("transactions"); selectedLineIndex = l.index; renderMatchColumns(); openLineDrilldown(l); },
       })),
     };
   }
@@ -1516,7 +1516,7 @@
           closeNotifPanel();
           if (item.page) { switchPage(item.page); history.replaceState(null, "", "#" + item.page); }
           if (item.target != null) {
-            switchPage("matching");
+            switchPage("transactions");
             history.replaceState(null, "", "#matching");
             const line = D.lines[item.target];
             if (line) { selectedLineIndex = line.index; renderMatchColumns(); openLineDrilldown(line); }
@@ -1837,13 +1837,40 @@
   }
 
   /* ============================== PAGE SWITCHING ============================== */
-  const PAGES = ["overview", "exceptions", "runs", "accounting", "close", "entities", "ingestion", "trust", "matching", "connectors"];
+  const PAGES = ["overview", "transactions", "exceptions", "accounting", "close", "sources"];
 
-  function switchPage(name) {
+  // Pages that carry a tab strip. Consolidating nine nav items into six put
+  // several genuinely distinct views behind one nav entry, so the hash has
+  // to address them: "#overview/audit" is a real, linkable location, not
+  // just "#overview" plus hidden client state.
+  function switchPage(name, tab) {
     if (!PAGES.includes(name)) name = "overview";
     $$(".page").forEach((p) => p.classList.toggle("active", p.dataset.page === name));
     $$(".navlinks a").forEach((a) => a.classList.toggle("active", a.dataset.page === name));
+    if (tab) switchTab(name, tab);
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  }
+
+  function switchTab(pageName, tab) {
+    const strip = $(`.tabstrip[data-tabs="${pageName}"]`);
+    if (!strip) return;
+    const page = strip.closest(".page");
+    const known = $$("button", strip).some((b) => b.dataset.tab === tab);
+    if (!known) return;
+    $$("button", strip).forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+    $$(".tabpanel", page).forEach((tp) => tp.classList.toggle("active", tp.dataset.tabpanel === tab));
+  }
+
+  function setupTabs() {
+    $$(".tabstrip").forEach((strip) => {
+      const pageName = strip.dataset.tabs;
+      $$("button", strip).forEach((btn) => {
+        btn.addEventListener("click", () => {
+          switchTab(pageName, btn.dataset.tab);
+          history.replaceState(null, "", `#${pageName}/${btn.dataset.tab}`);
+        });
+      });
+    });
   }
 
   function setupPageSwitching() {
@@ -1865,10 +1892,12 @@
     // clicks routed through the handlers above called switchPage() so far.
     // This listener is what makes the browser's own back/forward buttons,
     // and any link into this page with a #hash, actually work.
-    window.addEventListener("hashchange", () => switchPage(location.hash.slice(1)));
-
-    const initial = (location.hash || "#overview").slice(1);
-    switchPage(initial);
+    const route = (hash) => {
+      const [page, tab] = hash.replace(/^#/, "").split("/");
+      switchPage(page, tab);
+    };
+    window.addEventListener("hashchange", () => route(location.hash));
+    route(location.hash || "#overview");
   }
 
   /* ============================== BOOT ============================== */
@@ -1894,6 +1923,7 @@
   setupTheme();
   setupAvatarMenu();
   setupNotifications();
+  setupTabs();
   setupPageSwitching();
   $("#matchingSub").textContent =
     "Flagship entity " + D.meta.flagship_dataset + " · " + D.lines.length +
