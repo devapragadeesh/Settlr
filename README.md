@@ -535,15 +535,22 @@ service/             the pipeline, scheduler, and read-only API built on
                      ingest/, transport/ and store/
 dashboard/           the generated Settlr UI -- build_dashboard.py runs a
                      real resolver pass and renders index.html from it
+agents/              Claude-narrated agents over the live store -- a chat
+                     answerer, an SLA watchdog, and three write-capable
+                     agents gated behind agent_approval_requests/
+                     human_resolutions; never writes to line_outcomes/
+                     row_outcomes
 DECISIONS.md         numbered, append-only; every entry carries the
                      alternatives it rejected and why
 CHECKPOINT.md        the current state, written against the artefacts on disk
 ```
 
-`ingest/`, `transport/`, `store/`, `service/` and `dashboard/` sit downstream
-of the resolver/benchmark boundary above and never import `resolver/`,
-`resolver_contract/`, `matching/`, `engine/`, or any frozen dataset path --
-enforced by `tests/test_layer_isolation.py`. See `DECISIONS.md` §§79-91 for
+`ingest/`, `transport/`, `store/`, `service/`, `dashboard/` and `agents/` sit
+downstream of the resolver/benchmark boundary above and never import
+`resolver/`, `resolver_contract/`, `matching/`, `engine/`, or any frozen
+dataset path --
+enforced by `tests/test_layer_isolation.py` and, for `agents/` specifically,
+`tests/test_agent_isolation.py`. See `DECISIONS.md` §§79-91 and §§94-96 for
 how and why each was added.
 
 The dependency direction is one-way and load-bearing: `engine/` generates the
