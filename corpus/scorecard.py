@@ -52,7 +52,7 @@ def dig(payload, path):
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("--out", type=Path, default=ROOT / "SCORECARD.md")
+    parser.add_argument("--out", type=Path, default=ROOT / "docs" / "SCORECARD.md")
     arguments = parser.parse_args()
 
     oracle = json.loads((ROOT / "corpus" / "oracle_results.json").read_text())

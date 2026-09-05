@@ -6,7 +6,7 @@ retyped here. This document is the plan and the map — the numbers are in
 `scale/SCALE_REPORT.md`, `investigation/OPERATIONAL_REVIEW.md`,
 `investigation/CONTROLS_MAPPING.md`, and the existing `SCORECARD.md`/
 `CLAIMS.md`. The synthesis of what all of it means is
-[`investigation/BENCHMARK_EXTENSION_RESULTS.md`](investigation/BENCHMARK_EXTENSION_RESULTS.md).
+[`investigation/BENCHMARK_EXTENSION_RESULTS.md`](../investigation/BENCHMARK_EXTENSION_RESULTS.md).
 
 ## Why this document exists
 
@@ -33,7 +33,7 @@ reported" section) and a global sum-check has the same shape of problem.
 **Amended 2026-08-31 (`DECISIONS.md` §55).** The GST/ITC axis named above as
 deliberately deferred has since been built, as a separate, later, dated
 pass — `corpus/datasets_gst/`, scored read-only against the frozen filters
-in [`corpus/GST_RESULTS.md`](corpus/GST_RESULTS.md). The B×C grid gap and
+in [`corpus/GST_RESULTS.md`](../corpus/GST_RESULTS.md). The B×C grid gap and
 the global conservation-test decision are unaffected and stand as written.
 
 ## 1. Accuracy — does the resolver's evidence model actually hold in a
@@ -196,7 +196,7 @@ fraction, a genuine IRN-presence fraction, drawn independently so a single
 invoice can carry more than one statutory ground, plus vendor-pool noise
 varied independently of population size. Scored read-only against the
 existing, unmodified `matching/stage4_exceptions.py` filters and against
-`resolver/` in [`corpus/GST_RESULTS.md`](corpus/GST_RESULTS.md). The result
+`resolver/` in [`corpus/GST_RESULTS.md`](../corpus/GST_RESULTS.md). The result
 is one of the two honest outcomes named in advance: the filters do **not**
 fully generalize — the `itc_availability` single-column shortcut misses
 every Rule-37A-only and absent-from-2B invoice by construction, and the

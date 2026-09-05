@@ -41,6 +41,12 @@ dashboard/             the generated product UI (dashboard/index.html is
 investigation/         dated findings, predictions committed before a fix,
                        before/after measurements. Read before assuming a
                        defect is unknown or already fixed.
+docs/                  DECISIONS.md, CLAIMS.md, SCORECARD.md, CHECKPOINT.md,
+                       TEST_PLAN.md. SCORECARD/CLAIMS are GENERATED into this
+                       directory (corpus/scorecard.py, corpus/claims_ledger.py)
+                       -- never hand-edit them.
+assets/                brand and UI source images. dashboard/build_dashboard.py
+                       inlines assets/aibutton.png at build time.
 ```
 
 **One-way dependency, enforced by tests, not convention:** `resolver/` never

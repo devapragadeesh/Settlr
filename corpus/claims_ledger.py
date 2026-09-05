@@ -307,7 +307,7 @@ def render() -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("--out", type=Path, default=ROOT / "CLAIMS.md")
+    parser.add_argument("--out", type=Path, default=ROOT / "docs" / "CLAIMS.md")
     arguments = parser.parse_args()
     arguments.out.write_text(render() + "\n")
     print(f"wrote {arguments.out}")

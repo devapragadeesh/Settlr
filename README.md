@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="settlrlogoblue.png" alt="Settlr" width="220">
+  <img src="assets/settlrlogoblue.png" alt="Settlr" width="220">
 </p>
 
 <p align="center">
@@ -102,6 +102,8 @@ store/ service/       SFTP/S3 pulls; SQLite persistence with a full
                       row-level audit trail; a pipeline, scheduler and API.
 agents/               Claude-narrated agents — see "Inside the dashboard".
 dashboard/            the generated product UI.
+docs/                 DECISIONS, CLAIMS, SCORECARD, CHECKPOINT, TEST_PLAN.
+assets/               brand and UI source images.
 ```
 
 The dependency direction is one-way and enforced by tests that scan
@@ -131,9 +133,9 @@ verify the tests pass or to see the product.
 ## Engineering rigor, if you want to check it yourself
 
 Every number in this README traces to a script, not a hand-typed claim.
-**[`CLAIMS.md`](CLAIMS.md)** lists every quantitative claim with its
-denominator and scope; **[`SCORECARD.md`](SCORECARD.md)** is the five-
-minute version. **[`DECISIONS.md`](DECISIONS.md)** is the append-only,
+**[`CLAIMS.md`](docs/CLAIMS.md)** lists every quantitative claim with its
+denominator and scope; **[`SCORECARD.md`](docs/SCORECARD.md)** is the five-
+minute version. **[`DECISIONS.md`](docs/DECISIONS.md)** is the append-only,
 numbered record of every non-trivial design call in this project, each one
 carrying the alternative that was rejected and why — including the defects
 this project found in its own earlier work and how they were measured,

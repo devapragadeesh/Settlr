@@ -69,7 +69,7 @@ ITC_EXAMPLE_DIR = ROOT / "corpus" / "datasets" / "A10_B100_Cmax"
 TEMPLATE_PATH = ROOT / "dashboard" / "web" / "template.html"
 APP_JS_PATH = ROOT / "dashboard" / "web" / "app.js"
 LOGO_PATH = ROOT / "dashboard" / "web" / "logo_lockup.png"
-AI_ORB_PATH = ROOT / "aibutton.png"
+AI_ORB_PATH = ROOT / "assets" / "aibutton.png"
 OUT_PATH = ROOT / "dashboard" / "index.html"
 DASHBOARD_DATA_PATH = ROOT / "dashboard" / "data.json"
 

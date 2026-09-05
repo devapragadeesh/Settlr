@@ -108,9 +108,9 @@ def test_the_generated_reports_do_not_print_the_combined_total():
     for report in (ROOT / "corpus" / "ORACLE_RESULTS.md",
                    ROOT / "corpus" / "THREE_SYSTEMS.md",
                    ROOT / "README.md",
-                   ROOT / "CHECKPOINT.md",
-                   ROOT / "CLAIMS.md",
-                   ROOT / "SCORECARD.md"):
+                   ROOT / "docs" / "CHECKPOINT.md",
+                   ROOT / "docs" / "CLAIMS.md",
+                   ROOT / "docs" / "SCORECARD.md"):
         if not report.exists():
             continue
         for number, line in enumerate(report.read_text().splitlines(), 1):
