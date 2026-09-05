@@ -33,7 +33,7 @@ Razorpay test mode never produces settlements. Instant settlement — the only
 forcing mechanism — is blocked server-side with reason code
 `instant_settlements_test_mode_blocked`, reproduced identically through REST,
 the hosted MCP server and the CLI. The evidence is in
-[`../spike/FINDINGS.md`](../spike/FINDINGS.md).
+an internal spike.
 
 Settlement batching here is therefore **synthesized from Razorpay's documented
 behaviour, not captured**. Every row carries a `source_tier` saying which of

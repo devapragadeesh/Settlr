@@ -28,13 +28,13 @@ Full provenance for each number, including the command that reproduces it: [`CLA
 | planted but missed | 2 | of 39 planted |
 | | | |
 | **D15 — the decisive diagnostic** |  |  |
-| G8 abstentions that are **correct refusals** | **15/15** | ≥2 closing subsets **proven** over the pool the resolver can see; `investigation/D15_MEASUREMENT.md` |
+| G8 abstentions that are **correct refusals** | **15/15** | ≥2 closing subsets **proven** over the pool the resolver can see |
 | … genuine abstention failures | **0** | of 18 reconstructible instances — none returned unique-and-complete |
-| both FAILING datasets fail on | **a premise** | G8 asserts uniqueness over the simulator's pool, 1.4×–14× smaller than the resolver's. The gate is **not** loosened (`DECISIONS.md` §46) |
+| both FAILING datasets fail on | **a premise** | G8 asserts uniqueness over the simulator's pool, 1.4×–14× smaller than the resolver's. The gate is **not** loosened |
 | | | |
 | **The exception queue** |  |  |
 | `ProvenUnmatched` rows — the ledger entails no bank credit | 701 | two entailed reasons only; gated at zero by G9 |
-| `OpenBreak` rows — classified, aged, **assert nothing** | 4308 | never summed with the row above (`DECISIONS.md` §40) |
+| `OpenBreak` rows — classified, aged, **assert nothing** | 4308 | never summed with the row above |
 | … clustered under a causing bank line | 1582 | across 54 distinct causes |
 | … the resolver could not classify at all | 1472 | a real reported category; a high count is an honest finding |
 | | | |
@@ -45,13 +45,13 @@ Full provenance for each number, including the command that reproduces it: [`CLA
 | resolver runtime, 30 datasets | 916s | one full scoring run |
 | | | |
 | **Resolver at scale — enumerations completing** |  |  |
-| at 48,566 rows | **0/12** | every solve truncates from ~4,876 rows up; `rival_closure_count` becomes a lower bound, silently -- `scale/RESOLVER_SCALE_REPORT.md`, `DECISIONS.md` §77 |
+| at 48,566 rows | **0/12** | every solve truncates from ~4,876 rows up; `rival_closure_count` becomes a lower bound, silently`scale/RESOLVER_SCALE_REPORT.md` |
 | | | |
 | **Ingestion adapters — round-trip against every dataset** |  |  |
-| `xlsx` | **45/45** | fixtures generated from this repo's own data, not a real bank export -- `ingest/INGESTION_REPORT.md`, `DECISIONS.md` §§81-83 |
-| `camt053` | **45/45** | fixtures generated from this repo's own data, not a real bank export -- `ingest/INGESTION_REPORT.md`, `DECISIONS.md` §§81-83 |
-| `mt940` | **45/45** | fixtures generated from this repo's own data, not a real bank export -- `ingest/INGESTION_REPORT.md`, `DECISIONS.md` §§81-83 |
-| `jsonl` | **45/45** | fixtures generated from this repo's own data, not a real bank export -- `ingest/INGESTION_REPORT.md`, `DECISIONS.md` §§81-83 |
+| `xlsx` | **45/45** | fixtures generated from this repo's own data, not a real bank export -- `ingest/INGESTION_REPORT.md` |
+| `camt053` | **45/45** | fixtures generated from this repo's own data, not a real bank export -- `ingest/INGESTION_REPORT.md` |
+| `mt940` | **45/45** | fixtures generated from this repo's own data, not a real bank export -- `ingest/INGESTION_REPORT.md` |
+| `jsonl` | **45/45** | fixtures generated from this repo's own data, not a real bank export -- `ingest/INGESTION_REPORT.md` |
 
 ## The one-paragraph version
 

@@ -16,3 +16,12 @@ scale/DATASET_HASHES.txt
 # POST /runs/{run_id}/ask (DECISIONS Sec.101), rebuilt on every dashboard
 # build, never hand-edited
 dashboard/data/
+
+# macOS
+.DS_Store
+
+# Local agent/tooling config and internal build notes -- kept on disk, never
+# published. This is a product repo; how it was built is not part of it.
+.claude/
+CLAUDE.md
+AGENTS.md

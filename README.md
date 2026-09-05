@@ -8,8 +8,7 @@
 
 # Settlr
 
-*[`AGENTS.md`](AGENTS.md) describes this repo's layout to a coding agent.
-[`dashboard/`](dashboard/) is the generated product UI.*
+*[`dashboard/`](dashboard/) is the generated product UI.*
 
 ## What Settlr does
 
@@ -102,7 +101,7 @@ store/ service/       SFTP/S3 pulls; SQLite persistence with a full
                       row-level audit trail; a pipeline, scheduler and API.
 agents/               Claude-narrated agents — see "Inside the dashboard".
 dashboard/            the generated product UI.
-docs/                 DECISIONS, CLAIMS, SCORECARD, CHECKPOINT, TEST_PLAN.
+docs/                 SCORECARD and CLAIMS — generated benchmark results.
 assets/               brand and UI source images.
 ```
 
@@ -133,18 +132,13 @@ verify the tests pass or to see the product.
 ## Engineering rigor, if you want to check it yourself
 
 Every number in this README traces to a script, not a hand-typed claim.
-**[`CLAIMS.md`](docs/CLAIMS.md)** lists every quantitative claim with its
-denominator and scope; **[`SCORECARD.md`](docs/SCORECARD.md)** is the five-
-minute version. **[`DECISIONS.md`](docs/DECISIONS.md)** is the append-only,
-numbered record of every non-trivial design call in this project, each one
-carrying the alternative that was rejected and why — including the defects
-this project found in its own earlier work and how they were measured,
-not just claimed fixed. **`investigation/`** holds the dated, evidence-
-first write-ups behind that record (a malformed-input robustness suite, a
-throughput ceiling, a controls mapping, an actively-tracked resolver-timing
-property under CI runner contention — `investigation/resolver_nondeterminism/`).
-None of it is summarized away here; it's linked because it's long, not
-because it's hidden.
+**[`SCORECARD.md`](docs/SCORECARD.md)** is the five-minute version;
+**[`CLAIMS.md`](docs/CLAIMS.md)** is the long one — every quantitative claim
+the repository makes, each with the artefact that produces it, the command
+that reproduces it, and its denominator and scope inline. Both are generated
+from live run artefacts (`corpus/scorecard.py`, `corpus/claims_ledger.py`);
+neither is hand-edited, and a value that no command can regenerate is listed
+as exactly that rather than quietly presented as measured.
 
 ```bash
 # verify the frozen primary dataset has not been altered

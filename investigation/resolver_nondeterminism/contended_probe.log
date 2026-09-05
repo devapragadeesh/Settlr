@@ -1,8 +1,0 @@
-6 concurrent resolver processes started
-run 0: 83.2s  clock stops=5 counts=[0, 27, 9, 31, 11]
-run 1: 83.6s  clock stops=5 counts=[0, 27, 9, 34, 9]
-run 2: 83.2s  clock stops=5 counts=[0, 27, 9, 34, 10]
-
-IDENTICAL ACROSS 3 CONTENDED RUNS: False
-  line  11 Unresolved                 fields=['detail', 'partial_candidates']
-  line  15 Unresolved                 fields=['detail', 'partial_candidates']

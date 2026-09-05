@@ -66,7 +66,7 @@ def rows() -> list[dict]:
     THREE = "`python3 corpus/three_systems.py`"
     TRIV = "`python3 corpus/triviality_check.py --all`"
     BASE = "`python3 corpus/baseline_old_engine.py --all`"
-    AUDIT = "committed measurement, `investigation/DERIVED_BRANCH_AUDIT.md`"
+    AUDIT = "committed one-time measurement"
 
     out = [
         dict(claim="`Verified` assignments that are wrong",
@@ -90,7 +90,7 @@ def rows() -> list[dict]:
             value=f"{counts['ok']}/{counts['total']}",
             denom=f"{counts['total']} dataset directories",
             scope="fixtures generated from this repo's own bank_statement.csv/"
-                  "recon_combined.json, not a real bank export -- "
+                  "recon_combined.json, not a real bank export"
                   "`ingest/INGESTION_REPORT.md`",
             artefact="`ingest/ingestion_report.py`",
             how="`python3 -m ingest.ingestion_report`"))
@@ -121,7 +121,7 @@ def rows() -> list[dict]:
              denom=f"{sum(r['measured']['determined']['reconstructible_instances'] for r in oracle)} reconstructible instances",
              scope="30 datasets, gate G8. **Uniqueness is scoped to the pool the "
                    "simulator drew from, 1.4×–14× smaller than the pool the resolver "
-                   "searches** — `DECISIONS.md` §46",
+                   "searches**",
              artefact="`corpus/oracle.py`", how=ORACLE),
         dict(claim="candidate sets not containing the truth",
              value=gate("G3"), denom="all candidate sets built, 30 datasets",
@@ -149,7 +149,7 @@ def rows() -> list[dict]:
              value=total(("proven_unmatched","rows")),
              denom=f"{total(('open_break','rows'))} `OpenBreak` rows alongside it "
                    "(**deliberately not a shared denominator: one asserts, the "
-                   "other does not, and they are never summed** — `DECISIONS.md` §40)",
+                   "other does not, and they are never summed**)",
              scope="30 datasets; two entailed reasons only", artefact="`resolver/breaks.py`", how=ORACLE),
         dict(claim="`OpenBreak` rows",
              value=total(("open_break","rows")),
@@ -193,7 +193,7 @@ def rows() -> list[dict]:
             scope="**A line the resolver MUST NOT answer is not a line it "
                   "failed to answer.** The single-figure version counted them "
                   "identically and so fell as detection improved "
-                  "(`DECISIONS.md` §48)",
+                  "",
             artefact="`corpus/coverage.py`", how=ORACLE))
 
     triv = ROOT / "corpus" / "TRIVIALITY_CHECK.md"
@@ -210,25 +210,25 @@ def rows() -> list[dict]:
              value="45.7%", denom="4,994 claims over 30 datasets",
              scope="**historical.** Split into `ProvenUnmatched` and `OpenBreak` by "
                    "contract §4.7; 2,469 of those rows had settled",
-             artefact="`investigation/DERIVED_BRANCH_AUDIT.md`", how=AUDIT),
+             artefact="", how=AUDIT),
         dict(claim="derived-branch reason accuracy — the SUPERSEDED outcome",
              value="97.6%", denom="1,872 claims",
              scope="**historical, and the naive inference from it is wrong**: correcting "
                    "the derivations raised rows-that-settled from 8 to 64, because a "
                    "corrected `dispute_held` promotes rows out of a residual that "
                    "asserts nothing into a branch that asserts something false "
-                   "(`DECISIONS.md` §40)",
-             artefact="`investigation/DERIVED_BRANCH_AUDIT.md`", how=AUDIT),
+                   "",
+             artefact="", how=AUDIT),
         dict(claim="disputed rows whose `on_hold` column disagrees with their state at the horizon",
              value="202", denom="540 disputed rows",
              scope="defect D13. Not fixable from this feed: the Razorpay dispute entity "
-                   "publishes no resolution timestamp (`DECISIONS.md` §44.5)",
-             artefact="`investigation/DERIVED_BRANCH_AUDIT.md`", how=AUDIT),
+                   "publishes no resolution timestamp",
+             artefact="", how=AUDIT),
         dict(claim="pool growth from the F1 fix",
              value="+1.7% mean, +2.8% max",
              denom="all pools, 30 datasets; 1,544 row-slots added",
-             scope="`DECISIONS.md` §45; no gate moved",
-             artefact="`investigation/F1_PREDICTION.md`", how="`python3 corpus/score_resolver.py --all` before and after `4b65764`"),
+             scope="no gate moved",
+             artefact="", how="`python3 corpus/score_resolver.py --all` before and after `4b65764`"),
     ]
     return out
 
@@ -243,7 +243,7 @@ UNTRACEABLE = [
     ("closure count over the DERIVED pool at the 18 reconstructible instances",
      "**MEASURED, but by a one-time enumeration rather than a pipeline step.** "
      "This row read \"NOT MEASURED ... deliberately not built\" until "
-     "2026-09-03, which was false: `investigation/D15_MEASUREMENT.md` took "
+     "2026-09-03, which was false: took "
      "exactly this measurement and `SCORECARD.md` publishes its result. All "
      "**15/15** G8 abstentions are correct refusals -- at every one the "
      "resolver proved two or more closing subsets exist over the pool it can "
@@ -278,10 +278,8 @@ def render() -> str:
            "it; nothing else in the repository had.", "",
            "That is the argument for this artefact, and it is deliberately not "
            "the argument that the author was careful. **A mechanism caught "
-           "what care did not.** The same conclusion `DECISIONS.md` \u00a744.4 "
-           "reaches about the reference-frame sweep, and `CHECKPOINT.md` "
-           "\u00a70 reaches about the leak audit: in this project, the "
-           "informed searcher is not the control.", "",
+           "what care did not.** In this project, the informed searcher "
+           "is not the control.", "",
            "| claim | value | denominator | scope | produced by | reproduce with |",
            "|---|---:|---|---|---|---|"]
     for row in rows():
@@ -301,7 +299,7 @@ def render() -> str:
             "2. **`ProvenUnmatched` and `OpenBreak` are never summed.** One "
             "asserts, the other does not. The single place their total appears "
             "is as a denominator in this table, labelled as such "
-            "(`DECISIONS.md` §40)."]
+            "."]
     return "\n".join(out)
 
 
